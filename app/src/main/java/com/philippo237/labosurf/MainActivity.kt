@@ -1,10 +1,12 @@
 package com.philippo237.labosurf
 
 import android.content.Intent
+import android.net.Uri
 import android.net.VpnService
 import android.os.Bundle
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
@@ -44,13 +46,34 @@ class MainActivity : AppCompatActivity() {
         webView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = ExternalLinkWebViewClient()
         webView.addJavascriptInterface(NativeBridge(), "LaboSurfNative")
         webView.loadUrl("file:///android_asset/www/index.html")
 
         // Ecoute les mises a jour d'etat envoyees par LaboVpnService (broadcast local)
         LaboVpnService.stateListener = { nativeState, detail ->
             notifyWeb(nativeState, detail)
+        }
+    }
+
+    /**
+     * Sans ceci, tout lien "target=_blank" (Telegram, canal, groupe, développeur...)
+     * reste muet quand on appuie dessus : une WebView ne sait pas ouvrir une nouvelle
+     * fenêtre toute seule. Ici on intercepte ces liens et on les ouvre soit dans
+     * l'app Telegram (si installée), soit dans le navigateur du téléphone.
+     */
+    inner class ExternalLinkWebViewClient : WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            val url = request.url.toString()
+            // Les pages internes de l'app (assets locaux) restent gerees par la WebView elle-meme
+            if (url.startsWith("file:///android_asset/")) return false
+            return try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "Impossible d'ouvrir le lien : $url", e)
+                false
+            }
         }
     }
 

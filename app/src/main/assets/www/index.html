@@ -216,6 +216,13 @@
   .footnote{ margin: 4px 0 20px; text-align:center; line-height:1.7; }
   .footnote .l2{ font-family:var(--display); font-size:13px; color:var(--gold); font-weight:700; letter-spacing:0.01em; text-shadow: 0 0 12px rgba(255,209,71,0.45); }
 
+  /* Notification interne (remplace alert(), invisible sur WebView Android sans config native) */
+  .toast{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+    background:#101110; border:1px solid rgba(57,255,106,0.4); color:var(--text); font-family:var(--display);
+    font-weight:600; font-size:12.5px; padding:11px 20px; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:100; max-width:80%; text-align:center; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
   .timer{ text-align:center; font-family:var(--mono); font-weight:700; font-size:26px; letter-spacing:0.04em; color:var(--text-muted); margin-bottom:4px; }
   .timer.on{ color:var(--accent); }
   .status-sub{ text-align:center; font-size:12px; color:var(--danger); font-weight:600; margin-bottom:18px; transition:color 0.3s; }
@@ -242,6 +249,7 @@
   .acc-input:focus{ outline:none; border-color:var(--accent); }
   .acc-error{ font-size:11.5px; color:var(--danger); margin-top:8px; display:none; }
   .acc-error.show{ display:block; }
+  .acc-switch-link{ text-align:center; font-size:11.5px; color:var(--text-muted); margin-top:12px; text-decoration:underline; }
   .acc-avatar{ width:56px; height:56px; border-radius:16px; background:var(--accent-dim); border:1px solid rgba(57,255,106,0.35);
     display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:700; font-size:20px; color:var(--accent); flex-shrink:0; }
   .acc-head{ display:flex; align-items:center; gap:12px; margin-bottom:4px; }
@@ -270,7 +278,7 @@
   .about-vpn b{ color:var(--text); }
   .logout-row{ display:flex; justify-content:center; margin-top:6px; }
   .logout-btn{ font-size:11.5px; color:var(--danger); cursor:pointer; font-weight:600; padding:8px 14px; }
-  .card-lbl{ font-family:var(--mono); font-size:10px; letter-spacing:0.13em; color:var(--text-muted); text-transform:uppercase; margin-bottom:13px; }
+  .card-lbl{ font-family:var(--mono); font-size:10px; letter-spacing:0.13em; color:var(--accent); opacity:0.85; text-transform:uppercase; margin-bottom:13px; }
   .traffic-row{ display:flex; align-items:center; }
   .traffic-item{ flex:1; }
   .traffic-item .v{ font-family:var(--display); font-weight:700; font-size:18px; }
@@ -368,6 +376,7 @@
 </style>
 </head>
 <body>
+<div class="toast" id="toastEl"></div>
 <div class="device">
 
   <div class="rail" id="rail">
@@ -491,7 +500,7 @@
     <!-- Etat 1 : non connecte -->
     <div id="accLoggedOut">
       <div class="section-lbl">Mon compte Labo</div>
-      <div class="card">
+      <div class="card" id="accLoginCard">
         <div class="card-lbl">Se connecter</div>
         <div class="acc-field">
           <div class="acc-label">Nom d'utilisateur</div>
@@ -504,6 +513,34 @@
         <div class="pill-btn primary" id="accLoginBtn" onclick="realLogin()">Se connecter</div>
         <div class="acc-error" id="accError">Identifiants incorrects. Réessaie.</div>
       </div>
+
+      <div class="card" id="accRegisterCard" style="display:none;">
+        <div class="card-lbl">Créer mon compte</div>
+        <div class="acc-field">
+          <div class="acc-label">Nom d'utilisateur</div>
+          <input type="text" id="regUsername" class="acc-input" placeholder="3-32 caractères, lettres/chiffres" autocomplete="username">
+        </div>
+        <div class="acc-field">
+          <div class="acc-label">Contact (email ou téléphone)</div>
+          <input type="text" id="regContact" class="acc-input" placeholder="Pour te retrouver en cas de souci" autocomplete="email">
+        </div>
+        <div class="acc-field">
+          <div class="acc-label">Phrase de récupération</div>
+          <input type="text" id="regRecovery" class="acc-input" placeholder="Pour réinitialiser ton mot de passe" autocomplete="off">
+        </div>
+        <div class="acc-field">
+          <div class="acc-label">Mot de passe</div>
+          <input type="password" id="regPassword" class="acc-input" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="acc-field">
+          <div class="acc-label">Confirme le mot de passe</div>
+          <input type="password" id="regPasswordConfirm" class="acc-input" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="pill-btn primary" id="regSubmitBtn" onclick="realRegister()">Créer mon compte</div>
+        <div class="acc-error" id="regError"></div>
+        <div class="acc-switch-link" onclick="toggleRegisterForm(false)">J'ai déjà un compte</div>
+      </div>
+
       <div class="card cta-signup">
         <div class="cta-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7 7 1-5.2 5 1.5 7-6.3-3.5L5.7 22l1.5-7L2 8l7-1 3-7z"/></svg>
@@ -515,7 +552,7 @@
           <div class="cta-perk"><span class="dot"></span>Aucun réglage technique à faire</div>
           <div class="cta-perk"><span class="dot"></span>Plans Gratuit, VIP et Revendeur</div>
         </div>
-        <div class="pill-btn primary" style="margin-top:4px;">Créer mon compte sur le site</div>
+        <div class="pill-btn primary" style="margin-top:4px;" onclick="toggleRegisterForm(true)">Créer mon compte</div>
       </div>
     </div>
 
@@ -659,7 +696,7 @@
     <div class="set-group">
       <div class="set-row"><div><div class="lbl-main">Anti-DPI</div><div class="lbl-sub">Camouflage du trafic</div></div><div class="switch on" id="swDpi"></div></div>
       <div class="set-row"><div><div class="lbl-main">Vider le cache</div><div class="lbl-sub">Logs et configs temporaires</div></div>
-        <div class="pill-btn" style="padding:6px 12px; font-size:11px;" onclick="alert('Cache vidé')">Vider</div></div>
+        <div class="pill-btn" style="padding:6px 12px; font-size:11px;" onclick="toast('Cache vidé')">Vider</div></div>
     </div>
     <div class="section-lbl">À propos</div>
     <div class="set-group"><div class="about-card">
@@ -672,6 +709,17 @@
 </div>
 
 <script>
+// Notification interne legere (remplace window.alert(), invisible par defaut dans une
+// WebView Android native sans configuration cote Kotlin). Fonctionne pareil en PWA/navigateur.
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById('toastEl');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
 const servers = [
   { name: "Serveur 1", proto: "VLESS / XHTTP", ping: 46, active: true,
     link: "vless://uuid-demo@serveur1.exemple.net:443?encryption=none&security=tls&type=xhttp&path=%2Fproxy#Serveur-1" },
@@ -854,6 +902,33 @@ function daysLeftFromExpiration(expIso){
   return Math.max(0, Math.ceil(diffMs / 86400000));
 }
 
+// Logique partagee apres une authentification reussie (connexion OU inscription) :
+// va chercher le compte reel et bascule l'affichage vers l'etat "connecte".
+async function loadAndShowAccount(fallbackUsername){
+  const [meRes, subRes] = await Promise.all([
+    apiFetch('/api/user/me'),
+    apiFetch('/api/user/subscription'),
+  ]);
+  const me = meRes.ok ? meRes.data : {};
+  const sub = subRes.ok ? subRes.data : {};
+  const planKey = planKeyFromType(me.type);
+  const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur' };
+  const expiresAt = (sub && sub.expires_at) || me.expiration || '';
+
+  renderAccountCard({
+    username: me.username || fallbackUsername,
+    plan: planKey,
+    planLabel: planLabels[planKey],
+    daysLeft: planKey === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
+    graceDays: 3,
+    quotaGB: (me.quota_gb !== undefined && me.quota_gb !== null) ? Number(me.quota_gb) : null,
+    quotaUsedGB: 0, // l'API ne renvoie pas encore la consommation reelle, a completer cote panel
+  });
+  document.getElementById('accLoggedOut').style.display = 'none';
+  document.getElementById('accLoggedIn').style.display = '';
+  document.getElementById('accSyncTime').textContent = "À l'instant";
+}
+
 async function realLogin(){
   const u = document.getElementById('accUsername').value.trim();
   const p = document.getElementById('accPassword').value;
@@ -875,38 +950,63 @@ async function realLogin(){
       return;
     }
     authToken = login.data.token;
-
-    const [meRes, subRes] = await Promise.all([
-      apiFetch('/api/user/me'),
-      apiFetch('/api/user/subscription'),
-    ]);
-
-    const me = meRes.ok ? meRes.data : {};
-    const sub = subRes.ok ? subRes.data : {};
-    const planKey = planKeyFromType(me.type);
-    const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur' };
-    const expiresAt = (sub && sub.expires_at) || me.expiration || '';
-
-    const acc = {
-      username: me.username || u,
-      plan: planKey,
-      planLabel: planLabels[planKey],
-      daysLeft: planKey === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
-      graceDays: 3,
-      quotaGB: (me.quota_gb !== undefined && me.quota_gb !== null) ? Number(me.quota_gb) : null,
-      quotaUsedGB: 0, // l'API ne renvoie pas encore la consommation reelle, a completer cote panel
-    };
-
-    renderAccountCard(acc);
-    document.getElementById('accLoggedOut').style.display = 'none';
-    document.getElementById('accLoggedIn').style.display = '';
-    document.getElementById('accSyncTime').textContent = "À l'instant";
+    await loadAndShowAccount(u);
   }catch(e){
     err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
     err.classList.add('show');
   }finally{
     btn.textContent = originalLbl;
   }
+}
+
+async function realRegister(){
+  const u = document.getElementById('regUsername').value.trim();
+  const c = document.getElementById('regContact').value.trim();
+  const rs = document.getElementById('regRecovery').value.trim();
+  const p = document.getElementById('regPassword').value;
+  const p2 = document.getElementById('regPasswordConfirm').value;
+  const err = document.getElementById('regError');
+  const btn = document.getElementById('regSubmitBtn');
+  err.classList.remove('show');
+
+  if(!u || !c || !rs || !p || !p2){
+    err.textContent = 'Remplis tous les champs.'; err.classList.add('show'); return;
+  }
+  if(p !== p2){
+    err.textContent = 'Les mots de passe ne correspondent pas.'; err.classList.add('show'); return;
+  }
+
+  const originalLbl = btn.textContent;
+  btn.textContent = 'Création...';
+  try{
+    const reg = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: u, contact: c, recovery_secret: rs,
+        password: p, confirm_password: p2,
+      }),
+    });
+    if(!reg.ok || !reg.data || reg.data.status !== 'ok'){
+      err.textContent = (reg.data && reg.data.message) || 'Inscription impossible. Réessaie.';
+      err.classList.add('show');
+      return;
+    }
+    authToken = reg.data.token;
+    toast('Compte créé — bienvenue !');
+    await loadAndShowAccount(u);
+  }catch(e){
+    err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
+    err.classList.add('show');
+  }finally{
+    btn.textContent = originalLbl;
+  }
+}
+
+function toggleRegisterForm(show){
+  document.getElementById('accLoginCard').style.display = show ? 'none' : '';
+  document.getElementById('accRegisterCard').style.display = show ? '' : 'none';
+  const cta = document.querySelector('.cta-signup');
+  if(cta) cta.style.display = show ? 'none' : '';
 }
 
 function realLogout(){
@@ -959,7 +1059,7 @@ function toggleRailGroup(name){
   document.getElementById('group-'+name).classList.toggle('open');
 }
 function quickClearCache(){
-  alert('Cache vidé');
+  toast('Cache vidé');
 }
 
 // ─── Bannière panel (pilotée depuis LABORATOIRE DU FREE-SURF) ───
@@ -1056,7 +1156,7 @@ window.onNativeVpnState = function(nativeState, detail){
 
 function toggleConnection(){
   if(state==='off'){
-    if(servers.length===0){ alert("Aucun serveur disponible pour l'instant."); return; }
+    if(servers.length===0){ toast("Aucun serveur disponible pour l'instant."); return; }
     const target = servers.find(s=>s.active)||servers[0];
     state='connecting'; render();
     logEvent('info', `Connexion en cours vers ${target.name} (${target.proto})`);
