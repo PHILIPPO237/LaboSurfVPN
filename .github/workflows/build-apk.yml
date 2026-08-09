@@ -1,0 +1,45 @@
+name: Build APK Labo Surf
+
+# Se declenche a chaque push sur main, ou manuellement depuis l'onglet Actions
+# du site GitHub (utilisable depuis le telephone, comme ton pipeline VPS).
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Installer le SDK Android
+        uses: android-actions/setup-android@v3
+
+      - name: Preparer Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Compiler l'APK (debug)
+        run: gradle assembleDebug
+
+      - name: Rendre l'APK telechargeable
+        uses: actions/upload-artifact@v4
+        with:
+          name: labo-surf-vpn-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+# ─── Comment recuperer l'APK depuis ton telephone ───
+# 1. Va dans l'onglet "Actions" de ton depot GitHub.
+# 2. Ouvre le dernier run termine (coche verte).
+# 3. Descends jusqu'a "Artifacts" -> "labo-surf-vpn-debug" -> telecharge le zip.
+# 4. Dedans se trouve app-debug.apk, installable directement sur ton telephone
+#    (autorise "sources inconnues" si Android le demande).

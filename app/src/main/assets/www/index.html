@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Labo Surf — Laboratoire du Free-Surf</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#050705">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Labo Surf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#000000;
+    --panel: rgba(255,255,255,0.045);
+    --panel-strong: rgba(255,255,255,0.09);
+    --border: rgba(255,255,255,0.1);
+    --accent: #39ff6a;
+    --accent2: #ff8a3d;
+    --gold: #ffd147;
+    --info: #4fd1ff;
+    --accent-dim: rgba(57,255,106,0.14);
+    --accent-deep: #12b34a;
+    --good: #39ff6a;
+    --danger: #ff5c7a;
+    --text: #f1f5f2;
+    --text-muted: #8a9490;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(circle at 50% 0%, rgba(57,255,106,0.05), transparent 55%), var(--void);
+    min-height:100vh; color:var(--text); font-family:var(--body);
+    display:flex; justify-content:center;
+  }
+  .device{ width:100%; max-width:420px; position:relative; min-height:100vh; padding:20px 18px 40px 96px; }
+  .tab-content{ display:none; } .tab-content.active{ display:block; }
+
+  /* RAIL LATÉRAL — tout visible directement */
+  .rail{ position:fixed; left:14px; top:210px; bottom:20px; display:flex; flex-direction:column; gap:11px; z-index:20; }
+  .rail-btn{ width:52px; height:52px; border-radius:17px; background:#101110; border:1px solid rgba(57,255,106,0.22);
+    display:flex; align-items:center; justify-content:center; color:var(--accent); cursor:pointer;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); transition: transform .15s ease, background .2s ease; position:relative; }
+  .rail-btn svg{ width:21px; height:21px; }
+  .rail-btn.active{ background:var(--accent); color:#04140a; border-color:var(--accent); }
+  .rail-btn:active{ transform:scale(0.9); }
+
+  .rail-group{ display:flex; flex-direction:column; align-items:center; }
+  .rail-caret{ position:absolute; bottom:-5px; right:-5px; width:18px; height:18px; border-radius:50%;
+    background:#0b0c0b; border:1px solid rgba(57,255,106,0.4); display:flex; align-items:center; justify-content:center;
+    z-index:2; cursor:pointer; }
+  .rail-caret svg{ width:9px; height:9px; color:var(--accent); transition: transform .25s ease; }
+  .rail-group.open .rail-caret svg{ transform:rotate(180deg); }
+
+  .rail-expand{ display:flex; flex-direction:column; align-items:center; gap:8px;
+    max-height:0; opacity:0; overflow:hidden; transition: max-height .25s ease, opacity .2s ease, margin .25s ease; margin-top:0; }
+  .rail-group.open .rail-expand{ max-height:200px; opacity:1; margin-top:8px; }
+
+  /* ===== Bannière (affichée dans l'onglet Historique > Journal technique) ===== */
+  .banner-card{ display:none; margin-top:16px; border-radius:20px; padding:26px 20px; text-align:center;
+    position:relative; overflow:hidden; }
+  .banner-card.show{ display:block; }
+  .banner-card .bc-img{ width:100%; max-height:130px; object-fit:cover; border-radius:14px; margin-bottom:14px; }
+  .banner-card .bc-text{ font-family:var(--display); font-weight:800; font-size:18px; line-height:1.3;
+    letter-spacing:0.01em; color:#fff; text-wrap:balance; }
+  .banner-card .bc-link{ display:inline-flex; align-items:center; gap:6px; margin-top:16px; padding:11px 24px;
+    border-radius:14px; font-family:var(--display); font-weight:700; font-size:13px; text-decoration:none;
+    background:var(--accent); color:#04140a; }
+
+  /* Styles reprises du panel admin (LABORATOIRE DU FREE-SURF > Publicites) pour coherence visuelle */
+  .banner-style-neon{ border:1px solid #39ff6a; box-shadow:0 0 22px rgba(57,255,106,0.25); background:rgba(57,255,106,0.06); }
+  .banner-style-gradient{ border:1px solid transparent;
+    background:linear-gradient(#0b0c0b,#0b0c0b) padding-box, linear-gradient(120deg,#4facfe,#00f2fe) border-box;
+    background-size:200% 200%; animation:bsGradient 3s ease infinite; }
+  .banner-style-gold{ border:1px solid #FFD700; background:linear-gradient(135deg, rgba(255,215,0,.12), transparent);
+    box-shadow:0 0 24px rgba(255,215,0,.25); }
+  .banner-style-gold .bc-text{ text-shadow:0 0 8px rgba(255,215,0,.5); }
+  .banner-style-alert{ border:1px solid #ef4444; background:rgba(239,68,68,.1); animation:bsPulseRed 2s infinite; }
+  .banner-style-glass{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(16px); }
+  .banner-style-cyberpunk{ background:repeating-linear-gradient(45deg, rgba(255,0,60,.06) 0, rgba(255,0,60,.06) 2px, transparent 2px, transparent 4px);
+    border:2px solid #00f0ff; border-left:6px solid #fce205; box-shadow:inset 0 0 14px rgba(0,240,255,.25), 0 0 20px rgba(252,226,5,.25); }
+  .banner-style-hacker{ background:#000; border:1px dashed #0f0; box-shadow:inset 0 0 24px rgba(0,255,0,.12); }
+  .banner-style-hacker .bc-text{ color:#0f0 !important; font-family:var(--mono); }
+  .banner-style-galaxy{ background:radial-gradient(circle at center, rgba(31,10,89,.85) 0, rgba(10,0,30,.97) 100%);
+    border:1px solid rgba(138,43,226,.55); animation:bsBreatheGalaxy 4s infinite alternate; }
+  .banner-style-fire{ border:1px solid #ff4500; background:linear-gradient(45deg, rgba(139,0,0,.5), rgba(255,69,0,.25), rgba(255,140,0,.12));
+    background-size:200% 200%; animation:bsFire 3s ease infinite; box-shadow:0 0 20px rgba(255,69,0,.35); }
+  .banner-style-hologram{ background:linear-gradient(rgba(0,255,255,.06) 50%, rgba(0,0,0,.12) 50%); background-size:100% 4px;
+    border:1px solid rgba(0,255,255,.6); box-shadow:0 0 20px rgba(0,255,255,.3), inset 0 0 24px rgba(0,255,255,.12); }
+
+  @keyframes bsGradient{ 0%,100%{ background-position:0 50%; } 50%{ background-position:100% 50%; } }
+  @keyframes bsPulseRed{ 0%{ box-shadow:0 0 0 0 rgba(239,68,68,.45);} 70%{ box-shadow:0 0 0 14px rgba(239,68,68,0);} 100%{ box-shadow:0 0 0 0 rgba(239,68,68,0);} }
+  @keyframes bsBreatheGalaxy{ from{ box-shadow:0 0 18px rgba(138,43,226,.35);} to{ box-shadow:0 0 40px rgba(138,43,226,.75);} }
+
+  /* Modele par defaut (Labo Surf VPN) - affiche tant qu'aucune pub personnalisee n'est configuree dans le panel */
+  /* Compact: le logo "Labo Surf" est deja affiche en haut de l'ecran (hero-brand), pas repete ici */
+  .banner-style-default{ border:1px solid #FFD700; background:linear-gradient(150deg, rgba(255,215,0,.14), rgba(57,255,106,.04) 60%, transparent); }
+  .bd-block-wrap{ position:relative; padding:12px 0 8px; overflow:hidden; }
+  .bd-block-wrap::before{ content:''; position:absolute; inset:0; opacity:0.3;
+    background-image: radial-gradient(rgba(57,255,106,0.5) 1px, transparent 1.5px); background-size:7px 7px; }
+  .bd-block-wrap::after{ content:''; position:absolute; top:0; bottom:0; width:36%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform:skewX(-18deg); left:-50%; animation: bdShimmer 3.6s ease-in-out infinite; pointer-events:none; }
+  .bd-block{ position:relative; font-family:var(--mono); font-weight:700; font-size:44px; letter-spacing:0.05em;
+    color:var(--accent); text-shadow:0 0 4px rgba(57,255,106,0.9), 0 0 18px rgba(57,255,106,0.5);
+    -webkit-text-stroke:0.6px rgba(57,255,106,0.9); animation: bdPulse 2.4s ease-in-out infinite; }
+  .bd-tagline{ font-family:var(--display); font-weight:700; font-size:14px; color:var(--text); margin:8px 0 14px;
+    animation: bdFade 3.6s ease-in-out infinite; }
+  @keyframes bdPulse{
+    0%,100%{ text-shadow:0 0 4px rgba(57,255,106,0.9), 0 0 18px rgba(57,255,106,0.5); }
+    50%{ text-shadow:0 0 8px rgba(57,255,106,1), 0 0 30px rgba(57,255,106,0.85); }
+  }
+  @keyframes bdShimmer{
+    0%{ left:-50%; opacity:0; }
+    12%{ opacity:1; }
+    45%{ left:115%; opacity:0; }
+    100%{ left:115%; opacity:0; }
+  }
+  @keyframes bdFade{
+    0%,100%{ opacity:0.75; }
+    50%{ opacity:1; }
+  }
+  .bd-badge-row{ display:flex; justify-content:center; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .bd-badge{ font-family:var(--mono); font-size:10px; letter-spacing:0.07em; text-transform:uppercase; font-weight:700;
+    padding:5px 12px; border-radius:20px; }
+  .bd-badge-premium{ background:rgba(255,209,71,0.16); color:var(--gold, #ffd147); border:1px solid rgba(255,209,71,0.4); }
+  .bd-badge-official{ background:rgba(57,255,106,0.14); color:var(--accent); border:1px solid rgba(57,255,106,0.35); }
+  .bd-actions{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+  .bd-btn{ display:inline-flex; align-items:center; gap:6px; padding:11px 20px; border-radius:12px;
+    font-family:var(--display); font-weight:700; font-size:12.5px; text-decoration:none;
+    background:var(--accent); color:#04140a; }
+  .bd-btn-outline{ display:inline-flex; align-items:center; gap:6px; padding:11px 20px; border-radius:12px;
+    font-family:var(--display); font-weight:700; font-size:12.5px; text-decoration:none;
+    background:transparent; border:1px solid rgba(255,255,255,0.18); color:var(--text-muted); }
+  .bd-btn svg, .bd-btn-outline svg{ width:13px; height:13px; }
+  @keyframes bsFire{ 0%,100%{ background-position:0% 50%;} 50%{ background-position:100% 50%;} }
+
+  .rail-mini{ width:40px; height:40px; border-radius:13px; background:#0c0d0c; border:1px solid rgba(57,255,106,0.16);
+    display:flex; align-items:center; justify-content:center; color:var(--accent); cursor:pointer; transition: background .2s ease; }
+  .rail-mini svg{ width:16px; height:16px; }
+  .rail-mini.on{ background:var(--accent); color:#04140a; }
+  .rail-mini:active{ transform:scale(0.9); }
+  .rail-btn svg{ width:21px; height:21px; }
+  .rail-btn.active{ background:var(--accent); color:#04140a; border-color:var(--accent); }
+  .rail-btn:active{ transform:scale(0.9); }
+
+  /* HEADER */
+
+  /* HERO BRAND */
+  .hero-brand{ text-align:center; margin-bottom:6px; }
+  .hexagon{ width:128px; height:128px; margin:0 auto; }
+  .hexagon svg{ width:100%; height:100%; filter: drop-shadow(0 0 20px rgba(57,255,106,0.3)); transition: filter .6s ease; }
+  .hero-brand.on .hexagon svg{ animation: logoGlow 2.6s ease-in-out infinite; }
+  @keyframes logoGlow{
+    0%,100%{ filter: drop-shadow(0 0 18px rgba(57,255,106,0.32)); }
+    50%{ filter: drop-shadow(0 0 34px rgba(57,255,106,0.65)); }
+  }
+  .hero-brand.on .hex-key-dot{ animation: keyPulse 1.6s ease-in-out infinite; transform-origin:82px 92px; }
+  @keyframes keyPulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.55; transform:scale(1.4); } }
+  .app-title{ font-family:var(--display); font-weight:800; font-size:30px; letter-spacing:0.03em; color:var(--text);
+    margin-top:10px; text-shadow: 0 0 18px rgba(57,255,106,0.45); }
+  .app-title span{ color:var(--accent); }
+  .app-subtitle{ font-family:var(--body); font-weight:600; font-size:12.5px; color:var(--text-muted);
+    letter-spacing:0.04em; margin-top:3px; text-transform:uppercase; }
+  .app-subtitle .sub-green{ color:var(--accent); font-weight:700; }
+  .app-subtitle .sub-white{ color:#f2f2f2; }
+
+  /* HOME (Accueil) — tient sur un seul écran, sans défilement (jamais, même sur WebView Android).
+     #homeFit est mesuré et réduit automatiquement en JS (fitHomeScreen) si le téléphone est trop
+     petit pour afficher le contenu à taille normale — jamais de scroll, jamais de contenu coupé. */
+  .tab-content.active.home-tab{ display:flex; flex-direction:column; overflow:hidden; max-height:calc(100vh - 60px); }
+  #homeFit{ width:100%; transform-origin:top center; }
+  .home-top{ display:flex; flex-direction:column; align-items:center; }
+  .home-bottom{ width:100%; }
+  .home-banner-slot{ width:100%; padding-top:8px; }
+  .home-banner-slot .banner-card{ margin-top:0; }
+  .home-footnote.footnote{ margin:10px 0 4px; }
+
+  /* STATUS PILL */
+  .status-pill{ display:flex; align-items:center; gap:7px; justify-content:center; margin:0 auto 20px; width:fit-content; padding:7px 15px; border-radius:20px; background:var(--panel); border:1px solid var(--border); position:relative; overflow:hidden; }
+  .status-pill .dot{ width:7px; height:7px; border-radius:50%; background:var(--danger); box-shadow:0 0 6px rgba(255,92,122,0.6); }
+  .status-pill.on{ border-color: var(--accent); background: var(--accent-dim); }
+  .status-pill.on .dot{ background:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .status-pill span.txt{ font-size:12px; font-weight:600; color:var(--danger); }
+  .status-pill.on span.txt{ color:var(--accent); }
+  .status-pill.on::after{ content:''; position:absolute; top:0; left:-60%; width:50%; height:100%;
+    background: linear-gradient(90deg, transparent, rgba(57,255,106,0.35), transparent);
+    animation: pillWave 2.8s ease-in-out infinite; }
+  @keyframes pillWave{ 0%{ left:-60%; } 100%{ left:120%; } }
+
+  /* BUTTON ZONE */
+  .btn-zone{ position:relative; height:190px; display:flex; align-items:center; justify-content:center; margin-bottom:6px; }
+  .ring{ position:absolute; border-radius:50%; border:1px solid var(--accent); opacity:0; }
+  .btn-zone.on .ring{ animation: pulse 2.6s cubic-bezier(.2,.6,.3,1) infinite; }
+  .ring:nth-child(1){ animation-delay:0s; } .ring:nth-child(2){ animation-delay:0.85s; } .ring:nth-child(3){ animation-delay:1.7s; }
+  @keyframes pulse{ 0%{ width:140px; height:140px; opacity:0.4; } 100%{ width:215px; height:215px; opacity:0; } }
+  .big-btn{ position:relative; z-index:2; width:170px; height:170px; border-radius:50%;
+    background: var(--accent);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; border:none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: transform .15s ease, background .2s ease; }
+  .big-btn:active{ transform:scale(0.97); }
+  .big-btn .big-lbl{ font-family:var(--display); font-weight:700; font-size:26px; letter-spacing:0.04em; color:#ffffff; }
+  .btn-zone.connecting .big-btn{ background: var(--accent-deep); }
+  .btn-zone.off .big-btn{ background: #2a2a2a; box-shadow:none; }
+  .btn-zone.off .big-btn .big-lbl{ color: var(--text-muted); }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .footnote{ margin: 4px 0 20px; text-align:center; line-height:1.7; }
+  .footnote .l2{ font-family:var(--display); font-size:13px; color:var(--gold); font-weight:700; letter-spacing:0.01em; text-shadow: 0 0 12px rgba(255,209,71,0.45); }
+
+  .timer{ text-align:center; font-family:var(--mono); font-weight:700; font-size:26px; letter-spacing:0.04em; color:var(--text-muted); margin-bottom:4px; }
+  .timer.on{ color:var(--accent); }
+  .status-sub{ text-align:center; font-size:12px; color:var(--danger); font-weight:600; margin-bottom:18px; transition:color 0.3s; }
+  .status-sub.connecting{ color:var(--gold); }
+  .status-sub.on{ color:var(--accent); }
+
+  /* CTA BUTTON */
+  .cta-btn{ display:flex; align-items:center; justify-content:center; gap:9px; width:100%; padding:15px; border-radius:16px;
+    font-family:var(--display); font-weight:700; font-size:15px; cursor:pointer; border:none;
+    background: var(--accent); color:#04140a; margin-bottom:12px; transition: background .2s ease; }
+  .cta-btn.off{ background: var(--panel-strong); color:var(--text); border:1px solid var(--border); }
+  .cta-btn svg{ width:18px; height:18px; }
+  .logs-link{ display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; color:var(--good); cursor:pointer; margin-bottom:22px; }
+  .logs-link svg{ width:14px; height:14px; }
+
+  /* TRAFFIC CARD */
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:16px; margin-bottom:14px; }
+
+  /* ===== COMPTE ===== */
+  .acc-field{ margin-bottom:12px; }
+  .acc-label{ font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:600; }
+  .acc-input{ width:100%; background:rgba(0,0,0,0.35); border:1px solid var(--border); border-radius:10px;
+    padding:11px 12px; color:var(--text); font-family:var(--body); font-size:13px; }
+  .acc-input:focus{ outline:none; border-color:var(--accent); }
+  .acc-error{ font-size:11.5px; color:var(--danger); margin-top:8px; display:none; }
+  .acc-error.show{ display:block; }
+  .acc-avatar{ width:56px; height:56px; border-radius:16px; background:var(--accent-dim); border:1px solid rgba(57,255,106,0.35);
+    display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:700; font-size:20px; color:var(--accent); flex-shrink:0; }
+  .acc-head{ display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+  .acc-name{ font-family:var(--display); font-weight:700; font-size:16px; }
+  .cta-signup{ text-align:center; background:linear-gradient(160deg, rgba(255,209,71,0.08), rgba(57,255,106,0.05)); border-color:rgba(255,209,71,0.22); }
+  .cta-icon{ width:44px; height:44px; margin:0 auto 10px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,209,71,0.14); color:#ffd147; }
+  .cta-icon svg{ width:22px; height:22px; }
+  .cta-title{ font-family:var(--display); font-size:15px; font-weight:700; margin-bottom:6px; }
+  .cta-sub{ font-size:11.5px; color:var(--text-muted); line-height:1.6; margin-bottom:12px; }
+  .cta-perks{ display:flex; flex-direction:column; gap:7px; text-align:left; margin-bottom:14px; }
+  .cta-perk{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text); }
+  .cta-perk .dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; box-shadow:0 0 8px rgba(57,255,106,0.6); }
+  .plan-badge{ display:inline-block; margin-top:4px; padding:3px 10px; border-radius:20px; font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.05em; }
+  .plan-badge.gratuit{ background:rgba(255,255,255,0.08); color:var(--text-muted); }
+  .plan-badge.vip{ background:rgba(255,209,71,0.15); color:#ffd147; }
+  .plan-badge.revendeur{ background:rgba(255,138,61,0.15); color:var(--accent2); }
+  .gauge-track{ width:100%; height:8px; border-radius:99px; background:rgba(255,255,255,0.08); overflow:hidden; margin:10px 0 6px; }
+  .gauge-fill{ height:100%; border-radius:99px; transition: width .5s ease, background .5s ease; }
+  .gauge-label{ font-size:11.5px; color:var(--text-muted); display:flex; justify-content:space-between; }
+  .about-vpn{ font-size:12px; line-height:1.7; color:var(--text-muted); }
+
+  .stats-section{ max-height:0; opacity:0; overflow:hidden; transition: max-height .5s ease, opacity .4s ease, margin .5s ease; }
+  .stats-section.on{ max-height:600px; opacity:1; margin-top:4px; }
+  .about-vpn b{ color:var(--text); }
+  .logout-row{ display:flex; justify-content:center; margin-top:6px; }
+  .logout-btn{ font-size:11.5px; color:var(--danger); cursor:pointer; font-weight:600; padding:8px 14px; }
+  .card-lbl{ font-family:var(--mono); font-size:10px; letter-spacing:0.13em; color:var(--text-muted); text-transform:uppercase; margin-bottom:13px; }
+  .traffic-row{ display:flex; align-items:center; }
+  .traffic-item{ flex:1; }
+  .traffic-item .v{ font-family:var(--display); font-weight:700; font-size:18px; }
+  .traffic-item .k{ font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+  .traffic-div{ width:1px; height:34px; background:var(--border); margin:0 14px; }
+  .speed-col{ text-align:right; font-family:var(--mono); font-size:11px; color:var(--text-muted); line-height:1.6; }
+  .speed-col b{ color:var(--good); }
+
+  .info-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .info-row:last-child{ border-bottom:none; }
+  .info-row .k{ font-size:12.5px; color:var(--text-muted); }
+  .info-row .v{ font-family:var(--mono); font-size:12.5px; display:flex; align-items:center; gap:8px; }
+  .eye{ cursor:pointer; color:var(--text-muted); }
+  .eye svg{ width:15px; height:15px; }
+
+  /* SERVERS */
+  .section-lbl{ font-family:var(--mono); font-size:11px; letter-spacing:0.14em; color:var(--accent); opacity:0.85; text-transform:uppercase; margin: 4px 0 10px 2px; display:flex; justify-content:space-between; align-items:center; }
+  .section-lbl span.add{ color:var(--accent); cursor:pointer; letter-spacing:normal; text-transform:none; font-family:var(--body); font-weight:600; font-size:12.5px; }
+  .server{ display:flex; align-items:center; gap:11px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px 13px; margin-bottom:9px; cursor:pointer; }
+  .server.active{ border-color: var(--accent); background:var(--panel-strong); }
+  .flag{ width:30px;height:30px;border-radius:9px; display:flex;align-items:center;justify-content:center;
+    font-size:11px; font-weight:800; font-family:var(--mono); flex-shrink:0; }
+  .server .info{ flex:1; min-width:0; }
+  .server .name{ font-family:var(--display); font-weight:600; font-size:13.5px; }
+  .server .proto{ font-family:var(--mono); font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .server .ping{ font-family:var(--mono); font-size:11.5px; text-align:right; min-width:50px; }
+  .server .del{ width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    color:var(--text-muted); flex-shrink:0; }
+  .server .del svg{ width:14px; height:14px; }
+  .server .del:active{ background:rgba(255,90,90,0.15); color:var(--danger); }
+  .ping.good{ color:var(--good); } .ping.mid{ color:#f5c144; } .ping.bad{ color:var(--danger); }
+  .radio{ width:15px;height:15px;border-radius:50%; border:1.5px solid var(--border); position:relative; flex-shrink:0;}
+  .server.active .radio{ border-color:var(--accent); }
+  .server.active .radio::after{ content:''; position:absolute; inset:3px; border-radius:50%; background:var(--accent);}
+
+  .pill-btn{ text-align:center; font-family:var(--body); font-weight:600; font-size:11.5px; padding:8px; border-radius:10px; cursor:pointer; border:1px solid var(--border); background:rgba(255,255,255,0.04); color:var(--text); }
+  .pill-btn.primary{ background:var(--accent); color:#04140a; border-color:var(--accent); }
+
+  /* HISTORIQUE */
+  .hist-item{ display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:13px; margin-bottom:9px; }
+  .hist-dot{ width:9px; height:9px; border-radius:50%; background:var(--good); flex-shrink:0; }
+  .hist-dot.fail{ background:var(--danger); }
+  .hist-item .ht{ font-weight:600; font-size:13px; }
+  .hist-item .hd{ font-family:var(--mono); font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+  .hist-item .hdur{ margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--text-muted); }
+  .empty-state{ text-align:center; padding:30px 16px; color:var(--text-muted); font-size:12.5px; line-height:1.6; }
+
+  .hist-toggle{ display:flex; gap:6px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:4px; margin-bottom:16px; }
+  .hist-toggle-btn{ flex:1; text-align:center; padding:9px 0; border-radius:11px; font-family:var(--display); font-weight:700;
+    font-size:12.5px; color:var(--text-muted); cursor:pointer; transition:background .18s ease, color .18s ease; }
+  .hist-toggle-btn.active{ background:var(--accent); color:#04140a; }
+
+  .log-feed{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px 14px; max-height:420px; overflow-y:auto; }
+  .log-line{ display:flex; gap:9px; align-items:flex-start; font-family:var(--mono); font-size:11px; line-height:1.55;
+    padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .log-line:last-child{ border-bottom:none; }
+  .log-time{ color:var(--text-muted); flex-shrink:0; }
+  .log-tag{ flex-shrink:0; padding:1px 6px; border-radius:6px; font-weight:700; font-size:9.5px; text-transform:uppercase; letter-spacing:0.03em; }
+  .log-tag.info{ background:rgba(79,209,255,0.15); color:var(--info); }
+  .log-tag.ok{ background:rgba(57,255,106,0.15); color:var(--accent); }
+  .log-tag.warn{ background:rgba(255,181,71,0.15); color:#ffb547; }
+  .log-tag.err{ background:rgba(255,92,92,0.15); color:#ff5c5c; }
+  .log-msg{ color:var(--text); flex:1; word-break:break-word; }
+  .log-clear{ font-family:var(--mono); font-size:10.5px; color:var(--text-muted); cursor:pointer; text-transform:uppercase; letter-spacing:0.06em; }
+  .empty-state svg{ width:34px; height:34px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; }
+
+  /* SETTINGS */
+  .set-group{ background:var(--panel); border:1px solid var(--border); border-radius:16px; margin-bottom:12px; overflow:hidden; }
+  .comm-row{ display:flex; align-items:center; gap:12px; padding:14px 15px; text-decoration:none; border-bottom:1px solid var(--border); }
+  .comm-row:last-child{ border-bottom:none; }
+  .comm-row:active{ background:var(--panel-strong); }
+  .comm-ico{ width:38px; height:38px; border-radius:12px; background:rgba(57,255,106,0.1); color:var(--accent);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .comm-ico svg{ width:18px; height:18px; }
+  .comm-txt{ flex:1; }
+  .comm-t{ font-size:13.5px; font-weight:600; color:var(--text); }
+  .comm-s{ font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .comm-chev{ width:16px; height:16px; color:var(--text-muted); flex-shrink:0; }
+  .set-row{ display:flex; align-items:center; justify-content:space-between; padding:13px 14px; border-bottom:1px solid var(--border); }
+  .set-row:last-child{ border-bottom:none; }
+  .set-row .lbl-main{ font-weight:600; font-size:13px; }
+  .set-row .lbl-sub{ font-family:var(--mono); font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .switch{ width:40px; height:23px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid var(--border); position:relative; cursor:pointer; flex-shrink:0; }
+  .switch::after{ content:''; position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%; background:var(--text-muted); transition:transform .2s ease; }
+  .switch.on{ background:var(--accent-dim); border-color:var(--accent); }
+  .switch.on::after{ transform:translateX(17px); background:var(--accent); }
+  .select-pill{ font-family:var(--mono); font-size:11px; color:var(--text); background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; padding:6px 9px; }
+  .about-card{ text-align:center; padding:20px 14px; }
+  .about-card .app-name{ font-family:var(--display); font-weight:700; font-size:15px; }
+  .about-card .app-org{ font-family:var(--mono); font-size:10.5px; color:var(--text-muted); margin-top:3px; }
+  .about-card .app-author{ font-size:11.5px; color:var(--gold); font-weight:700; margin-top:9px; }
+  .about-card .app-ver{ font-family:var(--mono); font-size:9.5px; color:var(--text-muted); opacity:0.6; margin-top:4px; }
+
+  /* nav du bas retirée — remplacée par le rail latéral */
+</style>
+</head>
+<body>
+<div class="device">
+
+  <div class="rail" id="rail">
+    <div class="rail-btn" id="railBtn-compte" onclick="switchTab('compte')" title="Mon compte">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
+    </div>
+
+    <div class="rail-btn" id="railBtn-serveurs" onclick="switchTab('serveurs')" title="Serveurs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><circle cx="7.5" cy="6.5" r="0.6" fill="currentColor"/><circle cx="10.5" cy="6.5" r="0.6" fill="currentColor"/></svg>
+    </div>
+
+    <div class="rail-group" id="group-reglages">
+      <div class="rail-btn" id="railBtn-reglages" onclick="switchTab('reglages')" title="Paramètres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <div class="rail-caret" onclick="event.stopPropagation(); toggleRailGroup('reglages')" title="Raccourcis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+      <div class="rail-expand" id="expand-reglages">
+        <div class="rail-mini" id="miniKill" onclick="quickToggle('swKill','miniKill')" title="Kill switch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>
+        </div>
+        <div class="rail-mini on" id="miniDpi" onclick="quickToggle('swDpi','miniDpi')" title="Anti-DPI">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg>
+        </div>
+        <div class="rail-mini" id="miniAuto" onclick="quickToggle('swAuto','miniAuto')" title="Connexion auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg>
+        </div>
+        <div class="rail-mini" onclick="quickClearCache()" title="Vider le cache">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail-btn" id="railBtn-communaute" onclick="switchTab('communaute')" title="Communauté">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    </div>
+
+    <div class="rail-btn" id="railBtn-historique" onclick="switchTab('historique')" title="Historique">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    </div>
+
+    <div class="rail-btn" id="railBtn-connexion" onclick="switchTab('connexion')" title="Accueil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    </div>
+  </div>
+
+
+  <!-- ===== ACCUEIL ===== -->
+  <div class="tab-content active home-tab" id="tab-connexion">
+  <div id="homeFit">
+
+    <div class="home-top">
+      <div class="hero-brand" id="heroBrand">
+        <div class="hexagon">
+          <svg viewBox="0 0 200 200">
+            <polygon points="100,8 180,54 180,146 100,192 20,146 20,54" fill="#000000" stroke="#39ff6a" stroke-width="3"/>
+            <g class="hex-key" transform="rotate(-32 100 102)">
+              <polygon points="62,80 82,68 102,80 102,104 82,116 62,104" fill="none" stroke="#39ff6a" stroke-width="8.5"/>
+              <circle class="hex-key-dot" cx="82" cy="92" r="6" fill="#39ff6a"/>
+              <path d="M102,92 L155,92 M138,92 L138,108 M148,92 L148,104" fill="none" stroke="#39ff6a" stroke-width="8.5" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+        <div class="app-title">LABO <span>SURF</span></div>
+        <div class="app-subtitle"><span class="sub-green">Laboratoire</span> <span class="sub-white">du</span> <span class="sub-white">Free-Surf</span></div>
+      </div>
+
+      <div class="btn-zone off" id="btnZone">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <button class="big-btn" id="bigBtn">
+          <span class="big-lbl" id="bigLbl">START</span>
+        </button>
+      </div>
+
+      <div class="timer" id="timer">00:00:00</div>
+      <div class="status-sub" id="statusSub">Appuie pour sécuriser ta connexion</div>
+    </div>
+
+    <div class="home-bottom">
+      <div class="home-banner-slot" id="homeBannerSlot">
+        <div class="banner-card show banner-style-default" id="homeBannerCard">
+          <div id="homeBannerDefault">
+            <div class="bd-block-wrap"><div class="bd-block">VPN</div></div>
+            <div class="bd-tagline">Fournisseur officiel du Free-Surf</div>
+            <div class="bd-badge-row">
+              <span class="bd-badge bd-badge-premium">Premium</span>
+              <span class="bd-badge bd-badge-official">Officiel</span>
+            </div>
+            <div class="bd-actions">
+              <a class="bd-btn" href="https://t.me/laboratoire_du_free_surf" target="_blank" rel="noopener">
+                Canal
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </a>
+              <a class="bd-btn-outline" href="https://t.me/laboratoire_du_free_surf_chat" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 5.4l-3.13 14.77c-.24 1.05-.86 1.3-1.74.81l-4.8-3.54-2.32 2.23c-.26.26-.47.47-.96.47l.34-4.86 8.85-8c.38-.34-.08-.53-.6-.19L7.02 13.5l-4.8-1.5c-1.04-.33-1.06-1.04.22-1.54L20.6 4.2c.87-.32 1.63.2 1.35 1.2z"/></svg>
+                Groupe
+              </a>
+            </div>
+          </div>
+          <div id="homeBannerAd" style="display:none;">
+            <img id="homeBannerImg" class="bc-img" src="" alt="" style="display:none;">
+            <div class="bc-text" id="homeBannerText"></div>
+            <a id="homeBannerLink" class="bc-link" href="#" target="_blank" rel="noopener" style="display:none;">
+              En savoir plus
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="footnote home-footnote">
+        <div class="l2">Powered by Philippo</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===== COMPTE ===== -->
+  <div class="tab-content" id="tab-compte">
+
+    <!-- Etat 1 : non connecte -->
+    <div id="accLoggedOut">
+      <div class="section-lbl">Mon compte Labo</div>
+      <div class="card">
+        <div class="card-lbl">Se connecter</div>
+        <div class="acc-field">
+          <div class="acc-label">Nom d'utilisateur</div>
+          <input type="text" id="accUsername" class="acc-input" placeholder="Ton pseudo Laboratoire du Free-Surf" autocomplete="username">
+        </div>
+        <div class="acc-field">
+          <div class="acc-label">Mot de passe</div>
+          <input type="password" id="accPassword" class="acc-input" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="pill-btn primary" id="accLoginBtn" onclick="realLogin()">Se connecter</div>
+        <div class="acc-error" id="accError">Identifiants incorrects. Réessaie.</div>
+      </div>
+      <div class="card cta-signup">
+        <div class="cta-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7 7 1-5.2 5 1.5 7-6.3-3.5L5.7 22l1.5-7L2 8l7-1 3-7z"/></svg>
+        </div>
+        <div class="cta-title">Pas encore de compte ?</div>
+        <div class="cta-sub">Rejoins le Laboratoire du Free-Surf : vitesse, stabilité et confidentialité, sans configuration technique à gérer toi-même.</div>
+        <div class="cta-perks">
+          <div class="cta-perk"><span class="dot"></span>Connexion rapide et stable</div>
+          <div class="cta-perk"><span class="dot"></span>Aucun réglage technique à faire</div>
+          <div class="cta-perk"><span class="dot"></span>Plans Gratuit, VIP et Revendeur</div>
+        </div>
+        <div class="pill-btn primary" style="margin-top:4px;">Créer mon compte sur le site</div>
+      </div>
+    </div>
+
+    <!-- Etat 2 : connecte -->
+    <div id="accLoggedIn" style="display:none;">
+      <div class="section-lbl">Mon compte</div>
+      <div class="card">
+        <div class="acc-head" style="margin-bottom:0;">
+          <div class="acc-avatar" id="accAvatarLetter">P</div>
+          <div>
+            <div class="acc-name" id="accNameTxt">philippo237</div>
+            <div class="plan-badge vip" id="accPlanBadge">VIP</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="accGaugeCard">
+        <div class="card-lbl">Abonnement</div>
+        <div id="daysGaugeBlock">
+          <div class="gauge-track"><div class="gauge-fill" id="accGaugeFill" style="width:71%; background:#39ff6a;"></div></div>
+          <div class="gauge-label"><span id="accGaugeLabel">18 jours restants</span><span id="accGaugePct">71%</span></div>
+        </div>
+        <div id="quotaGaugeBlock" style="margin-top:14px;">
+          <div class="gauge-track"><div class="gauge-fill" id="accQuotaFill" style="width:46%; background:var(--accent2);"></div></div>
+          <div class="gauge-label"><span id="accQuotaLabel">23 Go restants sur 50 Go</span><span id="accQuotaPct">46%</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-lbl">Configuration</div>
+        <div class="info-row"><div class="k">Dernière synchro</div><div class="v" id="accSyncTime">À l'instant</div></div>
+        <div class="pill-btn primary" style="margin-top:10px;" onclick="fetchSubscriptionFromAccount()">↻ Actualiser mon compte</div>
+      </div>
+
+      <div class="logout-row"><div class="logout-btn" onclick="realLogout()">Se déconnecter</div></div>
+    </div>
+
+    <!-- Avant-propos : discret, sans détails techniques sensibles -->
+    <div class="section-lbl" style="margin-top:22px;">À propos de Labo Surf</div>
+    <div class="card about-vpn">
+      <p style="margin:0 0 10px;"><b>Labo Surf</b> est l'application compagnon du <b>Laboratoire du Free-Surf</b>. Elle te donne un accès rapide et sécurisé, directement lié à ton abonnement (Gratuit, VIP ou Revendeur).</p>
+      <p style="margin:0;">Le fonctionnement interne (serveurs, protocoles, techniques de connexion) n'est pas détaillé ici : c'est ce qui permet à Labo Surf de rester fiable pour tout le monde. Pour toute question, l'équipe reste disponible sur nos canaux communautaires.</p>
+    </div>
+  </div>
+
+  <!-- ===== SERVEURS ===== -->
+  <div class="tab-content" id="tab-serveurs">
+    <div class="section-lbl">Mes serveurs
+      <span style="display:flex; gap:14px;">
+        <span class="add" id="testPingBtn">↻ Tester</span>
+      </span>
+    </div>
+    <div class="card server-note">
+      <div style="font-size:11.5px; color:var(--text-muted); line-height:1.6;">
+        Les serveurs affichés sont ceux inclus dans ton abonnement. Choisis-en un, Labo Surf s'occupe du reste — aucune configuration à saisir toi-même.
+      </div>
+    </div>
+    <div id="serverListFull"></div>
+  </div>
+
+  <!-- ===== HISTORIQUE ===== -->
+  <div class="tab-content" id="tab-historique">
+    <div class="section-lbl">État de la connexion</div>
+    <div class="status-pill" id="statusPill" style="margin:0 auto 18px;"><div class="dot"></div><span class="txt" id="statusTxt">Non protégé</span></div>
+
+    <div class="stats-section" id="statsSection" style="margin-bottom:18px;">
+      <div class="card">
+        <div class="card-lbl">Trafic en temps réel</div>
+        <div class="traffic-row">
+          <div class="traffic-item"><div class="v" id="sentKB">0 KB</div><div class="k">↑ Envoyé</div></div>
+          <div class="traffic-div"></div>
+          <div class="traffic-item"><div class="v" id="recvKB">0 KB</div><div class="k">↓ Reçu</div></div>
+          <div class="speed-col"><div>↑ <b id="upSpeed">0 B/s</b></div><div>↓ <b id="downSpeed">0 B/s</b></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-lbl">Informations de connexion</div>
+        <div class="info-row"><div class="k">Adresse IP</div><div class="v"><span id="ipVal">••••••••</span><span class="eye" onclick="toggleIp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span></div></div>
+        <div class="info-row"><div class="k">Serveur</div><div class="v" id="infoServer">Serveur 1</div></div>
+        <div class="info-row"><div class="k">Protocole</div><div class="v" id="infoProto">XHTTP / Xray</div></div>
+        <div class="info-row"><div class="k">Ping</div><div class="v" id="infoPing">— ms</div></div>
+      </div>
+    </div>
+
+    <div class="hist-toggle">
+      <div class="hist-toggle-btn active" id="histTabSessions" onclick="switchHistView('sessions')">Sessions</div>
+      <div class="hist-toggle-btn" id="histTabLog" onclick="switchHistView('log')">Journal technique</div>
+    </div>
+
+    <div id="histViewSessions">
+      <div class="section-lbl">Sessions récentes</div>
+      <div id="histList"></div>
+    </div>
+
+    <div id="histViewLog" style="display:none;">
+      <div class="section-lbl">Journal technique <span class="log-clear" onclick="clearTechLog()">Vider</span></div>
+      <div class="log-feed" id="logFeed"></div>
+    </div>
+
+    <div class="footnote">
+      <div class="l2">Powered by Philippo</div>
+    </div>
+  </div>
+
+  <!-- ===== COMMUNAUTÉ ===== -->
+  <div class="tab-content" id="tab-communaute">
+    <div class="section-lbl">Laboratoire du Free-Surf</div>
+    <div class="card" style="text-align:center; padding:22px 16px 16px;">
+      <div style="font-family:var(--display); font-weight:700; font-size:15px; margin-bottom:6px;">Rejoins la communauté</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px; line-height:1.6;">Astuces, nouveaux serveurs et retours d'expérience entre membres.</div>
+    </div>
+    <div class="set-group">
+      <a class="comm-row" href="https://t.me/laboratoire_du_free_surf_chat" target="_blank" rel="noopener">
+        <div class="comm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+        <div class="comm-txt"><div class="comm-t">Groupe de discussion</div><div class="comm-s">Échanges entre membres</div></div>
+        <svg class="comm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <a class="comm-row" href="https://t.me/laboratoire_du_free_surf" target="_blank" rel="noopener">
+        <div class="comm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l16-7-5 16-4-6-6-3z"/></svg></div>
+        <div class="comm-txt"><div class="comm-t">Canal</div><div class="comm-s">Annonces et mises à jour</div></div>
+        <svg class="comm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <a class="comm-row" href="https://t.me/Philippo237" target="_blank" rel="noopener">
+        <div class="comm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg></div>
+        <div class="comm-txt"><div class="comm-t">Le développeur</div><div class="comm-s">Contacter Philippo</div></div>
+        <svg class="comm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== RÉGLAGES ===== -->
+  <div class="tab-content" id="tab-reglages">
+    <div class="section-lbl">Connexion</div>
+    <div class="set-group">
+      <div class="set-row"><div><div class="lbl-main">Protocole</div><div class="lbl-sub">Moteur de tunneling</div></div>
+        <select class="select-pill"><option>Auto</option><option>XHTTP</option><option>VLESS</option><option>Trojan</option></select></div>
+      <div class="set-row"><div><div class="lbl-main">Kill switch</div><div class="lbl-sub">Coupe le net si le tunnel tombe</div></div><div class="switch" id="swKill"></div></div>
+      <div class="set-row"><div><div class="lbl-main">Connexion auto</div><div class="lbl-sub">Au démarrage de l'appli</div></div><div class="switch" id="swAuto"></div></div>
+    </div>
+    <div class="section-lbl">Réseau</div>
+    <div class="set-group">
+      <div class="set-row"><div><div class="lbl-main">Anti-DPI</div><div class="lbl-sub">Camouflage du trafic</div></div><div class="switch on" id="swDpi"></div></div>
+      <div class="set-row"><div><div class="lbl-main">Vider le cache</div><div class="lbl-sub">Logs et configs temporaires</div></div>
+        <div class="pill-btn" style="padding:6px 12px; font-size:11px;" onclick="alert('Cache vidé')">Vider</div></div>
+    </div>
+    <div class="section-lbl">À propos</div>
+    <div class="set-group"><div class="about-card">
+      <div class="app-name">Labo Surf</div>
+      <div class="app-org">Laboratoire du Free-Surf</div>
+      <div class="app-author">Powered by Philippo</div>
+      <div class="app-ver">v0.3.0 — build interface</div>
+    </div></div>
+  </div>
+</div>
+
+<script>
+const servers = [
+  { name: "Serveur 1", proto: "VLESS / XHTTP", ping: 46, active: true,
+    link: "vless://uuid-demo@serveur1.exemple.net:443?encryption=none&security=tls&type=xhttp&path=%2Fproxy#Serveur-1" },
+  { name: "Serveur 2", proto: "VLESS / WS", ping: 112, active: false,
+    link: "vless://uuid-demo2@serveur2.exemple.net:443?encryption=none&security=tls&type=ws&path=%2Fws#Serveur-2" },
+];
+
+const historyLog = [
+  { server: "Serveur 1", when: "Hier, 19:04", dur: "1h 08", ok: true },
+  { server: "Serveur 1", when: "Hier, 14:20", dur: "Échec", ok: false },
+];
+function renderHistory(){
+  const el = document.getElementById('histList');
+  if(historyLog.length === 0){
+    el.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <div>Aucune session pour l'instant.<br>Connecte-toi pour voir ton historique ici.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = historyLog.map(h => `<div class="hist-item">
+    <div class="hist-dot ${h.ok ? '' : 'fail'}"></div>
+    <div><div class="ht">${h.server}</div><div class="hd">${h.when}</div></div>
+    <div class="hdur">${h.dur}</div></div>`).join('');
+}
+function logSession(server, durSeconds, ok){
+  const h = String(Math.floor(durSeconds/3600)).padStart(2,'0');
+  const m = String(Math.floor((durSeconds%3600)/60)).padStart(2,'0');
+  const dur = ok ? (durSeconds < 60 ? durSeconds+' s' : `${h!=='00'?h+'h ':''}${m} min`) : 'Échec';
+  historyLog.unshift({ server, when: "À l'instant", dur, ok });
+  renderHistory();
+}
+
+// ─── Journal technique (détail des événements, complète les Sessions) ───
+function switchHistView(view){
+  document.getElementById('histTabSessions').classList.toggle('active', view === 'sessions');
+  document.getElementById('histTabLog').classList.toggle('active', view === 'log');
+  document.getElementById('histViewSessions').style.display = view === 'sessions' ? '' : 'none';
+  document.getElementById('histViewLog').style.display = view === 'log' ? '' : 'none';
+}
+
+const techLog = [
+  { time: "Hier 19:04:02", tag: "ok",   msg: "Tunnel établi vers Serveur 1 (VLESS/XHTTP)" },
+  { time: "Hier 19:04:01", tag: "info", msg: "Handshake TLS terminé (48 ms)" },
+  { time: "Hier 19:03:59", tag: "info", msg: "Résolution DNS OK" },
+  { time: "Hier 14:20:11", tag: "err",  msg: "Échec de connexion — délai dépassé (Serveur 1)" },
+  { time: "Hier 14:20:08", tag: "warn", msg: "Nouvelle tentative (2/3)" },
+];
+function renderTechLog(){
+  const el = document.getElementById('logFeed');
+  if(techLog.length === 0){
+    el.innerHTML = `<div class="empty-state">Aucun événement pour l'instant.</div>`;
+    return;
+  }
+  el.innerHTML = techLog.map(l => `<div class="log-line">
+    <span class="log-time">${l.time}</span>
+    <span class="log-tag ${l.tag}">${l.tag}</span>
+    <span class="log-msg">${l.msg}</span></div>`).join('');
+}
+function logEvent(tag, msg){
+  techLog.unshift({ time: "À l'instant", tag, msg });
+  if(techLog.length > 200) techLog.pop(); // evite une liste sans fin sur un usage prolongé
+  renderTechLog();
+}
+function clearTechLog(){
+  techLog.length = 0;
+  renderTechLog();
+}
+renderTechLog();
+
+function pingClass(p){ return p < 70 ? 'good' : (p < 150 ? 'mid' : 'bad'); }
+const PROTO_STYLE = {
+  VLESS:  { letter:'VL', bg:'rgba(57,255,106,0.15)', color:'#39ff6a' },
+  VMESS:  { letter:'VM', bg:'rgba(79,209,255,0.15)', color:'#4fd1ff' },
+  TROJAN: { letter:'TR', bg:'rgba(255,181,71,0.15)', color:'#ffb547' },
+  SS:     { letter:'SS', bg:'rgba(255,110,180,0.15)', color:'#ff6eb4' },
+};
+function protoBadge(proto){
+  const key = (proto||'').split(' ')[0].toUpperCase();
+  return PROTO_STYLE[key] || { letter:'??', bg:'rgba(255,255,255,0.06)', color:'var(--text-muted)' };
+}
+function serverRowHtml(s, i){
+  const b = protoBadge(s.proto);
+  return `<div class="server ${s.active ? 'active' : ''}" data-i="${i}">
+    <div class="flag" style="background:${b.bg}; color:${b.color};">${b.letter}</div>
+    <div class="info"><div class="name">${s.name}</div><div class="proto">${s.proto}</div></div>
+    <div class="ping ${pingClass(s.ping)}">${s.ping} ms</div>
+    <div class="radio"></div></div>`;
+}
+function renderServers(){
+  const el = document.getElementById('serverListFull');
+  if(servers.length === 0){
+    el.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/></svg>
+      <div>Aucun serveur disponible pour l'instant.<br>Ton abonnement détermine les serveurs accessibles.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = servers.map((s,i)=>serverRowHtml(s,i)).join('');
+  document.querySelectorAll('.server').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      const i = +el.dataset.i;
+      servers.forEach((s,j)=>s.active=(j===i));
+      renderServers(); updateInfoCard();
+    });
+  });
+}
+function updateInfoCard(){
+  const active = servers.find(s=>s.active)||servers[0];
+  document.getElementById('infoServer').textContent = active ? active.name : '—';
+  document.getElementById('infoProto').textContent = active ? active.proto : '—';
+  document.getElementById('infoPing').textContent = active ? active.ping + ' ms' : '—';
+}
+
+// ===== COMPTE (branche sur l'API du panel LABORATOIRE DU FREE-SURF) =====
+// Aucune donnee n'est stockee sur le telephone : le token vit uniquement en memoire JS
+// (variable, jamais localStorage/sessionStorage) et disparait a la deconnexion ou a la
+// fermeture de l'app. Authentification via "Authorization: Bearer <token>" (jamais de
+// cookie cross-site). Voir loadHomeBanner() plus haut pour FREE_SURF_API_BASE.
+let authToken = null;
+
+function planKeyFromType(type){
+  const t = String(type || '').trim().toLowerCase();
+  if(t === 'vip') return 'vip';
+  if(t === 'revendeur') return 'revendeur';
+  return 'gratuit';
+}
+
+async function apiFetch(path, options={}){
+  const headers = Object.assign({}, options.headers || {});
+  if(authToken) headers['Authorization'] = 'Bearer ' + authToken;
+  if(options.body) headers['Content-Type'] = 'application/json';
+  const res = await fetch(`${FREE_SURF_API_BASE}${path}`, Object.assign({}, options, { headers }));
+  let data = null;
+  try{ data = await res.json(); }catch(e){ data = null; }
+  return { ok: res.ok, status: res.status, data };
+}
+
+function renderAccountCard(acc){
+  document.getElementById('accNameTxt').textContent = acc.username;
+  document.getElementById('accAvatarLetter').textContent = acc.username[0].toUpperCase();
+  const badge = document.getElementById('accPlanBadge');
+  badge.textContent = acc.planLabel;
+  badge.className = 'plan-badge ' + acc.plan;
+
+  const daysBlock = document.getElementById('daysGaugeBlock');
+  if(acc.daysLeft === null){
+    daysBlock.style.display = 'none';
+  } else {
+    daysBlock.style.display = '';
+    const pct = Math.max(0, Math.min(100, Math.round((acc.daysLeft / (acc.graceDays + 25)) * 100)));
+    const color = pct >= 60 ? '#39ff6a' : (pct >= 25 ? '#ffd147' : '#ff5c7a');
+    document.getElementById('accGaugeFill').style.width = pct + '%';
+    document.getElementById('accGaugeFill').style.background = color;
+    document.getElementById('accGaugeLabel').textContent = acc.daysLeft + ' jour(s) restant(s)';
+    document.getElementById('accGaugePct').textContent = pct + '%';
+  }
+
+  const quotaBlock = document.getElementById('quotaGaugeBlock');
+  if(!acc.quotaGB){
+    quotaBlock.style.display = 'none';
+  } else {
+    quotaBlock.style.display = '';
+    const remainingGB = Math.max(0, acc.quotaGB - acc.quotaUsedGB);
+    const pct = Math.max(0, Math.min(100, Math.round((remainingGB / acc.quotaGB) * 100)));
+    const color = pct >= 60 ? '#39ff6a' : (pct >= 25 ? '#ffd147' : '#ff5c7a');
+    document.getElementById('accQuotaFill').style.width = pct + '%';
+    document.getElementById('accQuotaFill').style.background = color;
+    const fmt = n => Number.isInteger(n) ? n : n.toFixed(1);
+    document.getElementById('accQuotaLabel').textContent = fmt(remainingGB) + ' Go restants sur ' + fmt(acc.quotaGB) + ' Go';
+    document.getElementById('accQuotaPct').textContent = pct + '%';
+  }
+}
+
+function daysLeftFromExpiration(expIso){
+  if(!expIso) return null;
+  const exp = new Date(expIso + 'T23:59:59');
+  if(isNaN(exp.getTime())) return null;
+  const diffMs = exp.getTime() - Date.now();
+  return Math.max(0, Math.ceil(diffMs / 86400000));
+}
+
+async function realLogin(){
+  const u = document.getElementById('accUsername').value.trim();
+  const p = document.getElementById('accPassword').value;
+  const err = document.getElementById('accError');
+  const btn = document.getElementById('accLoginBtn');
+  err.classList.remove('show');
+  if(!u || !p){ err.textContent = "Entre ton nom d'utilisateur et ton mot de passe."; err.classList.add('show'); return; }
+
+  const originalLbl = btn.textContent;
+  btn.textContent = 'Connexion...';
+  try{
+    const login = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: u, password: p }),
+    });
+    if(!login.ok || !login.data || login.data.status !== 'ok'){
+      err.textContent = (login.data && login.data.message) || 'Identifiants incorrects. Réessaie.';
+      err.classList.add('show');
+      return;
+    }
+    authToken = login.data.token;
+
+    const [meRes, subRes] = await Promise.all([
+      apiFetch('/api/user/me'),
+      apiFetch('/api/user/subscription'),
+    ]);
+
+    const me = meRes.ok ? meRes.data : {};
+    const sub = subRes.ok ? subRes.data : {};
+    const planKey = planKeyFromType(me.type);
+    const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur' };
+    const expiresAt = (sub && sub.expires_at) || me.expiration || '';
+
+    const acc = {
+      username: me.username || u,
+      plan: planKey,
+      planLabel: planLabels[planKey],
+      daysLeft: planKey === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
+      graceDays: 3,
+      quotaGB: (me.quota_gb !== undefined && me.quota_gb !== null) ? Number(me.quota_gb) : null,
+      quotaUsedGB: 0, // l'API ne renvoie pas encore la consommation reelle, a completer cote panel
+    };
+
+    renderAccountCard(acc);
+    document.getElementById('accLoggedOut').style.display = 'none';
+    document.getElementById('accLoggedIn').style.display = '';
+    document.getElementById('accSyncTime').textContent = "À l'instant";
+  }catch(e){
+    err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
+    err.classList.add('show');
+  }finally{
+    btn.textContent = originalLbl;
+  }
+}
+
+function realLogout(){
+  authToken = null;
+  document.getElementById('accLoggedIn').style.display = 'none';
+  document.getElementById('accLoggedOut').style.display = '';
+  document.getElementById('accUsername').value = '';
+  document.getElementById('accPassword').value = '';
+}
+
+async function fetchSubscriptionFromAccount(){
+  if(!authToken) return;
+  const btnLbl = document.getElementById('accSyncTime');
+  btnLbl.textContent = 'Synchro...';
+  try{
+    const [meRes, subRes] = await Promise.all([
+      apiFetch('/api/user/me'),
+      apiFetch('/api/user/subscription'),
+    ]);
+    if(!meRes.ok){ btnLbl.textContent = 'Échec de synchro'; return; }
+    const me = meRes.data || {};
+    const sub = subRes.ok ? (subRes.data || {}) : {};
+    const planKey = planKeyFromType(me.type);
+    const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur' };
+    const expiresAt = (sub && sub.expires_at) || me.expiration || '';
+    renderAccountCard({
+      username: me.username || document.getElementById('accNameTxt').textContent,
+      plan: planKey,
+      planLabel: planLabels[planKey],
+      daysLeft: planKey === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
+      graceDays: 3,
+      quotaGB: (me.quota_gb !== undefined && me.quota_gb !== null) ? Number(me.quota_gb) : null,
+      quotaUsedGB: 0,
+    });
+    btnLbl.textContent = "À l'instant";
+  }catch(e){
+    btnLbl.textContent = 'Panel injoignable';
+  }
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.rail-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const rb = document.getElementById('railBtn-'+name);
+  if(rb) rb.classList.add('active');
+}
+
+function toggleRailGroup(name){
+  document.getElementById('group-'+name).classList.toggle('open');
+}
+function quickClearCache(){
+  alert('Cache vidé');
+}
+
+// ─── Bannière panel (pilotée depuis LABORATOIRE DU FREE-SURF) ───
+// Par defaut, la bannière "Labo Surf VPN" (modele par defaut, integree dans l'app) s'affiche.
+// L'admin/revendeur peut la remplacer par une pub personnalisee dans le panel web (Admin > Publicités,
+// emplacement "Labo Surf"), avec le style de son choix parmi les 10 deja proposes
+// dans le panel (neon/gradient/gold/alert/glass/cyberpunk/hacker/galaxy/fire/hologram).
+// Si rien n'est configure ou si le panel est injoignable, le modele par defaut reste affiche.
+const FREE_SURF_API_BASE = 'https://laboratoire.free-surf237-4all.xyz';
+
+async function loadHomeBanner(){
+  const card = document.getElementById('homeBannerCard');
+  const defaultBlock = document.getElementById('homeBannerDefault');
+  const adBlock = document.getElementById('homeBannerAd');
+  try{
+    const res = await fetch(`${FREE_SURF_API_BASE}/api/ads/active?location=labo_surf_rail`, { cache: 'no-store' });
+    if(!res.ok) return; // panel indisponible -> le modele par defaut reste affiche
+    const data = await res.json();
+    const ad = (data && Array.isArray(data.ads) && data.ads.length) ? data.ads[0] : null;
+    if(!ad) return; // aucune pub configuree -> le modele par defaut reste affiche
+
+    card.className = 'banner-card show banner-style-' + (ad.style || 'neon');
+    defaultBlock.style.display = 'none';
+    adBlock.style.display = '';
+
+    const img = document.getElementById('homeBannerImg');
+    if(ad.image){
+      img.src = ad.image.startsWith('http') ? ad.image : `${FREE_SURF_API_BASE}${ad.image}`;
+      img.style.display = 'block';
+    } else { img.style.display = 'none'; }
+
+    document.getElementById('homeBannerText').textContent = ad.text || '';
+
+    const link = document.getElementById('homeBannerLink');
+    if(ad.link){ link.href = ad.link; link.style.display = 'inline-flex'; }
+    else { link.style.display = 'none'; }
+  }catch(e){
+    // Panel injoignable (hors-ligne, etc.) -> le modele par defaut reste affiche, aucune erreur visible
+  }
+  if(typeof fitHomeScreen === 'function') fitHomeScreen();
+}
+
+loadHomeBanner();
+setInterval(loadHomeBanner, 5 * 60 * 1000); // rafraîchi toutes les 5 min, comme la synchro serveurs côté site
+
+document.querySelectorAll('.switch').forEach(sw=>sw.addEventListener('click', ()=>{
+  sw.classList.toggle('on');
+  if(sw.id === 'swKill') document.getElementById('miniKill').classList.toggle('on', sw.classList.contains('on'));
+  if(sw.id === 'swDpi') document.getElementById('miniDpi').classList.toggle('on', sw.classList.contains('on'));
+  if(sw.id === 'swAuto') document.getElementById('miniAuto').classList.toggle('on', sw.classList.contains('on'));
+}));
+function quickToggle(switchId, miniId){
+  const sw = document.getElementById(switchId);
+  const mini = document.getElementById(miniId);
+  sw.classList.toggle('on');
+  mini.classList.toggle('on', sw.classList.contains('on'));
+}
+
+let ipRevealed = false;
+function toggleIp(){
+  ipRevealed = !ipRevealed;
+  document.getElementById('ipVal').textContent = ipRevealed ? '154.72.38.201' : '••••••••';
+}
+
+// ---- Connexion ----
+const btnZone = document.getElementById('btnZone');
+const statusPill = document.getElementById('statusPill');
+const statusTxt = document.getElementById('statusTxt');
+const statusSub = document.getElementById('statusSub');
+const timerEl = document.getElementById('timer');
+const bigLbl = document.getElementById('bigLbl');
+let state = 'off'; let speedInterval=null; let timerInterval=null; let elapsed=0;
+
+// ─── Pont vers le moteur VPN natif (app Android) ───
+// window.LaboSurfNative n'existe que dans l'app native (voir MainActivity.kt).
+// En navigateur/PWA, il est absent : le comportement simule reste identique a avant.
+const isNativeApp = () => typeof window.LaboSurfNative !== 'undefined';
+
+// Appele par le natif (Kotlin) via evaluateJavascript() pour rapporter l'etat reel du tunnel.
+window.onNativeVpnState = function(nativeState, detail){
+  if(nativeState === 'connected'){
+    state='on'; render(); startStats(); startTimer();
+    logEvent('ok', `Tunnel établi${detail ? ' — '+detail : ''}`);
+  } else if(nativeState === 'disconnected'){
+    stopStats(); stopTimer();
+    state='off'; render();
+    logEvent('info', `Déconnecté${detail ? ' — '+detail : ''}`);
+  } else if(nativeState === 'error'){
+    stopStats(); stopTimer();
+    state='off'; render();
+    logEvent('err', `Échec de connexion${detail ? ' — '+detail : ''}`);
+  }
+};
+
+function toggleConnection(){
+  if(state==='off'){
+    if(servers.length===0){ alert("Aucun serveur disponible pour l'instant."); return; }
+    const target = servers.find(s=>s.active)||servers[0];
+    state='connecting'; render();
+    logEvent('info', `Connexion en cours vers ${target.name} (${target.proto})`);
+
+    if(isNativeApp()){
+      // Le natif se chargera d'appeler window.onNativeVpnState('connected'|'error', ...)
+      window.LaboSurfNative.startVpn(JSON.stringify(target));
+      return;
+    }
+    // Repli navigateur/PWA (aucun vrai tunnel, juste une simulation visuelle)
+    setTimeout(()=>{
+      state='on'; render(); startStats(); startTimer();
+      logEvent('ok', `Tunnel établi vers ${target.name}`);
+    }, 1400);
+  } else if(state==='on'){
+    const active = servers.find(s=>s.active)||servers[0];
+    logSession(active ? active.name : 'Profil supprimé', elapsed, true);
+
+    if(isNativeApp()){
+      window.LaboSurfNative.stopVpn();
+      return; // l'etat 'off' arrivera via onNativeVpnState('disconnected')
+    }
+    state='off';
+    logEvent('info', `Déconnecté de ${active ? active.name : 'profil supprimé'} (session ${elapsed}s)`);
+    stopStats(); stopTimer(); render();
+  }
+}
+document.getElementById('bigBtn').addEventListener('click', toggleConnection);
+
+function render(){
+  btnZone.className = 'btn-zone ' + state;
+  statusPill.className = 'status-pill' + (state==='on' ? ' on' : '');
+  statusSub.className = 'status-sub' + (state==='off' ? '' : ' '+state);
+  timerEl.className = 'timer' + (state==='on' ? ' on' : '');
+  document.getElementById('heroBrand').classList.toggle('on', state==='on');
+  document.getElementById('statsSection').classList.toggle('on', state==='on');
+  if(state==='off'){
+    statusTxt.textContent='Non protégé';
+    statusSub.textContent='Appuie pour sécuriser ta connexion';
+    bigLbl.textContent='START';
+    document.getElementById('sentKB').textContent='0 KB'; document.getElementById('recvKB').textContent='0 KB';
+    document.getElementById('upSpeed').textContent='0 B/s'; document.getElementById('downSpeed').textContent='0 B/s';
+  } else if(state==='connecting'){
+    statusTxt.textContent='Connexion...';
+    statusSub.textContent='Négociation du tunnel Xray...';
+    bigLbl.textContent='...';
+  } else {
+    statusTxt.textContent='Protection active';
+    statusSub.textContent='Votre connexion est sécurisée';
+    bigLbl.textContent='STOP';
+  }
+}
+function startTimer(){
+  elapsed = 0;
+  timerInterval = setInterval(()=>{
+    elapsed++;
+    const h = String(Math.floor(elapsed/3600)).padStart(2,'0');
+    const m = String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
+    const s = String(elapsed%60).padStart(2,'0');
+    timerEl.textContent = `${h}:${m}:${s}`;
+  }, 1000);
+}
+function stopTimer(){ clearInterval(timerInterval); timerEl.textContent='00:00:00'; }
+function startStats(){
+  const active = servers.find(s=>s.active)||servers[0];
+  let sent=0, recv=0;
+  speedInterval = setInterval(()=>{
+    const up = 0.4+Math.random()*1.6, down = 2+Math.random()*6;
+    sent += up*1.4; recv += down*1.4;
+    document.getElementById('upSpeed').textContent = up.toFixed(1)+' KB/s';
+    document.getElementById('downSpeed').textContent = down.toFixed(1)+' KB/s';
+    document.getElementById('sentKB').textContent = sent.toFixed(1)+' KB';
+    document.getElementById('recvKB').textContent = recv.toFixed(1)+' KB';
+  }, 1400);
+}
+function stopStats(){ clearInterval(speedInterval); }
+
+// ─── Ajustement automatique de l'accueil : jamais de scroll, quel que soit le telephone ───
+// Mesure la hauteur reelle necessaire (#homeFit) contre l'espace reellement disponible sur cet
+// ecran precis, et reduit proportionnellement (texte, bannière, tout) si ça ne rentre pas.
+// Remplace toute dependance a des unites comme dvh, mal supportees par certaines WebView Android.
+function fitHomeScreen(){
+  const inner = document.getElementById('homeFit');
+  if(!inner) return;
+  inner.style.transform = 'none';
+  const availableH = window.innerHeight - 60; // 60 = padding haut+bas de .device (20+40)
+  const neededH = inner.scrollHeight;
+  if(neededH > availableH && availableH > 0){
+    const scale = Math.max(0.55, availableH / neededH);
+    inner.style.transform = 'scale(' + scale + ')';
+  }
+}
+window.addEventListener('resize', fitHomeScreen);
+window.addEventListener('orientationchange', () => setTimeout(fitHomeScreen, 200));
+
+renderServers(); updateInfoCard(); render(); renderHistory();
+fitHomeScreen();
+setTimeout(fitHomeScreen, 300); // filet de securite si les polices/images finissent de charger un peu apres
+
+document.getElementById('testPingBtn').addEventListener('click', function(){
+  if(servers.length === 0) return;
+  const btn = this;
+  btn.textContent = '… Test en cours';
+  setTimeout(()=>{
+    servers.forEach(s=> s.ping = 25 + Math.floor(Math.random()*180));
+    renderServers(); updateInfoCard();
+    btn.textContent = '↻ Tester';
+  }, 700);
+});
+
+// Enregistrement du service worker (rend l'app installable + fonctionnelle hors-ligne)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {
+      // Echec silencieux : l'app reste utilisable normalement dans le navigateur
+    });
+  });
+}
+</script>
+</body>
+</html>
