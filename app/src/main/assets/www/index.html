@@ -247,6 +247,15 @@
   .acc-input{ width:100%; background:rgba(0,0,0,0.35); border:1px solid var(--border); border-radius:10px;
     padding:11px 12px; color:var(--text); font-family:var(--body); font-size:13px; }
   .acc-input:focus{ outline:none; border-color:var(--accent); }
+  .pw-wrap{ position:relative; }
+  .pw-wrap .acc-input{ padding-right:42px; }
+  .pw-eye{ position:absolute; right:1px; top:1px; bottom:1px; width:40px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--text-muted); background:transparent; border:none; }
+  .pw-eye:active{ color:var(--accent); }
+  .pw-eye svg{ width:18px; height:18px; }
+  .pw-eye .eye-off{ display:none; }
+  .pw-eye.visible .eye-on{ display:none; }
+  .pw-eye.visible .eye-off{ display:block; }
   .acc-error{ font-size:11.5px; color:var(--danger); margin-top:8px; display:none; }
   .acc-error.show{ display:block; }
   .acc-switch-link{ text-align:center; font-size:11.5px; color:var(--text-muted); margin-top:12px; text-decoration:underline; }
@@ -268,6 +277,10 @@
   .plan-badge.gratuit{ background:rgba(255,255,255,0.08); color:var(--text-muted); }
   .plan-badge.vip{ background:rgba(255,209,71,0.15); color:#ffd147; }
   .plan-badge.revendeur{ background:rgba(255,138,61,0.15); color:var(--accent2); }
+  .plan-badge.admin{ background:rgba(79,209,255,0.15); color:var(--info); }
+  .pro-badge{ display:inline-block; vertical-align:middle; font-family:var(--mono); font-size:10px; font-weight:800;
+    letter-spacing:0.08em; padding:2px 8px; border-radius:8px; background:linear-gradient(135deg, var(--gold), var(--accent2));
+    color:#1a1200; }
   .gauge-track{ width:100%; height:8px; border-radius:99px; background:rgba(255,255,255,0.08); overflow:hidden; margin:10px 0 6px; }
   .gauge-fill{ height:100%; border-radius:99px; transition: width .5s ease, background .5s ease; }
   .gauge-label{ font-size:11.5px; color:var(--text-muted); display:flex; justify-content:space-between; }
@@ -348,6 +361,14 @@
   /* SETTINGS */
   .set-group{ background:var(--panel); border:1px solid var(--border); border-radius:16px; margin-bottom:12px; overflow:hidden; }
   .comm-row{ display:flex; align-items:center; gap:12px; padding:14px 15px; text-decoration:none; border-bottom:1px solid var(--border); }
+
+  .client-row{ display:flex; align-items:center; gap:12px; padding:13px 15px; border-bottom:1px solid var(--border); }
+  .client-row:last-child{ border-bottom:none; }
+  .client-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--text-muted); }
+  .client-dot.active{ background:var(--accent); box-shadow:0 0 6px rgba(57,255,106,0.6); }
+  .client-info{ flex:1; min-width:0; }
+  .client-name{ font-weight:700; font-size:13px; }
+  .client-sub{ font-size:11px; color:var(--text-muted); margin-top:2px; }
   .comm-row:last-child{ border-bottom:none; }
   .comm-row:active{ background:var(--panel-strong); }
   .comm-ico{ width:38px; height:38px; border-radius:12px; background:rgba(57,255,106,0.1); color:var(--accent);
@@ -415,6 +436,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
     </div>
 
+    <div class="rail-btn" id="railBtn-clients" onclick="switchTab('clients')" title="Mes clients" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/><circle cx="8" cy="14" r="1.4" fill="currentColor" stroke="none"/><path d="M12 14h6"/></svg>
+    </div>
+
     <div class="rail-btn" id="railBtn-historique" onclick="switchTab('historique')" title="Historique">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     </div>
@@ -441,7 +466,7 @@
             </g>
           </svg>
         </div>
-        <div class="app-title">LABO <span>SURF</span></div>
+        <div class="app-title">LABO <span>SURF</span> <span class="pro-badge" id="proBadgeHome" style="display:none;">PRO</span></div>
         <div class="app-subtitle"><span class="sub-green">Laboratoire</span> <span class="sub-white">du</span> <span class="sub-white">Free-Surf</span></div>
       </div>
 
@@ -508,7 +533,13 @@
         </div>
         <div class="acc-field">
           <div class="acc-label">Mot de passe</div>
-          <input type="password" id="accPassword" class="acc-input" placeholder="••••••••" autocomplete="current-password">
+          <div class="pw-wrap">
+            <input type="password" id="accPassword" class="acc-input" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="pw-eye" onclick="togglePasswordVisibility('accPassword', this)" aria-label="Afficher le mot de passe">
+              <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-7-11-7a20.7 20.7 0 015.06-5.94M9.9 4.24A9.1 9.1 0 0112 4c7 0 11 7 11 7a20.6 20.6 0 01-3.22 4.19M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
         </div>
         <div class="pill-btn primary" id="accLoginBtn" onclick="realLogin()">Se connecter</div>
         <div class="acc-error" id="accError">Identifiants incorrects. Réessaie.</div>
@@ -530,11 +561,23 @@
         </div>
         <div class="acc-field">
           <div class="acc-label">Mot de passe</div>
-          <input type="password" id="regPassword" class="acc-input" placeholder="••••••••" autocomplete="new-password">
+          <div class="pw-wrap">
+            <input type="password" id="regPassword" class="acc-input" placeholder="••••••••" autocomplete="new-password">
+            <button type="button" class="pw-eye" onclick="togglePasswordVisibility('regPassword', this)" aria-label="Afficher le mot de passe">
+              <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-7-11-7a20.7 20.7 0 015.06-5.94M9.9 4.24A9.1 9.1 0 0112 4c7 0 11 7 11 7a20.6 20.6 0 01-3.22 4.19M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
         </div>
         <div class="acc-field">
           <div class="acc-label">Confirme le mot de passe</div>
-          <input type="password" id="regPasswordConfirm" class="acc-input" placeholder="••••••••" autocomplete="new-password">
+          <div class="pw-wrap">
+            <input type="password" id="regPasswordConfirm" class="acc-input" placeholder="••••••••" autocomplete="new-password">
+            <button type="button" class="pw-eye" onclick="togglePasswordVisibility('regPasswordConfirm', this)" aria-label="Afficher le mot de passe">
+              <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-7-11-7a20.7 20.7 0 015.06-5.94M9.9 4.24A9.1 9.1 0 0112 4c7 0 11 7 11 7a20.6 20.6 0 01-3.22 4.19M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
         </div>
         <div class="pill-btn primary" id="regSubmitBtn" onclick="realRegister()">Créer mon compte</div>
         <div class="acc-error" id="regError"></div>
@@ -565,6 +608,7 @@
           <div>
             <div class="acc-name" id="accNameTxt">philippo237</div>
             <div class="plan-badge vip" id="accPlanBadge">VIP</div>
+            <span class="pro-badge" id="proBadgeAcc" style="display:none; margin-left:6px;">PRO</span>
           </div>
         </div>
       </div>
@@ -683,6 +727,15 @@
     </div>
   </div>
 
+  <!-- ===== MES CLIENTS (revendeur / admin uniquement) ===== -->
+  <div class="tab-content" id="tab-clients">
+    <div class="section-lbl">Mes clients<span class="add" onclick="loadResellerClients()">↻ Actualiser</span></div>
+    <div class="card" id="clientsEmptyCard" style="text-align:center; padding:22px 16px;">
+      <div style="font-size:12px; color:var(--text-muted);">Connecte-toi pour voir tes clients.</div>
+    </div>
+    <div id="clientsList"></div>
+  </div>
+
   <!-- ===== RÉGLAGES ===== -->
   <div class="tab-content" id="tab-reglages">
     <div class="section-lbl">Connexion</div>
@@ -720,6 +773,15 @@ function toast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
+
+function togglePasswordVisibility(inputId, btn){
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.classList.toggle('visible', !showing);
+}
+
 const servers = [
   { name: "Serveur 1", proto: "VLESS / XHTTP", ping: 46, active: true,
     link: "vless://uuid-demo@serveur1.exemple.net:443?encryption=none&security=tls&type=xhttp&path=%2Fproxy#Serveur-1" },
@@ -843,9 +905,13 @@ let authToken = null;
 
 function planKeyFromType(type){
   const t = String(type || '').trim().toLowerCase();
-  if(t === 'vip') return 'vip';
+  if(t === 'vip' || t === 'premium') return 'vip';
   if(t === 'revendeur') return 'revendeur';
+  if(t === 'admin') return 'admin';
   return 'gratuit';
+}
+function isProPlan(planKey){
+  return planKey === 'vip' || planKey === 'revendeur' || planKey === 'admin';
 }
 
 async function apiFetch(path, options={}){
@@ -864,6 +930,15 @@ function renderAccountCard(acc){
   const badge = document.getElementById('accPlanBadge');
   badge.textContent = acc.planLabel;
   badge.className = 'plan-badge ' + acc.plan;
+
+  const pro = isProPlan(acc.plan);
+  const proAcc = document.getElementById('proBadgeAcc');
+  const proHome = document.getElementById('proBadgeHome');
+  if(proAcc) proAcc.style.display = pro ? 'inline-block' : 'none';
+  if(proHome) proHome.style.display = pro ? 'inline-block' : 'none';
+
+  const clientsTab = document.getElementById('railBtn-clients');
+  if(clientsTab) clientsTab.style.display = (acc.plan === 'revendeur' || acc.plan === 'admin') ? '' : 'none';
 
   const daysBlock = document.getElementById('daysGaugeBlock');
   if(acc.daysLeft === null){
@@ -912,7 +987,7 @@ async function loadAndShowAccount(fallbackUsername){
   const me = meRes.ok ? meRes.data : {};
   const sub = subRes.ok ? subRes.data : {};
   const planKey = planKeyFromType(me.type);
-  const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur' };
+  const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur', admin: 'Admin' };
   const expiresAt = (sub && sub.expires_at) || me.expiration || '';
 
   renderAccountCard({
@@ -1009,12 +1084,63 @@ function toggleRegisterForm(show){
   if(cta) cta.style.display = show ? 'none' : '';
 }
 
+async function loadResellerClients(){
+  const emptyCard = document.getElementById('clientsEmptyCard');
+  const list = document.getElementById('clientsList');
+  if(!authToken){
+    emptyCard.style.display = '';
+    emptyCard.querySelector('div').textContent = 'Connecte-toi pour voir tes clients.';
+    list.innerHTML = '';
+    return;
+  }
+  emptyCard.style.display = '';
+  emptyCard.querySelector('div').textContent = 'Chargement...';
+  list.innerHTML = '';
+  try{
+    const res = await apiFetch('/api/revendeur/clients');
+    if(!res.ok || !res.data || res.data.status !== 'ok'){
+      emptyCard.querySelector('div').textContent = "Impossible de charger tes clients.";
+      return;
+    }
+    const clients = res.data.clients || [];
+    if(clients.length === 0){
+      emptyCard.querySelector('div').textContent = "Aucun client pour l'instant.";
+      return;
+    }
+    emptyCard.style.display = 'none';
+    const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur', admin: 'Admin' };
+    list.innerHTML = '<div class="card" style="padding:0;">' + clients.map(c => {
+      const planKey = planKeyFromType(c.type);
+      const isActive = String(c.status || '').toLowerCase() === 'active';
+      const exp = c.expiration ? c.expiration : 'Illimité';
+      const quota = (c.quota_gb !== null && c.quota_gb !== undefined && c.quota_gb !== '') ? (c.quota_gb + ' Go') : 'Illimité';
+      return `<div class="client-row">
+        <span class="client-dot${isActive ? ' active' : ''}"></span>
+        <div class="client-info">
+          <div class="client-name">${(c.username || '').replace(/</g,'&lt;')}</div>
+          <div class="client-sub">${planLabels[planKey] || c.type} · Exp. ${exp} · ${quota}</div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }catch(e){
+    emptyCard.querySelector('div').textContent = 'Panel injoignable.';
+  }
+}
+
 function realLogout(){
   authToken = null;
   document.getElementById('accLoggedIn').style.display = 'none';
   document.getElementById('accLoggedOut').style.display = '';
   document.getElementById('accUsername').value = '';
   document.getElementById('accPassword').value = '';
+  document.getElementById('proBadgeHome').style.display = 'none';
+  document.getElementById('proBadgeAcc').style.display = 'none';
+  document.getElementById('railBtn-clients').style.display = 'none';
+  document.getElementById('clientsList').innerHTML = '';
+  const emptyCard = document.getElementById('clientsEmptyCard');
+  emptyCard.style.display = '';
+  emptyCard.querySelector('div').textContent = 'Connecte-toi pour voir tes clients.';
+  if(document.getElementById('tab-clients').classList.contains('active')) switchTab('connexion');
 }
 
 async function fetchSubscriptionFromAccount(){
@@ -1030,7 +1156,7 @@ async function fetchSubscriptionFromAccount(){
     const me = meRes.data || {};
     const sub = subRes.ok ? (subRes.data || {}) : {};
     const planKey = planKeyFromType(me.type);
-    const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur' };
+    const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur', admin: 'Admin' };
     const expiresAt = (sub && sub.expires_at) || me.expiration || '';
     renderAccountCard({
       username: me.username || document.getElementById('accNameTxt').textContent,
@@ -1053,6 +1179,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).classList.add('active');
   const rb = document.getElementById('railBtn-'+name);
   if(rb) rb.classList.add('active');
+  if(name === 'clients') loadResellerClients();
 }
 
 function toggleRailGroup(name){
