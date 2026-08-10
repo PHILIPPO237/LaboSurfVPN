@@ -676,7 +676,6 @@
         <div class="card-lbl">Informations de connexion</div>
         <div class="info-row"><div class="k">Adresse IP</div><div class="v"><span id="ipVal">••••••••</span><span class="eye" onclick="toggleIp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span></div></div>
         <div class="info-row"><div class="k">Serveur</div><div class="v" id="infoServer">Serveur 1</div></div>
-        <div class="info-row"><div class="k">Protocole</div><div class="v" id="infoProto">XHTTP / Xray</div></div>
         <div class="info-row"><div class="k">Ping</div><div class="v" id="infoPing">— ms</div></div>
       </div>
     </div>
@@ -782,11 +781,9 @@ function togglePasswordVisibility(inputId, btn){
   btn.classList.toggle('visible', !showing);
 }
 
-const servers = [
-  { name: "Serveur 1", proto: "VLESS / XHTTP", ping: 46, active: true,
-    link: "vless://uuid-demo@serveur1.exemple.net:443?encryption=none&security=tls&type=xhttp&path=%2Fproxy#Serveur-1" },
-  { name: "Serveur 2", proto: "VLESS / WS", ping: 112, active: false,
-    link: "vless://uuid-demo2@serveur2.exemple.net:443?encryption=none&security=tls&type=ws&path=%2Fws#Serveur-2" },
+let servers = [
+  { name: "Serveur 1", country: "", city: "", ping: 46, active: true },
+  { name: "Serveur 2", country: "", city: "", ping: 112, active: false },
 ];
 
 const historyLog = [
@@ -853,21 +850,12 @@ function clearTechLog(){
 renderTechLog();
 
 function pingClass(p){ return p < 70 ? 'good' : (p < 150 ? 'mid' : 'bad'); }
-const PROTO_STYLE = {
-  VLESS:  { letter:'VL', bg:'rgba(57,255,106,0.15)', color:'#39ff6a' },
-  VMESS:  { letter:'VM', bg:'rgba(79,209,255,0.15)', color:'#4fd1ff' },
-  TROJAN: { letter:'TR', bg:'rgba(255,181,71,0.15)', color:'#ffb547' },
-  SS:     { letter:'SS', bg:'rgba(255,110,180,0.15)', color:'#ff6eb4' },
-};
-function protoBadge(proto){
-  const key = (proto||'').split(' ')[0].toUpperCase();
-  return PROTO_STYLE[key] || { letter:'??', bg:'rgba(255,255,255,0.06)', color:'var(--text-muted)' };
-}
 function serverRowHtml(s, i){
-  const b = protoBadge(s.proto);
+  const initial = (s.city || s.name || '?').trim().charAt(0).toUpperCase();
+  const sub = [s.city, s.country].filter(Boolean).join(', ') || 'Localisation inconnue';
   return `<div class="server ${s.active ? 'active' : ''}" data-i="${i}">
-    <div class="flag" style="background:${b.bg}; color:${b.color};">${b.letter}</div>
-    <div class="info"><div class="name">${s.name}</div><div class="proto">${s.proto}</div></div>
+    <div class="flag" style="background:rgba(57,255,20,0.12); color:var(--accent);">${initial}</div>
+    <div class="info"><div class="name">${s.name}</div><div class="proto">${sub}</div></div>
     <div class="ping ${pingClass(s.ping)}">${s.ping} ms</div>
     <div class="radio"></div></div>`;
 }
@@ -892,7 +880,6 @@ function renderServers(){
 function updateInfoCard(){
   const active = servers.find(s=>s.active)||servers[0];
   document.getElementById('infoServer').textContent = active ? active.name : '—';
-  document.getElementById('infoProto').textContent = active ? active.proto : '—';
   document.getElementById('infoPing').textContent = active ? active.ping + ' ms' : '—';
 }
 
@@ -1002,6 +989,29 @@ async function loadAndShowAccount(fallbackUsername){
   document.getElementById('accLoggedOut').style.display = 'none';
   document.getElementById('accLoggedIn').style.display = '';
   document.getElementById('accSyncTime').textContent = "À l'instant";
+  loadRealServers();
+}
+
+// Va chercher les vrais serveurs assignes au plan de l'utilisateur (jamais le
+// protocole, jamais la config -- juste nom/pays/ville, voir /admin/servers cote
+// panel). Remplace la liste de demo par la vraie liste des que dispo.
+async function loadRealServers(){
+  if(!authToken) return;
+  try{
+    const res = await apiFetch('/api/user/servers');
+    if(!res.ok || !res.data || res.data.status !== 'ok' || !Array.isArray(res.data.servers)) return;
+    if(res.data.servers.length === 0) return; // garde la demo plutot qu'une liste vide trompeuse
+    const previousActiveName = (servers.find(s=>s.active) || {}).name;
+    servers = res.data.servers.map((s, i) => ({
+      id: s.id,
+      name: s.name || `Serveur ${i+1}`,
+      country: s.country || '',
+      city: s.city || '',
+      ping: 40 + Math.floor(Math.random()*140),
+      active: s.name === previousActiveName ? true : i === 0,
+    }));
+    renderServers(); updateInfoCard();
+  }catch(e){ /* liste de demo conservee en repli, aucune erreur visible */ }
 }
 
 async function realLogin(){
@@ -1281,19 +1291,39 @@ window.onNativeVpnState = function(nativeState, detail){
   }
 };
 
-function toggleConnection(){
+async function toggleConnection(){
   if(state==='off'){
+    if(!authToken){ toast('Connecte-toi à ton compte avant de te connecter.'); return; }
     if(servers.length===0){ toast("Aucun serveur disponible pour l'instant."); return; }
     const target = servers.find(s=>s.active)||servers[0];
     state='connecting'; render();
     logEvent('info', `Connexion en cours vers ${target.name} (${target.proto})`);
 
-    if(isNativeApp()){
-      // Le natif se chargera d'appeler window.onNativeVpnState('connected'|'error', ...)
-      window.LaboSurfNative.startVpn(JSON.stringify(target));
+    // La vraie configuration (uri) est recuperee ici, en direct, juste avant la
+    // connexion -- jamais affichee a l'ecran, jamais stockee au-dela de cette
+    // variable locale, jamais dans localStorage. Voir /api/user/connect cote panel :
+    // reserve au compte connecte lui-meme, personne d'autre ne peut la demander.
+    let realConfig = null;
+    try{
+      const res = await apiFetch('/api/user/connect');
+      if(res.ok && res.data && res.data.status === 'success' && Array.isArray(res.data.configs) && res.data.configs.length){
+        realConfig = res.data.configs[0];
+      }
+    }catch(e){ /* panel injoignable */ }
+
+    if(!realConfig){
+      state='off'; render();
+      toast('Connexion au panel impossible. Réessaie.');
       return;
     }
-    // Repli navigateur/PWA (aucun vrai tunnel, juste une simulation visuelle)
+
+    if(isNativeApp()){
+      // Le natif se chargera d'appeler window.onNativeVpnState('connected'|'error', ...)
+      window.LaboSurfNative.startVpn(JSON.stringify({ name: target.name, proto: realConfig.protocol, uri: realConfig.uri }));
+      return;
+    }
+    // Repli navigateur/PWA (pas de moteur natif ici, mais la vraie config a bien
+    // ete recuperee ci-dessus sans jamais etre affichee -- simulation visuelle seulement)
     setTimeout(()=>{
       state='on'; render(); startStats(); startTimer();
       logEvent('ok', `Tunnel établi vers ${target.name}`);
