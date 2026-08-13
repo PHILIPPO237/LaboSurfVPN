@@ -1297,15 +1297,18 @@ async function toggleConnection(){
     if(servers.length===0){ toast("Aucun serveur disponible pour l'instant."); return; }
     const target = servers.find(s=>s.active)||servers[0];
     state='connecting'; render();
-    logEvent('info', `Connexion en cours vers ${target.name} (${target.proto})`);
+    logEvent('info', `Connexion en cours vers ${target.name}`);
 
     // La vraie configuration (uri) est recuperee ici, en direct, juste avant la
     // connexion -- jamais affichee a l'ecran, jamais stockee au-dela de cette
     // variable locale, jamais dans localStorage. Voir /api/user/connect cote panel :
     // reserve au compte connecte lui-meme, personne d'autre ne peut la demander.
+    // Le server_id transmet quel serveur (donc quel moteur : Xray/Hysteria2/...)
+    // l'utilisateur a choisi -- voir app/core/vpn_orchestrator.py cote panel.
     let realConfig = null;
     try{
-      const res = await apiFetch('/api/user/connect');
+      const qs = target.id ? ('?server_id=' + encodeURIComponent(target.id)) : '';
+      const res = await apiFetch('/api/user/connect' + qs);
       if(res.ok && res.data && res.data.status === 'success' && Array.isArray(res.data.configs) && res.data.configs.length){
         realConfig = res.data.configs[0];
       }
