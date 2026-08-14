@@ -171,6 +171,11 @@
     letter-spacing:0.04em; margin-top:3px; text-transform:uppercase; }
   .app-subtitle .sub-green{ color:var(--accent); font-weight:700; }
   .app-subtitle .sub-white{ color:#f2f2f2; }
+  /* Reutilisables partout ou "Laboratoire du Free-Surf" apparait comme titre/label
+     (pas dans une phrase de description) -- meme couleurs que l'accueil, exigees
+     de facon coherente sur toutes les pages secondaires. */
+  .sub-green{ color:var(--accent); font-weight:700; }
+  .sub-white{ color:#f2f2f2; }
 
   /* HOME (Accueil) — tient sur un seul écran, sans défilement (jamais, même sur WebView Android).
      #homeFit est mesuré et réduit automatiquement en JS (fitHomeScreen) si le téléphone est trop
@@ -605,7 +610,10 @@
       <div class="section-lbl">Mon compte</div>
       <div class="card">
         <div class="acc-head" style="margin-bottom:0;">
-          <div class="acc-avatar" id="accAvatarLetter">P</div>
+          <div class="acc-avatar" id="accAvatarLetter" style="overflow:hidden; padding:0;">
+            <img id="accAvatarImg" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:16px;">
+            <span id="accAvatarLetterText">P</span>
+          </div>
           <div>
             <div class="acc-name" id="accNameTxt">philippo237</div>
             <div class="plan-badge vip" id="accPlanBadge">VIP</div>
@@ -760,7 +768,7 @@
     <div class="section-lbl">À propos</div>
     <div class="set-group"><div class="about-card">
       <div class="app-name">Labo <span>Surf</span></div>
-      <div class="app-org">Laboratoire du Free-Surf</div>
+      <div class="app-org"><span class="sub-green">Laboratoire</span> <span class="sub-white">du Free-Surf</span></div>
       <div class="app-author">Powered by Philippo</div>
       <div class="app-ver">v0.3.0 — build interface</div>
     </div></div>
@@ -920,7 +928,20 @@ async function apiFetch(path, options={}){
 
 function renderAccountCard(acc){
   document.getElementById('accNameTxt').textContent = acc.username;
-  document.getElementById('accAvatarLetter').textContent = acc.username[0].toUpperCase();
+  const avatarImg = document.getElementById('accAvatarImg');
+  const avatarLetterText = document.getElementById('accAvatarLetterText');
+  if(acc.avatar){
+    // acc.avatar est un chemin relatif fourni par le panel (/static/avatars/...)
+    // -- on le combine avec l'adresse du panel pour obtenir une URL complete.
+    avatarImg.src = FREE_SURF_API_BASE + acc.avatar;
+    avatarImg.style.display = 'block';
+    avatarLetterText.style.display = 'none';
+    avatarImg.onerror = () => { avatarImg.style.display = 'none'; avatarLetterText.style.display = ''; };
+  } else {
+    avatarImg.style.display = 'none';
+    avatarLetterText.style.display = '';
+  }
+  avatarLetterText.textContent = acc.username[0].toUpperCase();
   const badge = document.getElementById('accPlanBadge');
   badge.textContent = acc.planLabel;
   badge.className = 'plan-badge ' + acc.plan;
@@ -986,6 +1007,7 @@ async function loadAndShowAccount(fallbackUsername){
 
   renderAccountCard({
     username: me.username || fallbackUsername,
+    avatar: me.avatar || '',
     plan: planKey,
     planLabel: planLabels[planKey],
     daysLeft: planKey === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
@@ -1191,6 +1213,7 @@ async function fetchSubscriptionFromAccount(){
     const expiresAt = (sub && sub.expires_at) || me.expiration || '';
     renderAccountCard({
       username: me.username || document.getElementById('accNameTxt').textContent,
+      avatar: me.avatar || '',
       plan: planKey,
       planLabel: planLabels[planKey],
       daysLeft: planKey === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
