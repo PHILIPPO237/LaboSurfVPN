@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Autorise le trafic HTTP non chiffre UNIQUEMENT vers 127.0.0.1 (le telephone
+  lui-meme, pour tester le panel qui tourne dans Termux sur le meme appareil).
+  Toute autre adresse reste protegee (HTTPS obligatoire), comme avant.
+
+  A supprimer (ou a retirer android:networkSecurityConfig dans AndroidManifest.xml)
+  une fois un vrai VPS/domaine HTTPS en place : ce fichier n'est utile que
+  pour le developpement/test en local.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

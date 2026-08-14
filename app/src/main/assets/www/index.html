@@ -83,7 +83,7 @@
     box-shadow:0 0 24px rgba(255,215,0,.25); }
   .banner-style-gold .bc-text{ text-shadow:0 0 8px rgba(255,215,0,.5); }
   .banner-style-alert{ border:1px solid #ef4444; background:rgba(239,68,68,.1); animation:bsPulseRed 2s infinite; }
-  .banner-style-glass{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(16px); }
+  .banner-style-glass{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.18); }
   .banner-style-cyberpunk{ background:repeating-linear-gradient(45deg, rgba(255,0,60,.06) 0, rgba(255,0,60,.06) 2px, transparent 2px, transparent 4px);
     border:2px solid #00f0ff; border-left:6px solid #fce205; box-shadow:inset 0 0 14px rgba(0,240,255,.25), 0 0 20px rgba(252,226,5,.25); }
   .banner-style-hacker{ background:#000; border:1px dashed #0f0; box-shadow:inset 0 0 24px rgba(0,255,0,.12); }
@@ -389,7 +389,8 @@
   .select-pill{ font-family:var(--mono); font-size:11px; color:var(--text); background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; padding:6px 9px; }
   .about-card{ text-align:center; padding:20px 14px; }
   .about-card .app-name{ font-family:var(--display); font-weight:700; font-size:15px; }
-  .about-card .app-org{ font-family:var(--mono); font-size:10.5px; color:var(--text-muted); margin-top:3px; }
+  .about-card .app-name span{ color:var(--accent); }
+  .about-card .app-org{ font-family:var(--mono); font-size:10.5px; color:var(--gold); letter-spacing:0.04em; margin-top:3px; }
   .about-card .app-author{ font-size:11.5px; color:var(--gold); font-weight:700; margin-top:9px; }
   .about-card .app-ver{ font-family:var(--mono); font-size:9.5px; color:var(--text-muted); opacity:0.6; margin-top:4px; }
 
@@ -752,7 +753,7 @@
     </div>
     <div class="section-lbl">À propos</div>
     <div class="set-group"><div class="about-card">
-      <div class="app-name">Labo Surf</div>
+      <div class="app-name">Labo <span>Surf</span></div>
       <div class="app-org">Laboratoire du Free-Surf</div>
       <div class="app-author">Powered by Philippo</div>
       <div class="app-ver">v0.3.0 — build interface</div>
@@ -1205,7 +1206,10 @@ function quickClearCache(){
 // emplacement "Labo Surf"), avec le style de son choix parmi les 10 deja proposes
 // dans le panel (neon/gradient/gold/alert/glass/cyberpunk/hacker/galaxy/fire/hologram).
 // Si rien n'est configure ou si le panel est injoignable, le modele par defaut reste affiche.
-const FREE_SURF_API_BASE = 'https://laboratoire.free-surf237-4all.xyz';
+// ADRESSE DU PANEL — a changer selon la situation :
+// - Test EN LOCAL sur ton telephone (Termux + app sur le meme appareil) : laisse comme ci-dessous (127.0.0.1).
+// - Une fois un VRAI VPS/domaine en place : remplace par ton domaine reel, ex. 'https://laboratoire.free-surf237-4all.xyz'.
+const FREE_SURF_API_BASE = 'http://127.0.0.1:8000';
 
 async function loadHomeBanner(){
   const card = document.getElementById('homeBannerCard');
