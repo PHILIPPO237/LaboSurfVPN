@@ -115,6 +115,23 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "stopVpn appele depuis le JS")
             LaboVpnService.stop(this@MainActivity)
         }
+
+        @JavascriptInterface
+        fun getDeviceId(): String {
+            // Identifiant d'appareil stable (survit a la desinstallation/reinstallation
+            // de l'app, contrairement a un simple stockage JS) -- utilise uniquement
+            // pour l'anti-abus de l'essai gratuit limite dans le temps (voir
+            // app/routers/user.py::_check_trial_abuse cote panel). Ne sert a rien
+            // d'autre, jamais transmis en dehors de cet usage.
+            return try {
+                android.provider.Settings.Secure.getString(
+                    contentResolver, android.provider.Settings.Secure.ANDROID_ID
+                ) ?: ""
+            } catch (e: Exception) {
+                Log.e(TAG, "Impossible de lire ANDROID_ID", e)
+                ""
+            }
+        }
     }
 
     override fun onBackPressed() {

@@ -530,12 +530,12 @@
         <div class="card-lbl">Se connecter</div>
         <div class="acc-field">
           <div class="acc-label">Nom d'utilisateur</div>
-          <input type="text" id="accUsername" class="acc-input" placeholder="Ton pseudo Laboratoire du Free-Surf" autocomplete="username">
+          <input type="text" id="accUsername" class="acc-input" placeholder="Ton pseudo Laboratoire du Free-Surf" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
         </div>
         <div class="acc-field">
           <div class="acc-label">Mot de passe</div>
           <div class="pw-wrap">
-            <input type="password" id="accPassword" class="acc-input" placeholder="••••••••" autocomplete="current-password">
+            <input type="password" id="accPassword" class="acc-input" placeholder="••••••••" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button type="button" class="pw-eye" onclick="togglePasswordVisibility('accPassword', this)" aria-label="Afficher le mot de passe">
               <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
               <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-7-11-7a20.7 20.7 0 015.06-5.94M9.9 4.24A9.1 9.1 0 0112 4c7 0 11 7 11 7a20.6 20.6 0 01-3.22 4.19M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
@@ -550,7 +550,7 @@
         <div class="card-lbl">Créer mon compte</div>
         <div class="acc-field">
           <div class="acc-label">Nom d'utilisateur</div>
-          <input type="text" id="regUsername" class="acc-input" placeholder="3-32 caractères, lettres/chiffres" autocomplete="username">
+          <input type="text" id="regUsername" class="acc-input" placeholder="3-32 caractères, lettres/chiffres" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
         </div>
         <div class="acc-field">
           <div class="acc-label">Contact (email ou téléphone)</div>
@@ -730,6 +730,12 @@
   <!-- ===== MES CLIENTS (revendeur / admin uniquement) ===== -->
   <div class="tab-content" id="tab-clients">
     <div class="section-lbl">Mes clients<span class="add" onclick="loadResellerClients()">↻ Actualiser</span></div>
+    <div class="card" id="clientsSummaryCard" style="display:none; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-around; text-align:center;">
+        <div><div style="font-family:var(--display); font-weight:800; font-size:20px; color:var(--accent);" id="clientsCountTotal">0</div><div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Total</div></div>
+        <div><div style="font-family:var(--display); font-weight:800; font-size:20px; color:var(--accent);" id="clientsCountActive">0</div><div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Actifs</div></div>
+      </div>
+    </div>
     <div class="card" id="clientsEmptyCard" style="text-align:center; padding:22px 16px;">
       <div style="font-size:12px; color:var(--text-muted);">Connecte-toi pour voir tes clients.</div>
     </div>
@@ -1017,7 +1023,7 @@ async function loadRealServers(){
 
 async function realLogin(){
   const u = document.getElementById('accUsername').value.trim();
-  const p = document.getElementById('accPassword').value;
+  const p = document.getElementById('accPassword').value.trim();
   const err = document.getElementById('accError');
   const btn = document.getElementById('accLoginBtn');
   err.classList.remove('show');
@@ -1097,15 +1103,18 @@ function toggleRegisterForm(show){
 
 async function loadResellerClients(){
   const emptyCard = document.getElementById('clientsEmptyCard');
+  const summaryCard = document.getElementById('clientsSummaryCard');
   const list = document.getElementById('clientsList');
   if(!authToken){
     emptyCard.style.display = '';
     emptyCard.querySelector('div').textContent = 'Connecte-toi pour voir tes clients.';
+    summaryCard.style.display = 'none';
     list.innerHTML = '';
     return;
   }
   emptyCard.style.display = '';
   emptyCard.querySelector('div').textContent = 'Chargement...';
+  summaryCard.style.display = 'none';
   list.innerHTML = '';
   try{
     const res = await apiFetch('/api/revendeur/clients');
@@ -1119,12 +1128,23 @@ async function loadResellerClients(){
       return;
     }
     emptyCard.style.display = 'none';
+    const activeCount = clients.filter(c => String(c.status || '').toLowerCase() === 'active').length;
+    document.getElementById('clientsCountTotal').textContent = clients.length;
+    document.getElementById('clientsCountActive').textContent = activeCount;
+    summaryCard.style.display = '';
     const planLabels = { gratuit: 'Gratuit', vip: 'VIP', revendeur: 'Revendeur', admin: 'Admin' };
     list.innerHTML = '<div class="card" style="padding:0;">' + clients.map(c => {
       const planKey = planKeyFromType(c.type);
       const isActive = String(c.status || '').toLowerCase() === 'active';
-      const exp = c.expiration ? c.expiration : 'Illimité';
-      const quota = (c.quota_gb !== null && c.quota_gb !== undefined && c.quota_gb !== '') ? (c.quota_gb + ' Go') : 'Illimité';
+      // "Illimité" n'a de sens que pour VIP/Revendeur/ADMIN (ou c'est reellement
+      // souvent le cas) -- pour un client Gratuit, une valeur vide veut dire
+      // "non definie/limitee", pas "sans limite". Afficher "Illimité" a tort
+      // donnerait une fausse impression sur un compte d'essai.
+      const isUnlimitedPlan = planKey !== 'gratuit';
+      const exp = c.expiration ? c.expiration : (isUnlimitedPlan ? 'Illimité' : 'Essai limité');
+      const quota = (c.quota_gb !== null && c.quota_gb !== undefined && c.quota_gb !== '')
+        ? (c.quota_gb + ' Go')
+        : (isUnlimitedPlan ? 'Illimité' : 'Quota limité');
       return `<div class="client-row">
         <span class="client-dot${isActive ? ' active' : ''}"></span>
         <div class="client-info">
@@ -1273,11 +1293,34 @@ const statusSub = document.getElementById('statusSub');
 const timerEl = document.getElementById('timer');
 const bigLbl = document.getElementById('bigLbl');
 let state = 'off'; let speedInterval=null; let timerInterval=null; let elapsed=0;
+let trialLimitMinutes = null; // limite d'essai (minutes) pour la session en cours, null = illimite
 
 // ─── Pont vers le moteur VPN natif (app Android) ───
 // window.LaboSurfNative n'existe que dans l'app native (voir MainActivity.kt).
 // En navigateur/PWA, il est absent : le comportement simule reste identique a avant.
 const isNativeApp = () => typeof window.LaboSurfNative !== 'undefined';
+
+// Identifiant d'appareil pour l'anti-abus de l'essai gratuit (voir cote panel :
+// app/routers/user.py::_check_trial_abuse). Dans l'app native, vient d'Android
+// (ANDROID_ID, stable meme apres reinstallation). En navigateur/PWA, repli sur
+// un identifiant genere une fois et conserve en local (moins robuste, mais
+// c'est la seule option disponible hors app native).
+function getDeviceId(){
+  if(isNativeApp() && typeof window.LaboSurfNative.getDeviceId === 'function'){
+    try{
+      const id = window.LaboSurfNative.getDeviceId();
+      if(id) return id;
+    }catch(e){ /* repli ci-dessous */ }
+  }
+  try{
+    let id = localStorage.getItem('labosurf_device_id');
+    if(!id){
+      id = 'web-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+      localStorage.setItem('labosurf_device_id', id);
+    }
+    return id;
+  }catch(e){ return ''; }
+}
 
 // Appele par le natif (Kotlin) via evaluateJavascript() pour rapporter l'etat reel du tunnel.
 window.onNativeVpnState = function(nativeState, detail){
@@ -1310,17 +1353,28 @@ async function toggleConnection(){
     // Le server_id transmet quel serveur (donc quel moteur : Xray/Hysteria2/...)
     // l'utilisateur a choisi -- voir app/core/vpn_orchestrator.py cote panel.
     let realConfig = null;
+    let connectErrorMessage = '';
     try{
-      const qs = target.id ? ('?server_id=' + encodeURIComponent(target.id)) : '';
+      const params = new URLSearchParams();
+      if(target.id) params.set('server_id', target.id);
+      const deviceId = getDeviceId();
+      if(deviceId) params.set('device_id', deviceId);
+      const qs = params.toString() ? ('?' + params.toString()) : '';
       const res = await apiFetch('/api/user/connect' + qs);
       if(res.ok && res.data && res.data.status === 'success' && Array.isArray(res.data.configs) && res.data.configs.length){
         realConfig = res.data.configs[0];
+        // Limite d'essai (minutes) transmise par le panel si ce profil en a une
+        // pour ce plan (voir /admin/servers > Regles par plan) -- sinon null = illimite.
+        trialLimitMinutes = (typeof res.data.trial_limit_minutes === 'number' && res.data.trial_limit_minutes > 0)
+          ? res.data.trial_limit_minutes : null;
+      } else if(res.data && res.data.message){
+        connectErrorMessage = res.data.message; // ex: essai gratuit deja utilise sur cet appareil
       }
     }catch(e){ /* panel injoignable */ }
 
     if(!realConfig){
       state='off'; render();
-      toast('Connexion au panel impossible. Réessaie.');
+      toast(connectErrorMessage || 'Connexion au panel impossible. Réessaie.');
       return;
     }
 
@@ -1381,9 +1435,21 @@ function startTimer(){
     const m = String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
     const s = String(elapsed%60).padStart(2,'0');
     timerEl.textContent = `${h}:${m}:${s}`;
+
+    if(trialLimitMinutes !== null){
+      const limitSeconds = trialLimitMinutes * 60;
+      const remaining = limitSeconds - elapsed;
+      if(remaining === 300){ // avertissement a 5 minutes de la fin
+        toast('Il te reste 5 minutes d\'essai sur ce serveur.');
+      }
+      if(remaining <= 0){
+        toast('Essai terminé sur ce serveur. Passe en VIP pour un accès illimité.');
+        toggleConnection(); // coupe la connexion automatiquement
+      }
+    }
   }, 1000);
 }
-function stopTimer(){ clearInterval(timerInterval); timerEl.textContent='00:00:00'; }
+function stopTimer(){ clearInterval(timerInterval); timerEl.textContent='00:00:00'; trialLimitMinutes = null; }
 function startStats(){
   const active = servers.find(s=>s.active)||servers[0];
   let sent=0, recv=0;
