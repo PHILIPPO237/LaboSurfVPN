@@ -28,7 +28,7 @@
     --good: #39ff6a;
     --danger: #ff5c7a;
     --text: #f1f5f2;
-    --text-muted: #8a9490;
+    --text-muted: #a8b3ae;
     --mono: 'JetBrains Mono', monospace;
     --display: 'Space Grotesk', sans-serif;
     --body: 'Inter', sans-serif;
@@ -639,6 +639,16 @@
         <div class="pill-btn primary" style="margin-top:10px;" onclick="fetchSubscriptionFromAccount()">↻ Actualiser mon compte</div>
       </div>
 
+      <div class="card" id="renewalCard">
+        <div class="card-lbl">Renouveler / Passer VIP</div>
+        <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px;">
+          Ta demande sera traitée par ton revendeur, ou directement par l'administrateur si tu n'en as pas.
+        </p>
+        <div class="pill-btn primary" style="margin-bottom:8px;" onclick="requestSubscriptionAction('renewal', 30)">↻ Renouveler (30 jours)</div>
+        <div class="pill-btn" onclick="requestSubscriptionAction('upgrade', null, 'VIP')">⭐ Passer VIP</div>
+        <div class="acc-error" id="renewalError"></div>
+      </div>
+
       <div class="logout-row"><div class="logout-btn" onclick="realLogout()">Se déconnecter</div></div>
     </div>
 
@@ -1177,6 +1187,32 @@ async function loadResellerClients(){
     }).join('') + '</div>';
   }catch(e){
     emptyCard.querySelector('div').textContent = 'Panel injoignable.';
+  }
+}
+
+async function requestSubscriptionAction(kind, durationDays, targetPlan){
+  const errEl = document.getElementById('renewalError');
+  errEl.classList.remove('show');
+  if(!authToken){ toast('Connecte-toi pour faire cette demande.'); return; }
+
+  const body = { kind };
+  if(kind === 'renewal') body.duration_days = durationDays;
+  if(kind === 'upgrade') body.target_plan = targetPlan;
+
+  try{
+    const res = await apiFetch('/api/user/subscription/request', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    if(res.ok && res.data && res.data.status === 'ok'){
+      toast(res.data.message || 'Demande envoyée.');
+    } else {
+      errEl.textContent = (res.data && res.data.message) || 'Impossible d\'envoyer la demande.';
+      errEl.classList.add('show');
+    }
+  }catch(e){
+    errEl.textContent = 'Connexion au panel impossible. Réessaie.';
+    errEl.classList.add('show');
   }
 }
 
