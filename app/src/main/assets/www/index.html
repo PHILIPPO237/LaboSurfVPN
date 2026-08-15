@@ -262,6 +262,7 @@
   .pw-eye.visible .eye-on{ display:none; }
   .pw-eye.visible .eye-off{ display:block; }
   .acc-error{ font-size:11.5px; color:var(--danger); margin-top:8px; display:none; }
+  .pill-select{ background:var(--bg-input,#0e1512); border:1px solid var(--border,#1f2b25); border-radius:10px; padding:9px 10px; color:var(--text); font-size:12px; }
   .acc-error.show{ display:block; }
   .acc-switch-link{ text-align:center; font-size:11.5px; color:var(--text-muted); margin-top:12px; text-decoration:underline; }
   .acc-avatar{ width:56px; height:56px; border-radius:16px; background:var(--accent-dim); border:1px solid rgba(57,255,106,0.35);
@@ -407,8 +408,9 @@
 <div class="device">
 
   <div class="rail" id="rail">
-    <div class="rail-btn" id="railBtn-compte" onclick="switchTab('compte')" title="Mon compte">
+    <div class="rail-btn" id="railBtn-compte" onclick="switchTab('compte')" title="Mon compte" style="position:relative;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
+      <span id="msgBadge" style="display:none; position:absolute; top:2px; right:2px; min-width:16px; height:16px; padding:0 3px; border-radius:8px; background:#ff5c7a; color:#fff; font-size:9.5px; font-weight:800; line-height:16px; text-align:center; box-shadow:0 0 0 2px var(--bg,#0a0f0c);"></span>
     </div>
 
     <div class="rail-btn" id="railBtn-serveurs" onclick="switchTab('serveurs')" title="Serveurs">
@@ -644,9 +646,47 @@
         <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px;">
           Ta demande sera traitée par ton revendeur, ou directement par l'administrateur si tu n'en as pas.
         </p>
-        <div class="pill-btn primary" style="margin-bottom:8px;" onclick="requestSubscriptionAction('renewal', 30)">↻ Renouveler (30 jours)</div>
-        <div class="pill-btn" onclick="requestSubscriptionAction('upgrade', null, 'VIP')">⭐ Passer VIP</div>
+        <div id="renewalFormBlock">
+          <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">Type de demande</label>
+          <select id="renewalKindSelect" class="pill-select" style="width:100%; margin-bottom:8px;" onchange="onRenewalKindChange()">
+            <option value="renewal">Renouveler mon abonnement (30 jours)</option>
+            <option value="upgrade">Passer VIP</option>
+          </select>
+          <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">Message (optionnel)</label>
+          <textarea id="renewalMessage" rows="2" placeholder="Ex: je voudrais régler par Orange Money..." style="width:100%; background:var(--bg-input,#0e1512); border:1px solid var(--border,#1f2b25); border-radius:10px; padding:8px; color:var(--text); font-size:12px; margin-bottom:10px; resize:vertical;"></textarea>
+          <div class="pill-btn primary" id="renewalSubmitBtn" onclick="submitRenewalForm()">Envoyer la demande</div>
+        </div>
+        <div id="renewalConfirmed" style="display:none; text-align:center; padding:10px 0;">
+          <div style="font-size:28px; margin-bottom:6px;">✅</div>
+          <div style="font-size:13px; font-weight:700; color:var(--accent);">Demande envoyée</div>
+          <div id="renewalConfirmedText" style="font-size:11px; color:var(--text-muted); margin-top:4px;"></div>
+          <div class="pill-btn" style="margin-top:12px; font-size:11px;" onclick="resetRenewalForm()">Faire une nouvelle demande</div>
+        </div>
         <div class="acc-error" id="renewalError"></div>
+      </div>
+
+      <div class="card" id="messagesCard">
+        <div class="card-lbl" style="display:flex; align-items:center; justify-content:space-between;">
+          <span>Mes messages</span>
+          <span id="messagesCardBadge" style="display:none; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#ff5c7a; color:#fff; font-size:10.5px; font-weight:800; line-height:18px; text-align:center;"></span>
+        </div>
+        <div id="messagesThread" style="max-height:260px; overflow-y:auto; margin:8px 0; padding-right:2px;">
+          <div style="font-size:11.5px; color:var(--text-muted); text-align:center; padding:14px 0;">Aucun message pour l'instant.</div>
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:6px;">
+          <label style="width:38px; height:38px; border-radius:12px; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <input type="file" accept="image/*" style="display:none;" id="msgAttachInput" onchange="onMsgAttachmentChosen(event)">
+          </label>
+          <textarea id="msgComposerInput" rows="1" placeholder="Écris un message..." style="flex:1; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-radius:12px; padding:9px 10px; color:var(--text); font-size:12.5px; resize:none;"></textarea>
+          <div class="pill-btn primary" style="width:38px; height:38px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" onclick="sendAppMessage()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </div>
+        </div>
+        <div id="msgAttachPreview" style="display:none; font-size:10.5px; color:var(--text-muted); margin-top:6px;">
+          <i class="fas fa-paperclip"></i> <span id="msgAttachName"></span>
+          <span onclick="clearMsgAttachment()" style="color:#ff5c7a; margin-left:6px; cursor:pointer;">annuler</span>
+        </div>
       </div>
 
       <div class="logout-row"><div class="logout-btn" onclick="realLogout()">Se déconnecter</div></div>
@@ -1076,6 +1116,9 @@ async function realLogin(){
     authToken = login.data.token;
     await loadAndShowAccount(u);
     loadHomeBanner(); // re-verifie la banniere maintenant que le token est disponible (revendeur potentiel)
+    loadAppMessages(); // charge immediatement si deja sur l onglet Compte
+    clearInterval(msgPollInterval);
+    msgPollInterval = setInterval(pollUnreadMessages, 20000); // signal discret toutes les 20s
   }catch(e){
     err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
     err.classList.add('show');
@@ -1120,6 +1163,9 @@ async function realRegister(){
     toast('Compte créé — bienvenue !');
     await loadAndShowAccount(u);
     loadHomeBanner(); // re-verifie la banniere maintenant que le token est disponible
+    loadAppMessages(); // charge immediatement si deja sur l onglet Compte
+    clearInterval(msgPollInterval);
+    msgPollInterval = setInterval(pollUnreadMessages, 20000);
   }catch(e){
     err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
     err.classList.add('show');
@@ -1192,14 +1238,24 @@ async function loadResellerClients(){
   }
 }
 
-async function requestSubscriptionAction(kind, durationDays, targetPlan){
+function onRenewalKindChange(){
+  // reserve pour une future extension (ex: choix de duree pour renewal) -- rien a faire pour l'instant
+}
+
+async function submitRenewalForm(){
   const errEl = document.getElementById('renewalError');
   errEl.classList.remove('show');
   if(!authToken){ toast('Connecte-toi pour faire cette demande.'); return; }
 
-  const body = { kind };
-  if(kind === 'renewal') body.duration_days = durationDays;
-  if(kind === 'upgrade') body.target_plan = targetPlan;
+  const kind = document.getElementById('renewalKindSelect').value;
+  const message = document.getElementById('renewalMessage').value.trim();
+  const submitBtn = document.getElementById('renewalSubmitBtn');
+  const originalLbl = submitBtn.textContent;
+  submitBtn.textContent = 'Envoi...';
+
+  const body = { kind, message };
+  if(kind === 'renewal') body.duration_days = 30;
+  if(kind === 'upgrade') body.target_plan = 'VIP';
 
   try{
     const res = await apiFetch('/api/user/subscription/request', {
@@ -1207,7 +1263,13 @@ async function requestSubscriptionAction(kind, durationDays, targetPlan){
       body: JSON.stringify(body),
     });
     if(res.ok && res.data && res.data.status === 'ok'){
-      toast(res.data.message || 'Demande envoyée.');
+      // Confirmation PERSISTANTE (pas juste un toast qui disparait) : on
+      // remplace le formulaire par un etat "envoye" clair, qui reste affiche
+      // jusqu'a ce que la personne choisisse de faire une nouvelle demande.
+      document.getElementById('renewalFormBlock').style.display = 'none';
+      document.getElementById('renewalConfirmed').style.display = '';
+      document.getElementById('renewalConfirmedText').textContent =
+        res.data.message || "Ta demande a bien été transmise.";
     } else {
       errEl.textContent = (res.data && res.data.message) || 'Impossible d\'envoyer la demande.';
       errEl.classList.add('show');
@@ -1215,11 +1277,147 @@ async function requestSubscriptionAction(kind, durationDays, targetPlan){
   }catch(e){
     errEl.textContent = 'Connexion au panel impossible. Réessaie.';
     errEl.classList.add('show');
+  }finally{
+    submitBtn.textContent = originalLbl;
+  }
+}
+
+function resetRenewalForm(){
+  document.getElementById('renewalFormBlock').style.display = '';
+  document.getElementById('renewalConfirmed').style.display = 'none';
+  document.getElementById('renewalMessage').value = '';
+}
+
+// ===== Messagerie privee =====
+let msgPendingAttachment = null;
+let msgPollInterval = null;
+
+function onMsgAttachmentChosen(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  if(file.size > 2_000_000){ toast('Image trop volumineuse (2 Mo max).'); ev.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    msgPendingAttachment = { data: reader.result, mime: file.type, filename: file.name };
+    document.getElementById('msgAttachName').textContent = file.name;
+    document.getElementById('msgAttachPreview').style.display = '';
+  };
+  reader.readAsDataURL(file);
+}
+function clearMsgAttachment(){
+  msgPendingAttachment = null;
+  document.getElementById('msgAttachInput').value = '';
+  document.getElementById('msgAttachPreview').style.display = 'none';
+}
+
+function renderAppMessages(messages){
+  const thread = document.getElementById('messagesThread');
+  if(!messages || !messages.length){
+    thread.innerHTML = '<div style="font-size:11.5px; color:var(--text-muted); text-align:center; padding:14px 0;">Aucun message pour l\'instant. Écris à ton administrateur ou ton revendeur ci-dessous.</div>';
+    return;
+  }
+  thread.innerHTML = messages.map(m => {
+    const mine = m.sender_role === 'client';
+    const roleLabel = m.sender_role === 'admin' ? 'Admin' : (m.sender_role === 'revendeur' ? 'Revendeur' : 'Toi');
+    let attachHtml = '';
+    if(m.attachment_data){
+      if(m.message_type === 'invoice'){
+        attachHtml = `<a href="${FREE_SURF_API_BASE}${m.attachment_data}" target="_blank" style="display:inline-flex; align-items:center; gap:5px; margin-top:6px; padding:5px 9px; border-radius:8px; background:rgba(0,0,0,0.3); border:1px solid var(--border,#1f2b25); font-size:10.5px; color:var(--text); text-decoration:none;"><i class="fas fa-file-pdf"></i> ${m.attachment_filename || 'Facture.pdf'}</a>`;
+      } else if((m.attachment_mime||'').startsWith('image/') || (m.attachment_data||'').startsWith('data:image')){
+        attachHtml = `<div style="margin-top:6px;"><img src="${m.attachment_data}" style="max-width:100%; border-radius:0.5rem; border:1px solid var(--border,#1f2b25);"></div>`;
+      }
+    }
+    const bodyEsc = (m.body || '').replace(/</g,'&lt;');
+    return `<div style="display:flex; ${mine ? 'justify-content:flex-end;' : ''} margin-bottom:8px;">
+      <div style="max-width:82%; border-radius:0.8rem; padding:7px 10px; font-size:11.5px; line-height:1.35;
+        ${mine ? 'background:rgba(57,255,106,0.14); border:1px solid rgba(57,255,106,0.3); border-bottom-right-radius:0.2rem;'
+               : 'background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-bottom-left-radius:0.2rem;'}">
+        ${bodyEsc}${attachHtml}
+        <div style="font-size:9px; color:var(--text-muted); margin-top:3px;">${roleLabel}</div>
+      </div>
+    </div>`;
+  }).join('');
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function updateMessageBadges(count){
+  const railBadge = document.getElementById('msgBadge');
+  const cardBadge = document.getElementById('messagesCardBadge');
+  if(count > 0){
+    railBadge.textContent = count > 9 ? '9+' : String(count);
+    railBadge.style.display = '';
+    cardBadge.textContent = count > 9 ? '9+' : String(count);
+    cardBadge.style.display = '';
+  } else {
+    railBadge.style.display = 'none';
+    cardBadge.style.display = 'none';
+  }
+}
+
+async function loadAppMessages(silent){
+  if(!authToken) return;
+  try{
+    const res = await apiFetch('/api/user/messages');
+    if(res.ok && res.data && res.data.messages){
+      renderAppMessages(res.data.messages);
+      // Le simple fait de charger via /api/user/messages marque deja les
+      // messages du gestionnaire comme lus cote serveur -- donc le badge
+      // s'efface naturellement des que l'utilisateur ouvre l'onglet Compte.
+      if(!silent) updateMessageBadges(0);
+    }
+  }catch(e){ /* silencieux, pas grave si ca echoue en arriere-plan */ }
+}
+
+async function pollUnreadMessages(){
+  // Interrogation discrete en arriere-plan (sans marquer comme lu) : sert
+  // uniquement a alimenter le badge tant que l'utilisateur n'a pas ouvert
+  // l'onglet Compte. On recompte les messages dont le role n'est PAS 'client'.
+  if(!authToken) return;
+  try{
+    const res = await apiFetch('/api/user/messages');
+    if(res.ok && res.data && res.data.messages){
+      // Ne met a jour le badge que si l'onglet Compte n'est pas deja ouvert
+      // (sinon loadAppMessages() vient de tout marquer comme lu, ce qui est le comportement voulu).
+      const compteTabActive = document.getElementById('tab-compte') && document.getElementById('tab-compte').classList.contains('active');
+      if(!compteTabActive){
+        const unread = res.data.messages.filter(m => m.sender_role !== 'client' && !m.read_at).length;
+        updateMessageBadges(unread);
+      }
+    }
+  }catch(e){ /* silencieux */ }
+}
+
+async function sendAppMessage(){
+  if(!authToken){ toast('Connecte-toi pour envoyer un message.'); return; }
+  const input = document.getElementById('msgComposerInput');
+  const text = input.value.trim();
+  if(!text && !msgPendingAttachment) return;
+
+  const payload = { body: text };
+  if(msgPendingAttachment){
+    payload.attachment_data = msgPendingAttachment.data;
+    payload.attachment_mime = msgPendingAttachment.mime;
+    payload.attachment_filename = msgPendingAttachment.filename;
+    payload.message_type = 'payment_proof';
+  }
+  try{
+    const res = await apiFetch('/api/user/messages', { method: 'POST', body: JSON.stringify(payload) });
+    if(res.ok && res.data && res.data.status === 'ok'){
+      input.value = '';
+      clearMsgAttachment();
+      await loadAppMessages();
+    } else {
+      toast((res.data && res.data.message) || "Impossible d'envoyer le message.");
+    }
+  }catch(e){
+    toast('Connexion au panel impossible.');
   }
 }
 
 function realLogout(){
   authToken = null;
+  clearInterval(msgPollInterval);
+  updateMessageBadges(0);
   document.getElementById('accLoggedIn').style.display = 'none';
   document.getElementById('accLoggedOut').style.display = '';
   document.getElementById('accUsername').value = '';
@@ -1273,6 +1471,7 @@ function switchTab(name){
   const rb = document.getElementById('railBtn-'+name);
   if(rb) rb.classList.add('active');
   if(name === 'clients') loadResellerClients();
+  if(name === 'compte') loadAppMessages();
 }
 
 function toggleRailGroup(name){
