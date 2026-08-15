@@ -787,6 +787,11 @@
 
   <!-- ===== MES CLIENTS (revendeur / admin uniquement) ===== -->
   <div class="tab-content" id="tab-clients">
+    <div class="section-lbl">Demandes en attente<span class="add" onclick="loadPendingRequests()">↻ Actualiser</span></div>
+    <div id="pendingRequestsList" style="margin-bottom:16px;">
+      <div class="card" style="text-align:center; padding:16px;"><div style="font-size:11.5px; color:var(--text-muted);">Chargement...</div></div>
+    </div>
+
     <div class="section-lbl">Mes clients<span class="add" onclick="loadResellerClients()">↻ Actualiser</span></div>
     <div class="card" id="clientsSummaryCard" style="display:none; margin-bottom:12px;">
       <div style="display:flex; justify-content:space-around; text-align:center;">
@@ -1181,6 +1186,65 @@ function toggleRegisterForm(show){
   if(cta) cta.style.display = show ? 'none' : '';
 }
 
+async function loadPendingRequests(){
+  const container = document.getElementById('pendingRequestsList');
+  if(!authToken){
+    container.innerHTML = '<div class="card" style="text-align:center; padding:16px;"><div style="font-size:11.5px; color:var(--text-muted);">Connecte-toi pour voir les demandes.</div></div>';
+    return;
+  }
+  container.innerHTML = '<div class="card" style="text-align:center; padding:16px;"><div style="font-size:11.5px; color:var(--text-muted);">Chargement...</div></div>';
+  try{
+    const res = await apiFetch('/api/revendeur/service-requests');
+    if(!res.ok || !res.data || !Array.isArray(res.data.requests)){
+      container.innerHTML = '<div class="card" style="text-align:center; padding:16px;"><div style="font-size:11.5px; color:var(--text-muted);">Impossible de charger les demandes.</div></div>';
+      return;
+    }
+    const requests = res.data.requests;
+    if(!requests.length){
+      container.innerHTML = '<div class="card" style="text-align:center; padding:16px;"><div style="font-size:11.5px; color:var(--text-muted);">Aucune demande en attente.</div></div>';
+      return;
+    }
+    container.innerHTML = requests.map(r => {
+      const kindLabel = r.kind === 'upgrade' ? `Passer ${r.target_plan || 'VIP'}` : `Renouvellement (${r.duration_days || 30}j)`;
+      const msg = r.message ? `<div style="font-size:11px; color:var(--text-muted); margin:4px 0 8px; font-style:italic;">"${String(r.message).replace(/</g,'&lt;')}"</div>` : '';
+      return `<div class="card" style="margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-weight:700; font-size:13px;">${(r.username || '').replace(/</g,'&lt;')}</div>
+            <div style="font-size:11px; color:var(--accent);">${kindLabel}</div>
+          </div>
+        </div>
+        ${msg}
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <div class="pill-btn primary" style="flex:1; font-size:11px; padding:8px;" onclick="handleServiceRequest(${r.id}, 'approve')">✓ Valider</div>
+          <div class="pill-btn" style="flex:1; font-size:11px; padding:8px; border-color:#ff5c7a; color:#ff5c7a;" onclick="handleServiceRequest(${r.id}, 'reject')">✕ Rejeter</div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    container.innerHTML = '<div class="card" style="text-align:center; padding:16px;"><div style="font-size:11.5px; color:var(--text-muted);">Connexion au panel impossible.</div></div>';
+  }
+}
+
+async function handleServiceRequest(id, action){
+  if(action === 'reject' && !confirm('Rejeter definitivement cette demande ?')) return;
+  try{
+    const res = await apiFetch(`/api/revendeur/service-requests/${action}`, {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+    });
+    if(res.ok && res.data && res.data.status === 'ok'){
+      toast(action === 'approve' ? 'Demande validée.' : 'Demande rejetée.');
+      loadPendingRequests();
+      loadResellerClients();
+    } else {
+      toast((res.data && res.data.message) || "Impossible de traiter cette demande.");
+    }
+  }catch(e){
+    toast('Connexion au panel impossible.');
+  }
+}
+
 async function loadResellerClients(){
   const emptyCard = document.getElementById('clientsEmptyCard');
   const summaryCard = document.getElementById('clientsSummaryCard');
@@ -1470,7 +1534,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).classList.add('active');
   const rb = document.getElementById('railBtn-'+name);
   if(rb) rb.classList.add('active');
-  if(name === 'clients') loadResellerClients();
+  if(name === 'clients'){ loadPendingRequests(); loadResellerClients(); }
   if(name === 'compte') loadAppMessages();
 }
 

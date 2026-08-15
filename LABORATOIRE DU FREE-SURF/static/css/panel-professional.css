@@ -1,8 +1,0 @@
-﻿/* ========================================================================== 
-   Professional Panel Theme
-   - Neutral entrypoint for templates that should not expose legacy provider naming.
-   - Imports the existing token set for backward-compatible rendering.
-   ========================================================================== */
-
-@import url('/static/css/theme-3xui.css');
-
