@@ -1,0 +1,6 @@
+{
+    "chatgpt.openOnStartup": true,
+    "geminicodeassist.agentYoloMode": true,
+    "geminicodeassist.agentDebugMode": true,
+    "geminicodeassist.inlineSuggestions.suggestionSpeed": "Fast"
+}

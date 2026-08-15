@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ma Consommation | LABORATOIRE</title>
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+  <link rel="stylesheet" href="/static/css/command-palette.css">
+  <link rel="stylesheet" href="/static/css/a11y.css">
+  <script defer src="/static/js/command-palette.js"></script>
+  <style>
+    :root { --neon:#39ff14; --info:#00f2ff; --dark:#050505; }
+    body {
+      background:
+        radial-gradient(circle at 18% 10%, rgba(57,255,20,0.08), transparent 35%),
+        radial-gradient(circle at 78% 25%, rgba(0,242,255,0.10), transparent 42%),
+        radial-gradient(circle at 50% 92%, rgba(255,45,85,0.06), transparent 45%),
+        var(--dark);
+    }
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .glass {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      backdrop-filter: blur(16px);
+    }
+    .bar-wrap {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.45);
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #39ff14, #00f2ff);
+      box-shadow: 0 0 14px rgba(57,255,20,0.4);
+      transition: width 0.35s ease;
+    }
+  </style>
+  <script defer src="/static/js/ui-a11y.js"></script>
+</head>
+<body class="min-h-screen p-4 md:p-6 text-white">
+  <div class="max-w-5xl mx-auto">
+    <header class="glass rounded-[2rem] p-5 md:p-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+      <div>
+        <div class="mono text-[10px] uppercase tracking-[0.35em] text-gray-300 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.8)]"></span>
+          Suivi de consommation
+        </div>
+        <h1 class="orbitron text-2xl md:text-3xl font-black tracking-widest mt-2">MA CONSOMMATION</h1>
+        <p class="mono text-[11px] text-gray-400 mt-2">
+          Utilisateur: <span class="text-gray-200">{{USERNAME}}</span> |
+          Type: <span class="text-cyan-200">{{TYPE}}</span> |
+          Etat: <span class="text-emerald-300">{{STATUS}}</span>
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="/profil" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-[10px] mono font-bold">
+          <i class="fas fa-id-badge mr-2"></i> Profil
+        </a>
+        <a href="/mes-options" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-[10px] mono font-bold">
+          <i class="fas fa-list-check mr-2"></i> Options
+        </a>
+        <a href="{{HOME_PANEL_URL}}" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-[10px] mono font-bold">
+          <i class="fas fa-layer-group mr-2"></i> Panel
+        </a>
+      </div>
+    </header>
+
+    <main class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- audit-nav -->
+    <div data-nav-audit="subpage" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-arrow-left"></i> Retour au dashboard
+      </a>
+      <a href="/" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-house"></i> Accueil
+      </a>
+    </div>
+      <article class="glass rounded-2xl p-5">
+        <div class="mono text-[10px] uppercase tracking-widest text-gray-400">Quota total</div>
+        <div class="orbitron text-xl font-black tracking-wider mt-2">{{QUOTA_TOTAL}}</div>
+      </article>
+
+      <article class="glass rounded-2xl p-5">
+        <div class="mono text-[10px] uppercase tracking-widest text-gray-400">Consomme</div>
+        <div class="orbitron text-xl font-black tracking-wider mt-2">{{CONSUMED}}</div>
+      </article>
+
+      <article class="glass rounded-2xl p-5">
+        <div class="mono text-[10px] uppercase tracking-widest text-gray-400">Restant</div>
+        <div class="orbitron text-xl font-black tracking-wider mt-2">{{REMAINING}}</div>
+      </article>
+
+      <article class="glass rounded-2xl p-5">
+        <div class="mono text-[10px] uppercase tracking-widest text-gray-400">Expiration</div>
+        <div class="mono text-[13px] text-gray-200 mt-2">{{EXPIRATION}}</div>
+      </article>
+    </main>
+
+    <section class="mt-6 glass rounded-2xl p-5">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h2 class="orbitron text-sm md:text-base font-black tracking-wider">Progression</h2>
+        <span class="mono text-[11px] text-cyan-200">{{PROGRESS_PCT}}%</span>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-fill" style="width: {{PROGRESS_PCT}}%;"></div>
+      </div>
+      <p class="mono text-[11px] text-gray-400 mt-3">{{PROGRESS_NOTE}}</p>
+      <p class="mono text-[11px] text-gray-500 mt-2">{{TELEMETRY_NOTE}}</p>
+    </section>
+  </div>
+</body>
+</html>

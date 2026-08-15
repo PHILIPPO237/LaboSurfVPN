@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+
+
+<html lang="fr">
+
+
+<head>
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+  <meta charset="UTF-8">
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+  <title>Paiement VIP | LABORATOIRE</title>
+
+
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+
+
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+
+
+  <style>
+
+
+    :root {
+
+
+      --neon: #39ff14;
+
+
+      --dark: #050505;
+
+
+    }
+
+
+
+
+
+    body {
+
+
+      background: radial-gradient(circle at 20% 10%, rgba(57, 255, 20, 0.08), transparent 35%),
+
+
+        radial-gradient(circle at 80% 30%, rgba(0, 242, 255, 0.10), transparent 40%),
+
+
+        radial-gradient(circle at 50% 90%, rgba(255, 15, 15, 0.06), transparent 45%),
+
+
+        var(--dark);
+
+
+    }
+
+
+
+
+
+    .orbitron {
+
+
+      font-family: 'Orbitron', sans-serif;
+
+
+    }
+
+
+
+
+
+    .mono {
+
+
+      font-family: 'JetBrains Mono', monospace;
+
+
+    }
+
+
+
+
+
+    .card {
+
+
+      background: rgba(255, 255, 255, 0.05);
+
+
+      border: 1px solid rgba(255, 255, 255, 0.10);
+
+
+      backdrop-filter: blur(18px);
+
+
+      border-radius: 16px;
+
+
+      transition: all 0.3s ease;
+
+
+    }
+
+
+
+
+
+    .card:hover {
+
+
+      background: rgba(255, 255, 255, 0.08);
+
+
+      border-color: rgba(57, 255, 20, 0.3);
+
+
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.1);
+
+
+    }
+
+
+
+
+
+    .plan-btn, .provider-btn {
+
+
+      transition: all 0.3s ease;
+
+
+      border: 2px solid transparent;
+
+
+    }
+
+
+
+
+
+    .plan-btn.selected, .provider-btn.selected {
+
+
+      border-color: #39ff14;
+
+
+      background: rgba(57, 255, 20, 0.15) !important;
+
+
+    }
+
+
+
+
+
+    .provider-btn.selected {
+
+
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+
+
+    }
+
+
+
+
+
+    input {
+
+
+      background: rgba(0, 0, 0, 0.6);
+
+
+      border: 1px solid rgba(57, 255, 20, 0.2);
+
+
+      transition: all 0.3s ease;
+
+
+    }
+
+
+
+
+
+    input:focus {
+
+
+      outline: none;
+
+
+      background: rgba(0, 0, 0, 0.8);
+
+
+      border-color: rgba(57, 255, 20, 0.8);
+
+
+      box-shadow: 0 0 0 2px rgba(57, 255, 20, 0.2);
+
+
+    }
+
+
+
+
+
+    .btn-pay {
+
+
+      background: linear-gradient(135deg, #39ff14, #00f2ff);
+
+
+      color: black;
+
+
+      font-weight: 900;
+
+
+      letter-spacing: 0.1em;
+
+
+      transition: all 0.3s ease;
+
+
+    }
+
+
+
+
+
+    .btn-pay:hover {
+
+
+      transform: scale(1.05);
+
+
+      box-shadow: 0 0 30px rgba(57, 255, 20, 0.6);
+
+
+    }
+
+
+
+
+
+    .btn-pay:active {
+
+
+      transform: scale(0.98);
+
+
+    }
+
+
+
+
+
+    .summary {
+
+
+      background: rgba(57, 255, 20, 0.1);
+
+
+      border: 2px solid rgba(57, 255, 20, 0.3);
+
+
+    }
+
+
+
+
+
+    @keyframes fadeIn {
+
+
+      from {
+
+
+        opacity: 0;
+
+
+        transform: translateY(20px);
+
+
+      }
+
+
+      to {
+
+
+        opacity: 1;
+
+
+        transform: translateY(0);
+
+
+      }
+
+
+    }
+
+
+
+
+
+    .animate-in {
+
+
+      animation: fadeIn 0.6s ease-out;
+
+
+    }
+
+
+
+
+
+    .spinner {
+
+
+      display: inline-block;
+
+
+      width: 20px;
+
+
+      height: 20px;
+
+
+      border: 3px solid rgba(57, 255, 20, 0.3);
+
+
+      border-top-color: #39ff14;
+
+
+      border-radius: 50%;
+
+
+      animation: spin 0.8s linear infinite;
+
+
+    }
+
+
+
+
+
+    @keyframes spin {
+
+
+      to { transform: rotate(360deg); }
+
+
+    }
+
+
+  </style>
+
+
+  <link rel="stylesheet" href="/static/css/a11y.css">
+
+
+  <script defer src="/static/js/ui-a11y.js"></script>
+
+
+</head>
+
+
+<body class="min-h-screen p-4 md:p-8 text-white">
+
+
+    <!-- audit-nav -->
+
+
+    <div data-nav-audit="subpage" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+
+
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+
+        <i class="fas fa-arrow-left"></i> Retour au dashboard
+
+
+      </a>
+
+
+      <a href="/" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+
+        <i class="fas fa-house"></i> Accueil
+
+
+      </a>
+
+
+    </div>
+
+
+  <div class="max-w-5xl mx-auto">
+
+
+    <div class="flex flex-wrap items-center gap-3 mb-6 mono text-[11px] uppercase tracking-widest">
+
+
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+
+        <i class="fas fa-arrow-left"></i> Retour au dashboard
+
+
+      </a>
+
+
+      <a href="/" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+
+        <i class="fas fa-house"></i> Accueil
+
+
+      </a>
+
+
+    </div>
+
+
+    <!-- Header -->
+
+
+    <div class="text-center mb-12">
+
+
+      <h1 class="orbitron text-4xl md:text-5xl font-black tracking-widest uppercase mb-2 animate-in">
+
+
+        💳 Passer à VIP
+
+
+      </h1>
+
+
+      <p class="text-gray-400 mono text-sm">Choisissez votre plan et votre opérateur de paiement</p>
+
+
+    </div>
+
+
+
+
+
+    <div class="grid md:grid-cols-3 gap-8 animate-in">
+
+
+      <!-- Colonne 1: Plans -->
+
+
+      <div class="md:col-span-1">
+
+
+        <div class="card p-6 mb-6">
+
+
+          <h2 class="orbitron text-lg font-bold tracking-wider uppercase mb-4 flex items-center gap-2">
+
+
+            <i class="fas fa-cube"></i> Plans
+
+
+          </h2>
+
+
+          <div class="space-y-3">
+
+
+            <button onclick="selectPlan('VIP', 2500)" class="plan-btn w-full p-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-left transition">
+
+
+              <div class="font-bold text-green-400">🟢 VIP</div>
+
+
+              <div class="text-2xl font-black">2,500 XAF</div>
+
+
+              <div class="text-xs text-gray-400 mt-1">/mois • 5 IPs • 50GB/jour</div>
+
+
+            </button>
+
+
+
+
+
+            <button onclick="selectPlan('REVENDEUR', 10000)" class="plan-btn w-full p-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-left transition">
+
+
+              <div class="font-bold text-red-400">🔴 REVENDEUR</div>
+
+
+              <div class="text-2xl font-black">10,000 XAF</div>
+
+
+              <div class="text-xs text-gray-400 mt-1">/mois • 50 clients • Configs illim.</div>
+
+
+            </button>
+
+
+
+
+
+            <button onclick="selectPlan('PREMIUM', 25000)" class="plan-btn w-full p-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-left transition">
+
+
+              <div class="font-bold text-yellow-400">⚫ PREMIUM</div>
+
+
+              <div class="text-2xl font-black">25,000 XAF</div>
+
+
+              <div class="text-xs text-gray-400 mt-1">/mois • Tout illimité • Support 24/7</div>
+
+
+            </button>
+
+
+          </div>
+
+
+        </div>
+
+
+
+
+
+        <!-- Opérateurs -->
+
+
+        <div class="card p-6">
+
+
+          <h2 class="orbitron text-lg font-bold tracking-wider uppercase mb-4 flex items-center gap-2">
+
+
+            <i class="fas fa-mobile-alt"></i> Opérateur
+
+
+          </h2>
+
+
+          <div class="space-y-2">
+
+
+<button onclick="selectProvider('orange')" class="provider-btn w-full p-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-left transition text-sm">
+
+
+              <div class="font-bold">🟠 Orange Money</div>
+
+
+              <div class="text-xs text-gray-400">Paiement manuel</div>
+
+
+            </button>
+
+
+
+
+
+            <button onclick="selectProvider('mtn')" class="provider-btn w-full p-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-left transition text-sm">
+
+
+              <div class="font-bold">🔴 MTN MoMo</div>
+
+
+              <div class="text-xs text-gray-400">Paiement manuel</div>
+
+
+            </button>
+
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <!-- Colonne 2-3: Formulaire & Résumé -->
+
+
+      <div class="md:col-span-2">
+
+
+        <!-- Formulaire -->
+
+
+        <div class="card p-6 mb-6">
+
+
+          <h2 class="orbitron text-lg font-bold tracking-wider uppercase mb-6 flex items-center gap-2">
+
+
+            <i class="fas fa-user-circle"></i> Coordonnées
+
+
+          </h2>
+
+
+
+
+
+          <div class="mb-6">
+
+
+            <label class="block text-sm font-bold uppercase tracking-wider mb-2 text-gray-300">
+
+
+              📱 Numéro de téléphone
+
+
+            </label>
+
+
+            <input
+
+
+              type="tel"
+
+
+              id="phoneInput"
+
+
+              placeholder="+237 6XX XXX XXX"
+
+
+              value="+237 "
+
+
+              class="w-full p-3 rounded-xl mono text-sm"
+
+
+              onchange="updateSummary()"
+
+
+            />
+
+
+            <p class="text-xs text-gray-500 mt-2">Format: +237 6XX XXX XXX ou 6XX XXX XXX</p>
+
+
+          </div>
+
+
+
+
+
+          <div>
+
+
+            <label class="block text-sm font-bold uppercase tracking-wider mb-2 text-gray-300">
+
+
+              📧 Email (optionnel)
+
+
+            </label>
+
+
+            <input
+
+
+              type="email"
+
+
+              id="emailInput"
+
+
+              placeholder="votre@email.com"
+
+
+              class="w-full p-3 rounded-xl mono text-sm"
+
+
+            />
+
+
+            <p class="text-xs text-gray-500 mt-2">Pour les confirmations de paiement</p>
+
+
+          </div>
+
+
+        </div>
+
+
+
+
+
+        <!-- Résumé -->
+
+
+        <div class="summary p-6 rounded-xl border-2">
+
+
+          <h3 class="orbitron text-lg font-bold tracking-wider uppercase mb-6 flex items-center gap-2">
+
+
+            <i class="fas fa-receipt"></i> Résumé de votre commande
+
+
+          </h3>
+
+
+
+
+
+          <div class="space-y-4 mb-6 mono text-sm">
+
+
+            <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+
+
+              <span class="text-gray-400">Plan:</span>
+
+
+              <span class="font-bold text-green-400" id="planDisplay">Sélectionner un plan</span>
+
+
+            </div>
+
+
+
+
+
+            <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+
+
+              <span class="text-gray-400">Opérateur:</span>
+
+
+              <span class="font-bold text-cyan-400" id="providerDisplay">Sélectionner un opérateur</span>
+
+
+            </div>
+
+
+
+
+
+            <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+
+
+              <span class="text-gray-400">Téléphone:</span>
+
+
+              <span class="font-bold" id="phoneDisplay">-</span>
+
+
+            </div>
+
+
+
+
+
+            <div class="flex justify-between items-center text-lg pt-2">
+
+
+              <span class="font-bold">Montant total:</span>
+
+
+              <span class="orbitron text-2xl font-black text-green-400" id="amountDisplay">0 XAF</span>
+
+
+            </div>
+
+
+          </div>
+
+
+
+
+
+          <button
+
+
+            onclick="processPayment()"
+
+
+            class="btn-pay w-full p-4 rounded-xl font-bold uppercase tracking-widest transition flex items-center justify-center gap-2"
+
+
+          >
+
+
+            <span id="btnText">💰 Procéder au paiement</span>
+
+
+            <span id="btnSpinner" class="spinner hidden"></span>
+
+
+          </button>
+
+
+
+
+
+          <p class="text-xs text-gray-500 text-center mt-4 mono">
+
+
+            🔒 Paiement sécurisé | ✅ Service fiable | 📞 Support 24/7
+
+
+          </p>
+
+
+        </div>
+
+
+      </div>
+
+
+    </div>
+
+
+
+
+
+    <!-- Info -->
+
+
+    <div class="mt-12 card p-6">
+
+
+      <div class="grid md:grid-cols-3 gap-6">
+
+
+        <div class="text-center">
+
+
+          <div class="text-3xl mb-2">🔒</div>
+
+
+          <h4 class="font-bold mb-1">Sécurisé</h4>
+
+
+          <p class="text-xs text-gray-400">Les meilleures normes de sécurité</p>
+
+
+        </div>
+
+
+        <div class="text-center">
+
+
+          <div class="text-3xl mb-2">⚡</div>
+
+
+          <h4 class="font-bold mb-1">Instantané</h4>
+
+
+          <p class="text-xs text-gray-400">Activation après validation manuelle</p>
+
+
+        </div>
+
+
+        <div class="text-center">
+
+
+          <div class="text-3xl mb-2">💬</div>
+
+
+          <h4 class="font-bold mb-1">Support</h4>
+
+
+          <p class="text-xs text-gray-400">Aide disponible 24/7 via tchat</p>
+
+
+        </div>
+
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+
+
+
+  <script>
+
+
+    let selectedPlan = null;
+
+
+    let selectedProvider = null;
+
+
+    let selectedAmount = 0;
+
+
+
+
+
+    function selectPlan(plan, amount) {
+
+
+      selectedPlan = plan;
+
+
+      selectedAmount = amount;
+
+
+      
+
+
+      document.querySelectorAll('.plan-btn').forEach(btn => {
+
+
+        btn.classList.remove('selected');
+
+
+      });
+
+
+      event.target.closest('.plan-btn').classList.add('selected');
+
+
+      
+
+
+      updateSummary();
+
+
+    }
+
+
+
+
+
+    function selectProvider(provider) {
+
+
+      selectedProvider = provider;
+
+
+      
+
+
+      document.querySelectorAll('.provider-btn').forEach(btn => {
+
+
+        btn.classList.remove('selected');
+
+
+      });
+
+
+      event.target.closest('.provider-btn').classList.add('selected');
+
+
+      
+
+
+      updateSummary();
+
+
+    }
+
+
+
+
+
+    function updateSummary() {
+
+
+      // Plan
+
+
+      if (selectedPlan) {
+
+
+        document.getElementById('planDisplay').textContent = `${selectedPlan} - ${selectedAmount.toLocaleString('fr-FR')} XAF`;
+
+
+      }
+
+
+      
+
+
+      // Provider
+
+
+      if (selectedProvider) {
+
+
+        const names = {
+
+
+          'orange': '🟠 Orange Money',
+
+
+          'mtn': '🔴 MTN MoMo'
+
+
+        };
+
+
+        document.getElementById('providerDisplay').textContent = names[selectedProvider];
+
+
+      }
+
+
+      
+
+
+      // Phone
+
+
+      const phone = document.getElementById('phoneInput').value.trim();
+
+
+      document.getElementById('phoneDisplay').textContent = phone || '-';
+
+
+      
+
+
+      // Amount
+
+
+      document.getElementById('amountDisplay').textContent = selectedAmount > 0 
+
+
+        ? `${selectedAmount.toLocaleString('fr-FR')} XAF`
+
+
+        : '0 XAF';
+
+
+    }
+
+
+
+
+
+    async function processPayment() {
+
+
+      if (!selectedPlan) {
+
+
+        alert('Veuillez choisir un plan');
+
+
+        return;
+
+
+      }
+
+
+
+
+
+      if (!selectedProvider) {
+
+
+        alert('Veuillez choisir un operateur');
+
+
+        return;
+
+
+      }
+
+
+
+
+
+      const phone = document.getElementById('phoneInput').value.trim();
+
+
+      const email = document.getElementById('emailInput').value.trim();
+
+
+
+
+
+      if (!phone || phone === '+237 ') {
+
+
+        alert('Entrez votre numero de telephone');
+
+
+        return;
+
+
+      }
+
+
+
+
+
+      const btnText = document.getElementById('btnText');
+
+
+      const btnSpinner = document.getElementById('btnSpinner');
+
+
+      const btn = event.target.closest('.btn-pay');
+
+
+
+
+
+      btn.disabled = true;
+
+
+      btnText.textContent = 'Traitement...';
+
+
+      btnSpinner.classList.remove('hidden');
+
+
+
+
+
+      try {
+
+
+        const response = await fetch('/api/payment/initiate', {
+
+
+          method: 'POST',
+
+
+          headers: { 'Content-Type': 'application/json' },
+
+
+          body: JSON.stringify({
+
+
+            provider: selectedProvider,
+
+
+            plan: selectedPlan,
+
+
+            phone: phone,
+
+
+            email: email
+
+
+          })
+
+
+        });
+
+
+
+
+
+        const data = await response.json();
+
+
+
+
+
+        if (data.status === 'success' || data.status === 'ok' || data.status === 'manual') {
+
+
+          if (data.payment_url) {
+
+
+            window.location.href = data.payment_url;
+
+
+          } else {
+
+
+            if (data.instructions) {
+
+
+              alert(`Instructions de paiement:\n\n${data.instructions}`);
+
+
+            }
+
+
+            window.location.href = `/payment-status/${data.order_id}`;
+
+
+          }
+
+
+        } else {
+
+
+          alert(`Erreur: ${data.error || data.message || 'Erreur inconnue'}`);
+
+
+          btn.disabled = false;
+
+
+          btnText.textContent = 'Proceder au paiement';
+
+
+          btnSpinner.classList.add('hidden');
+
+
+        }
+
+
+      } catch (e) {
+
+
+        alert(`Erreur reseau: ${e.message}`);
+
+
+        btn.disabled = false;
+
+
+        btnText.textContent = 'Proceder au paiement';
+
+
+        btnSpinner.classList.add('hidden');
+
+
+      }
+
+
+    }
+
+
+
+
+
+    // Initialize
+
+
+    document.addEventListener('DOMContentLoaded', updateSummary);
+
+
+  </script>
+
+
+</body>
+
+
+</html>
+
+
+
+
+
+
+
+
+
+
+

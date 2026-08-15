@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "openai.chatgpt",
+        "ghutu.perplexity-ext",
+        "anthropic.claude-code",
+        "project-accelerate.codex-copilot",
+        "github.copilot-chat",
+        "woozy-masta.codex-switch"
+    ]
+}

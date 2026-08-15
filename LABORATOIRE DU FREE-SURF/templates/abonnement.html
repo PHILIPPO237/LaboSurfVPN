@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+
+
+
+<head>
+
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Abonnement | LABORATOIRE</title>
+
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+  <link rel="stylesheet" href="/static/css/command-palette.css">
+
+  <link rel="stylesheet" href="/static/css/a11y.css">
+
+  <link rel="stylesheet" href="/static/css/guide-assistant.css">
+
+  <link rel="stylesheet" href="/static/css/panel-accent.css">
+
+  <script defer src="/static/js/command-palette.js"></script>
+
+  <script defer src="/static/js/guide-assistant.js"></script>
+
+  <script defer src="/static/js/panel-accent.js"></script>
+
+  <style>
+
+    :root {
+
+      --neon: #39ff14;
+
+      --cyan: #00e8ff;
+
+      --ink: #050505;
+
+      --danger: #ff3b3b;
+
+    }
+
+
+
+    body {
+
+      background:
+
+        radial-gradient(circle at 15% 5%, rgba(57, 255, 20, 0.09), transparent 36%),
+
+        radial-gradient(circle at 82% 15%, rgba(0, 232, 255, 0.10), transparent 42%),
+
+        radial-gradient(circle at 50% 98%, rgba(255, 59, 59, 0.07), transparent 45%),
+
+        var(--ink);
+
+    }
+
+
+
+    .orbitron {
+
+      font-family: "Orbitron", sans-serif;
+
+    }
+
+
+
+    .mono {
+
+      font-family: "JetBrains Mono", monospace;
+
+    }
+
+
+
+    .glass {
+
+      background: rgba(255, 255, 255, 0.05);
+
+      border: 1px solid rgba(255, 255, 255, 0.12);
+
+      backdrop-filter: blur(14px);
+
+    }
+
+
+
+    input,
+
+    select,
+
+    textarea {
+
+      background: rgba(0, 0, 0, 0.55);
+
+      border: 1px solid rgba(255, 255, 255, 0.16);
+
+    }
+
+
+
+    input:focus,
+
+    select:focus,
+
+    textarea:focus {
+
+      outline: none;
+
+      border-color: rgba(57, 255, 20, 0.75);
+
+      box-shadow: 0 0 0 4px rgba(57, 255, 20, 0.12);
+
+    }
+
+
+
+    .menu-pill {
+
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+
+      border: 1px solid rgba(255, 255, 255, 0.12);
+
+      backdrop-filter: blur(12px);
+
+      color: #d8e5ef;
+
+      transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px rgba(0, 0, 0, 0.22);
+
+    }
+
+
+
+    .menu-pill:hover {
+
+      color: #fff;
+
+      border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.5);
+
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(var(--panel-accent-rgb, 0, 242, 255), 0.08));
+
+      transform: translateY(-1px);
+
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 22px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.14);
+
+    }
+
+
+
+    .tab-btn {
+
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+
+      border: 1px solid rgba(255, 255, 255, 0.12);
+
+      backdrop-filter: blur(12px);
+
+      color: #d8e5ef;
+
+      transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px rgba(0, 0, 0, 0.22);
+
+    }
+
+
+
+    .tab-btn:hover {
+
+      color: #fff;
+
+      border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.5);
+
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(var(--panel-accent-rgb, 0, 242, 255), 0.08));
+
+      transform: translateY(-1px);
+
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 22px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.14);
+
+    }
+
+
+
+    .tab-btn.active {
+
+      color: #eafaff;
+
+      border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.75);
+
+      background: linear-gradient(135deg, rgba(var(--panel-accent-rgb, 0, 242, 255), 0.22), rgba(255, 255, 255, 0.08));
+
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 22px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.2), 0 10px 22px rgba(0, 0, 0, 0.3);
+
+    }
+
+
+
+    .password-field {
+
+      position: relative;
+
+    }
+
+
+
+    .password-field input {
+
+      padding-right: 3rem;
+
+    }
+
+
+
+    .password-toggle {
+
+      position: absolute;
+
+      top: 50%;
+
+      right: 0.85rem;
+
+      transform: translateY(-50%);
+
+      border: 0;
+
+      background: transparent;
+
+      color: rgba(255, 255, 255, 0.6);
+
+      cursor: pointer;
+
+    }
+
+
+
+    .password-toggle:hover,
+
+    .password-toggle:focus-visible {
+
+      color: rgba(255, 255, 255, 0.95);
+
+      outline: none;
+
+    }
+
+  </style>
+
+  <script defer src="/static/js/ui-a11y.js"></script>
+
+</head>
+
+
+
+<body class="min-h-screen text-white p-5 md:p-8" data-page-guide="abonnement" data-panel-key="{{PANEL_KEY}}">
+
+  <main class="mx-auto w-full max-w-5xl">
+
+    <!-- audit-nav -->
+
+    <div data-nav-audit="subpage" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+        <i class="fas fa-arrow-left"></i> Retour au dashboard
+
+      </a>
+
+      <a href="/" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+        <i class="fas fa-house"></i> Accueil
+
+      </a>
+
+    </div>
+
+    <header class="glass rounded-3xl p-5 md:p-7 mb-6">
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+
+          <div class="flex items-center gap-2 mb-2">
+
+            <span class="w-2.5 h-2.5 rounded-full"
+
+              style="background:var(--panel-accent,#39ff14);box-shadow:0 0 12px rgba(var(--panel-accent-rgb,57,255,20),0.8);"></span>
+
+            <span class="mono text-[10px] tracking-[0.35em] uppercase text-gray-300">Support utilisateur</span>
+
+          </div>
+
+          <h1 class="orbitron text-2xl md:text-3xl font-black tracking-wider uppercase">Mise à niveau et Renouvellement
+
+          </h1>
+
+          <p class="mono text-[11px] md:text-xs text-gray-300 mt-2">Envoyez une demande en quelques secondes. Un admin
+
+            validera ensuite.</p>
+
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+
+          <a href="/inscription"
+
+            class="menu-pill px-4 py-2 rounded-xl text-[10px] mono font-bold uppercase tracking-widest">
+
+            <i class="fas fa-user-plus mr-2"></i>Inscription
+
+          </a>
+
+          <a href="/acces"
+
+            class="menu-pill px-4 py-2 rounded-xl text-[10px] mono font-bold uppercase tracking-widest">
+
+            <i class="fas fa-lock mr-2"></i>Accès
+
+          </a>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+
+    <div id="alert" class="hidden mb-5 rounded-2xl border p-4">
+
+      <div class="flex items-start gap-3">
+
+        <i id="alertIcon" class="fas fa-circle-info mt-1"></i>
+
+        <div>
+
+          <p id="alertTitle" class="mono text-[11px] font-bold uppercase tracking-widest">Info</p>
+
+          <p id="alertText" class="mono text-[12px] text-gray-100 mt-1"></p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+
+      <button onclick="location.href='/inscription?next=/panel-gratuit'"
+
+        class="glass rounded-2xl p-4 text-left border border-[#39ff14]/35 hover:border-[#39ff14] transition">
+
+        <div class="text-[#39ff14] text-sm mb-2"><i class="fas fa-user-plus"></i></div>
+
+        <div class="orbitron text-sm font-bold uppercase tracking-wide">Inscription</div>
+
+        <p class="mono text-[11px] text-gray-400 mt-1">Créer un compte gratuit.</p>
+
+      </button>
+
+
+
+      <button onclick="location.href='/compte/activer'"
+
+        class="glass rounded-2xl p-4 text-left border border-yellow-300/25 hover:border-yellow-300/60 transition">
+
+        <div class="text-yellow-300 text-sm mb-2"><i class="fas fa-key"></i></div>
+
+        <div class="orbitron text-sm font-bold uppercase tracking-wide">Activer une Clé</div>
+
+        <p class="mono text-[11px] text-gray-400 mt-1">Utiliser une clé prépayée.</p>
+
+      </button>
+
+
+
+      <button type="button" id="quickUpgrade"
+
+        class="glass rounded-2xl p-4 text-left border border-cyan-300/25 hover:border-cyan-300/60 transition">
+
+        <div class="text-cyan-300 text-sm mb-2"><i class="fas fa-arrow-trend-up"></i></div>
+
+        <div class="orbitron text-sm font-bold uppercase tracking-wide">Mise à niveau</div>
+
+        <p class="mono text-[11px] text-gray-400 mt-1">Demander VIP ou Revendeur.</p>
+
+      </button>
+
+
+
+      <button type="button" id="quickRenewal"
+
+        class="glass rounded-2xl p-4 text-left border border-[#39ff14]/25 hover:border-[#39ff14]/60 transition">
+
+        <div class="text-[#39ff14] text-sm mb-2"><i class="fas fa-repeat"></i></div>
+
+        <div class="orbitron text-sm font-bold uppercase tracking-wide">Renouvellement</div>
+
+        <p class="mono text-[11px] text-gray-400 mt-1">Prolonger un abonnement existant.</p>
+
+      </button>
+
+    </section>
+
+
+
+    <section class="glass rounded-3xl p-5 md:p-7">
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+
+        <button type="button" id="tabUpgradeBtn"
+
+          class="tab-btn active rounded-2xl px-4 py-3 border border-white/15 bg-white/5 hover:bg-white/10 transition mono text-[11px] font-bold uppercase tracking-widest">
+
+          <i class="fas fa-arrow-trend-up mr-2 text-cyan-300"></i>Mise à niveau
+
+        </button>
+
+        <button type="button" id="tabRenewalBtn"
+
+          class="tab-btn rounded-2xl px-4 py-3 border border-white/15 bg-white/5 hover:bg-white/10 transition mono text-[11px] font-bold uppercase tracking-widest">
+
+          <i class="fas fa-repeat mr-2 text-[#39ff14]"></i>Renouvellement
+
+        </button>
+
+      </div>
+
+
+
+      <form id="upgradeForm" action="/abonnement" method="POST" class="space-y-4" data-guide-id="upgrade">
+
+        <input type="hidden" name="kind" value="upgrade">
+
+        <div class="grid gap-4 md:grid-cols-2">
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Pseudo</label>
+
+            <input type="text" name="username" minlength="3" maxlength="32" required value="{{ prefill_username }}"
+
+              class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+          </div>
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Mot de passe</label>
+
+            <div class="password-field">
+
+              <input type="password" name="password" minlength="6" required placeholder="Votre mot de passe"
+
+                class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+              <button type="button" class="password-toggle" data-password-toggle aria-label="Afficher le mot de passe" aria-pressed="false">
+
+                <i class="fas fa-eye" aria-hidden="true"></i>
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </di  class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+          </div>
+
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Contact</label>
+
+            <input type="text" name="contact" minlength="3" maxlength="120" required
+
+              placeholder="WhatsApp, Telegram ou email" class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+          </div>
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Plan cible</label>
+
+            <select name="target_plan" required class="w-full rounded-2xl px-4 py-3 mono text-[12px]">
+
+              <option value="VIP">VIP</option>
+
+              <option value="PREMIUM">Premium</option>
+
+              <option value="Revendeur">Revendeur</option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+        <div>
+
+          <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Message (optionnel)</label>
+
+          <textarea name="message" maxlength="600" rows="4" placeholder="Précisez votre besoin ou urgence."
+
+            class="w-full rounded-2xl px-4 py-3 mono text-[12px]"></textarea>
+
+        </div>
+
+        <button type="submit"
+
+          class="w-full md:w-auto px-7 py-3 rounded-2xl bg-[#00e8ff] text-black orbitron text-[11px] tracking-widest font-black uppercase hover:scale-[1.01] transition shadow-[0_0_22px_rgba(0,232,255,0.35)]">
+
+          Envoyer la demande
+
+        </button>
+
+      </form>
+
+
+
+      <form id="renewalForm" action="/abonnement" method="POST" class="space-y-4 hidden" data-guide-id="renewal">
+
+        <input type="hidden" name="kind" value="renewal">
+
+        <div class="grid gap-4 md:grid-cols-2">
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Pseudo</label>
+
+            <input type="text" name="username" minlength="3" maxlength="32" required value="{{ prefill_username }}"
+
+              class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+          </div>
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Mot de passe</label>
+
+            <div class="password-field">
+
+              <input type="password" name="password" minlength="6" required placeholder="Votre mot de passe"
+
+                class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+              <button type="button" class="password-toggle" data-password-toggle aria-label="Afficher le mot de passe" aria-pressed="false">
+
+                <i class="fas fa-eye" aria-hidden="true"></i>
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Licence</label>
+
+            <input type="text" name="license" minlength="8" maxlength="80" required value="{{ prefill_license }}"
+
+              class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+          </div>
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Contact</label>
+
+            <input type="text" name="contact" minlength="3" maxlength="120" required
+
+              placeholder="WhatsApp, Telegram ou email" class="w-full rounded-2xl px-4 py-3 mono text-[12px]" />
+
+          </div>
+
+          <div>
+
+            <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Durée</label>
+
+            <select name="duration_days" required class="w-full rounded-2xl px-4 py-3 mono text-[12px]">
+
+              <option value="7">7 jours</option>
+
+              <option value="30">30 jours</option>
+
+              <option value="90">90 jours</option>
+
+              <option value="365">365 jours</option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+        <div>
+
+          <label class="block mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Message (optionnel)</label>
+
+          <textarea name="message" maxlength="600" rows="4"
+
+            placeholder="Ajoutez une précision utile pour le renouvellement."
+
+            class="w-full rounded-2xl px-4 py-3 mono text-[12px]"></textarea>
+
+        </div>
+
+        <button type="submit"
+
+          class="w-full md:w-auto px-7 py-3 rounded-2xl bg-[#39ff14] text-black orbitron text-[11px] tracking-widest font-black uppercase hover:scale-[1.01] transition shadow-[0_0_22px_rgba(57,255,20,0.35)]">
+
+          Envoyer la demande
+
+        </button>
+
+      </form>
+
+    </section>
+
+  </main>
+
+
+
+  <script>
+
+    (function () {
+
+      const qs = new URLSearchParams(window.location.search);
+
+      const tab = (qs.get("tab") || "upgrade").trim().toLowerCase();
+
+      const err = (qs.get("err") || "").trim().toLowerCase();
+
+      const ok = (qs.get("ok") || "").trim();
+
+
+
+      const upgradeBtn = document.getElementById("tabUpgradeBtn");
+
+      const renewalBtn = document.getElementById("tabRenewalBtn");
+
+      const upgradeForm = document.getElementById("upgradeForm");
+
+      const renewalForm = document.getElementById("renewalForm");
+
+      const quickUpgrade = document.getElementById("quickUpgrade");
+
+      const quickRenewal = document.getElementById("quickRenewal");
+
+
+
+      function setTab(name) {
+
+        const isUpgrade = name !== "renewal";
+
+        if (upgradeForm) upgradeForm.classList.toggle("hidden", !isUpgrade);
+
+        if (renewalForm) renewalForm.classList.toggle("hidden", isUpgrade);
+
+        if (upgradeBtn) upgradeBtn.classList.toggle("active", isUpgrade);
+
+        if (renewalBtn) renewalBtn.classList.toggle("active", !isUpgrade);
+
+      }
+
+
+
+      if (upgradeBtn) {
+
+        upgradeBtn.addEventListener("click", function () {
+
+          setTab("upgrade");
+
+        });
+
+      }
+
+      if (renewalBtn) {
+
+        renewalBtn.addEventListener("click", function () {
+
+          setTab("renewal");
+
+        });
+
+      }
+
+
+
+      if (quickUpgrade) {
+
+        quickUpgrade.addEventListener("click", function () {
+
+          setTab("upgrade");
+
+          upgradeForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        });
+
+      }
+
+      if (quickRenewal) {
+
+        quickRenewal.addEventListener("click", function () {
+
+          setTab("renewal");
+
+          renewalForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        });
+
+      }
+
+
+
+      setTab(tab === "renewal" ? "renewal" : "upgrade");
+
+
+
+      const alertBox = document.getElementById("alert");
+
+      const alertTitle = document.getElementById("alertTitle");
+
+      const alertText = document.getElementById("alertText");
+
+      const alertIcon = document.getElementById("alertIcon");
+
+
+
+      document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+
+        const field = button.closest(".password-field");
+
+        const input = field ? field.querySelector("input") : null;
+
+        const icon = button.querySelector("i");
+
+        if (!input || !icon) return;
+
+        button.addEventListener("click", function () {
+
+          const isHidden = input.type === "password";
+
+          input.type = isHidden ? "text" : "password";
+
+          button.setAttribute("aria-pressed", isHidden ? "true" : "false");
+
+          button.setAttribute("aria-label", isHidden ? "Masquer le champ" : "Afficher le champ");
+
+          icon.className = isHidden ? "fas fa-eye-slash" : "fas fa-eye";
+
+        });
+
+      });
+
+
+
+      function showAlert(kind, title, text) {
+
+        if (!alertBox) return;
+
+        alertBox.classList.remove("hidden");
+
+        alertBox.classList.remove("border-red-500/40", "bg-red-500/10", "border-cyan-400/40", "bg-cyan-400/10", "border-green-500/40", "bg-green-500/10");
+
+        if (kind === "danger") {
+
+          alertBox.classList.add("border-red-500/40", "bg-red-500/10");
+
+          if (alertIcon) alertIcon.className = "fas fa-triangle-exclamation mt-1 text-red-300";
+
+        } else if (kind === "success") {
+
+          alertBox.classList.add("border-green-500/40", "bg-green-500/10");
+
+          if (alertIcon) alertIcon.className = "fas fa-circle-check mt-1 text-green-300";
+
+        } else {
+
+          alertBox.classList.add("border-cyan-400/40", "bg-cyan-400/10");
+
+          if (alertIcon) alertIcon.className = "fas fa-circle-info mt-1 text-cyan-300";
+
+        }
+
+        if (alertTitle) alertTitle.textContent = title;
+
+        if (alertText) alertText.textContent = text;
+
+      }
+
+
+
+      if (ok === "1") {
+
+        showAlert("success", "Demande envoyée", "Votre demande a été enregistrée et attend une validation admin.");
+
+      } else if (err) {
+
+        if (err === "bad_kind") {
+
+          showAlert("danger", "Type invalide", "Le type de demande est invalide.");
+
+        } else if (err === "bad_username") {
+
+          showAlert("danger", "Pseudo invalide", "Le pseudo doit faire entre 3 et 32 caractères.");
+
+        } else if (err === "bad_password") {
+
+          showAlert("danger", "Mot de passe invalide", "Le mot de passe saisi est incorrect.");
+
+        } else if (err === "bad_contact") {
+
+          showAlert("danger", "Contact invalide", "Le champ contact est obligatoire et invalide.");
+
+        } else if (err === "message_too_long") {
+
+          showAlert("danger", "Message trop long", "Le message ne doit pas dépasser 600 caractères.");
+
+        } else if (err === "bad_plan") {
+
+          showAlert("danger", "Plan invalide", "Choisissez VIP ou Revendeur.");
+
+        } else if (err === "bad_license") {
+
+          showAlert("danger", "Licence invalide", "La licence doit correspondre au compte a renouveler.");
+
+        } else if (err === "bad_duration") {
+
+          showAlert("danger", "Durée invalide", "Choisissez une durée valide de renouvellement.");
+
+        } else {
+
+          showAlert("danger", "Erreur", "La demande n'a pas pu être enregistrée.");
+
+        }
+
+      } else {
+
+        showAlert("info", "Formulaire prêt", "Remplissez le formulaire puis envoyez votre demande.");
+
+      }
+
+    })();
+
+  </script>
+
+</body>
+
+
+
+</html>
+
+
+

@@ -1,0 +1,425 @@
+{# ================================================================
+   ANDROID TEMPLATE COMPONENTS & SNIPPETS
+   Copy-paste ready Jinja2 templates for mobile-optimized layouts
+   ================================================================ #}
+
+{# ============= HEADER WITH THEME SELECTOR ============= #}
+{% macro android_header() %}
+<header class="motion-page">
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+      <h1 class="orbitron" style="font-size: 1.5rem; margin: 0;">{{ _('Labo Free-Surf') }}</h1>
+      
+      <div class="theme-selector">
+        <input type="radio" name="theme" value="dark" class="theme-option theme-dark" 
+               onchange="setTheme('dark')" checked title="{{ _('Dark') }}">
+        <input type="radio" name="theme" value="light" class="theme-option theme-light" 
+               onchange="setTheme('light')" title="{{ _('Light') }}">
+        <input type="radio" name="theme" value="blue" class="theme-option theme-blue" 
+               onchange="setTheme('blue')" title="{{ _('Blue') }}">
+        <input type="radio" name="theme" value="purple" class="theme-option theme-purple" 
+               onchange="setTheme('purple')" title="{{ _('Purple') }}">
+      </div>
+    </div>
+  </div>
+</header>
+{% endmacro %}
+
+{# ============= CARD GRID WITH ANIMATIONS ============= #}
+{% macro android_card_grid(items, title) %}
+<section class="container motion-page">
+  <h2 class="subtitle-fx">{{ title }}</h2>
+  
+  <div class="grid motion-stagger">
+    {% for item in items %}
+    <div class="panel-card">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        {% if item.icon %}
+        <div class="panel-icon" style="margin: 0;">
+          {{ item.icon }}
+        </div>
+        {% endif %}
+        <h3 style="margin: 0;">{{ item.title }}</h3>
+      </div>
+      
+      <p style="margin-bottom: 16px; color: var(--color-text-secondary);">
+        {{ item.description }}
+      </p>
+      
+      {% if item.action %}
+      <button class="btn btn-primary" onclick="navigate('{{ item.action }}')">
+        {{ _('View') }} →
+      </button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endmacro %}
+
+{# ============= FORM WITH ANDROID INPUTS ============= #}
+{% macro android_form(fields, title, submit_text) %}
+<section class="container motion-enter">
+  <h2>{{ title }}</h2>
+  
+  <form class="motion-stagger" style="display: flex; flex-direction: column; gap: 16px;">
+    {% for field in fields %}
+    <div style="display: flex; flex-direction: column;">
+      <label for="{{ field.id }}" style="margin-bottom: 6px; font-weight: 600;">
+        {{ field.label }}
+      </label>
+      
+      {% if field.type == 'text' or field.type == 'email' %}
+      <input 
+        type="{{ field.type }}"
+        id="{{ field.id }}"
+        name="{{ field.name }}"
+        class="field"
+        placeholder="{{ field.placeholder or '' }}"
+        {% if field.required %}required{% endif %}
+        minlength="{{ field.minlength or 1 }}"
+        maxlength="{{ field.maxlength or 255 }}">
+      
+      {% elif field.type == 'select' %}
+      <select id="{{ field.id }}" name="{{ field.name }}" class="field" 
+              {% if field.required %}required{% endif %}>
+        <option value="">{{ _('Select...') }}</option>
+        {% for option in field.options %}
+        <option value="{{ option.value }}">{{ option.label }}</option>
+        {% endfor %}
+      </select>
+      
+      {% elif field.type == 'textarea' %}
+      <textarea 
+        id="{{ field.id }}"
+        name="{{ field.name }}"
+        class="field"
+        placeholder="{{ field.placeholder or '' }}"
+        rows="4"
+        {% if field.required %}required{% endif %}>
+      </textarea>
+      
+      {% elif field.type == 'checkbox' %}
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" name="{{ field.name }}" value="1" 
+               {% if field.checked %}checked{% endif %}>
+        <span>{{ field.label }}</span>
+      </label>
+      {% endif %}
+      
+      {% if field.help %}
+      <small style="color: var(--color-text-hint); margin-top: 4px;">
+        {{ field.help }}
+      </small>
+      {% endif %}
+    </div>
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary" style="margin-top: 12px;">
+      {{ submit_text or _('Submit') }}
+    </button>
+  </form>
+</section>
+{% endmacro %}
+
+{# ============= BOTTOM SHEET MODAL ============= #}
+{% macro android_bottom_sheet(id, title, content) %}
+<dialog id="{{ id }}" style="border-radius: 20px 20px 0 0; bottom: 0; left: 0; right: 0; width: 100%;">
+  <div style="position: relative; padding: 24px;">
+    <!-- Handle bar -->
+    <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; margin: 0 auto 16px;"></div>
+    
+    <h2 style="margin-top: 0;">{{ title }}</h2>
+    
+    <div class="motion-enter">
+      {{ content }}
+    </div>
+    
+    <button onclick="document.getElementById('{{ id }}').close()" 
+            class="btn" 
+            style="width: 100%; margin-top: 16px;">
+      {{ _('Close') }}
+    </button>
+  </div>
+</dialog>
+
+<script>
+  function show{{ id | capitalize }}() {
+    document.getElementById('{{ id }}').showModal();
+  }
+</script>
+{% endmacro %}
+
+{# ============= STATS CARDS ROW ============= #}
+{% macro android_stats(stats) %}
+<section class="container motion-stagger" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 20px 0;">
+  {% for stat in stats %}
+  <div class="panel-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: bold; color: var(--color-primary); margin-bottom: 8px;">
+      {{ stat.value }}
+    </div>
+    <div style="font-size: 12px; color: var(--color-text-secondary);">
+      {{ stat.label }}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endmacro %}
+
+{# ============= LOADING SKELETON ============= #}
+{% macro android_skeleton(count) %}
+<div class="motion-stagger">
+  {% for i in range(count) %}
+  <div class="panel-card" style="
+    background: linear-gradient(90deg, 
+      var(--color-surface-variant) 0%, 
+      var(--color-surface) 50%, 
+      var(--color-surface-variant) 100%);
+    background-size: 200% 100%;
+    animation: shimmer-loading 2s infinite;
+    min-height: 80px;
+  "></div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{# ============= TAB NAVIGATION ============= #}
+{% macro android_tabs(tabs, active_tab) %}
+<nav class="sticky-top" style="background: var(--color-bg-primary); border-bottom: 1px solid var(--color-border); display: flex; gap: 8px; padding: 8px; overflow-x: auto;">
+  {% for tab in tabs %}
+  <button 
+    class="tab-btn {% if tab.id == active_tab %}is-active{% endif %}"
+    onclick="switchTab('{{ tab.id }}')"
+    style="
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+      background: {% if tab.id == active_tab %}linear-gradient(135deg, var(--color-primary), var(--color-secondary)){% else %}var(--color-surface){% endif %};
+      color: {% if tab.id == active_tab %}#000{% else %}var(--color-text-secondary){% endif %};
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    ">
+    {{ tab.label }}
+  </button>
+  {% endfor %}
+</nav>
+
+<script>
+  function switchTab(tabId) {
+    // Hide all tabs
+    document.querySelectorAll('[data-tab-content]').forEach(el => {
+      el.style.display = 'none';
+    });
+    
+    // Show selected tab
+    document.querySelector(`[data-tab-content="${tabId}"]`).style.display = 'block';
+    
+    // Update buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('is-active');
+    });
+    document.querySelector(`[onclick*="${tabId}"]`).classList.add('is-active');
+  }
+</script>
+{% endmacro %}
+
+{# ============= LIST WITH SWIPE ACTIONS ============= #}
+{% macro android_list_item(item, actions) %}
+<div class="panel-card motion-enter" style="
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+">
+  <div style="flex: 1;">
+    <h4 style="margin: 0 0 4px 0;">{{ item.title }}</h4>
+    <p style="margin: 0; font-size: 12px; color: var(--color-text-secondary);">
+      {{ item.subtitle }}
+    </p>
+  </div>
+  
+  <div style="display: flex; gap: 8px;">
+    {% for action in actions %}
+    <button 
+      class="btn" 
+      onclick="handleAction('{{ action.id }}')"
+      title="{{ action.label }}"
+      style="padding: 8px 12px; min-width: auto;">
+      {{ action.icon }}
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
+
+{# ============= FLOATING ACTION BUTTON ============= #}
+{% macro android_fab(label, icon, action) %}
+<button 
+  id="fab-main"
+  class="fab motion-enter"
+  onclick="{{ action }}"
+  style="
+    position: fixed;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    right: max(16px, env(safe-area-inset-right));
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: #000;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    z-index: 50;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  "
+  title="{{ label }}"
+>
+  {{ icon }}
+</button>
+
+<script>
+  // Hide FAB on scroll down
+  let lastScrollTop = 0;
+  const fab = document.getElementById('fab-main');
+  
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (scrollTop > lastScrollTop && scrollTop > 300) {
+      fab.style.transform = 'translateY(100px)';
+      fab.style.opacity = '0';
+      fab.style.pointerEvents = 'none';
+    } else {
+      fab.style.transform = 'translateY(0)';
+      fab.style.opacity = '1';
+      fab.style.pointerEvents = 'auto';
+    }
+    
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+  });
+</script>
+{% endmacro %}
+
+{# ============= PROGRESS BAR ============= #}
+{% macro android_progress(value, max, label) %}
+<div style="margin: 20px 0;">
+  {% if label %}
+  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+    <label>{{ label }}</label>
+    <span style="font-weight: 600; color: var(--color-primary);">{{ value }}/{{ max }}</span>
+  </div>
+  {% endif %}
+  
+  <div style="
+    height: 6px;
+    background: var(--color-surface);
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  ">
+    <div style="
+      height: 100%;
+      width: {{ (value / max * 100) | int }}%;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+      border-radius: 3px;
+      box-shadow: 0 0 12px var(--color-primary);
+      transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      animation: flow-gradient 3s linear infinite;
+      background-size: 200% 100%;
+    "></div>
+  </div>
+</div>
+
+<style>
+  @keyframes flow-gradient {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+  }
+</style>
+{% endmacro %}
+
+{# ============= ALERT / TOAST MESSAGE ============= #}
+{% macro android_alert(message, type, duration) %}
+<div 
+  class="motion-enter"
+  style="
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: max(20px, env(safe-area-inset-left));
+    right: max(20px, env(safe-area-inset-right));
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: {% if type == 'error' %}rgba(239, 68, 68, 0.9){% elif type == 'success' %}rgba(34, 197, 94, 0.9){% elif type == 'warning' %}rgba(245, 158, 11, 0.9){% else %}rgba(59, 130, 246, 0.9){% endif %};
+    color: white;
+    font-weight: 600;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    animation: slide-up 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  "
+  id="alert-toast"
+>
+  {{ message }}
+</div>
+
+<script>
+  {% if duration %}
+  setTimeout(() => {
+    document.getElementById('alert-toast').style.animation = 'slide-down 300ms cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => document.getElementById('alert-toast').remove(), 300);
+  }, {{ duration }});
+  {% endif %}
+  
+  @keyframes slide-up {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes slide-down {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(100px); opacity: 0; }
+  }
+</script>
+{% endmacro %}
+
+{# ============= USAGE EXAMPLES ============= #}
+
+{# Dans votre template:
+
+{{ android_header() }}
+
+{{ android_card_grid([
+  {'title': 'Scanner', 'description': 'Analyse rapide', 'icon': '📡', 'action': '/scanner'},
+  {'title': 'Dashboard', 'description': 'Vue d\'ensemble', 'icon': '📊', 'action': '/dashboard'},
+], 'Services') }}
+
+{{ android_form([
+  {'id': 'name', 'name': 'name', 'label': 'Nom', 'type': 'text', 'required': true},
+  {'id': 'email', 'name': 'email', 'label': 'Email', 'type': 'email', 'required': true},
+], 'Inscription', 'S\'inscrire') }}
+
+{{ android_stats([
+  {'value': 42, 'label': 'Scans'},
+  {'value': 156, 'label': 'IPs'},
+  {'value': 89, 'label': 'Hits'},
+]) }}
+
+{{ android_fab('Aide', '❓', 'openHelp()') }}
+
+{{ android_progress(75, 100, 'Progression du scan') }}
+
+{{ android_alert('Scan réussi!', 'success', 3000) }}
+
+#}

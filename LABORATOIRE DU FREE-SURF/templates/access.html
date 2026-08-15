@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connexion | LABORATOIRE DU FREE-SURF</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/tailwind-build.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/fonts/fonts.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/theme.css') }}">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    h1, h2, .orbitron { font-family: 'Orbitron', sans-serif; }
+
+    body {
+      background-color: var(--color-bg-primary, #05080a);
+      background-image:
+        radial-gradient(at 0% 0%, rgba(57, 255, 20, 0.10) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(0, 242, 255, 0.10) 0px, transparent 50%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      animation: pageEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes pageEnter {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body { animation: none; }
+    }
+
+    /* Logo : lueur pulsante douce dans le vert néon de la marque */
+    .logo-glow {
+      filter: drop-shadow(0 0 10px rgba(57, 255, 20, 0.55));
+      animation: pulse-glow 3s infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.4)); }
+      50% { filter: drop-shadow(0 0 16px rgba(57, 255, 20, 0.7)); }
+    }
+
+    .custom-input {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .custom-input:focus {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: #39ff14;
+      box-shadow: 0 0 0 4px rgba(57, 255, 20, 0.15);
+      outline: none;
+    }
+
+    /* Bouton d'accès : dégradé vert -> cyan, cohérent avec l'identité du site */
+    .btn-access {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #39ff14, #00c8d4);
+      color: #04110a;
+    }
+    .btn-access:hover { filter: brightness(1.08); }
+    .btn-access::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.35), transparent);
+      transform: rotate(45deg);
+      transition: 0.6s;
+    }
+    .btn-access:hover::after { left: 120%; }
+
+    .alert-premium {
+      border-left: 4px solid #ff4f4f;
+      background: rgba(255, 79, 79, 0.06);
+    }
+    .alert-premium.alert-info {
+      border-left-color: #00f2ff;
+      background: rgba(0, 242, 255, 0.06);
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div class="w-full max-w-[440px] z-10">
+
+    <div class="text-center mb-8">
+      <div class="logo-glow inline-flex items-center justify-center w-16 h-16 bg-[#39ff14]/10 rounded-2xl border border-[#39ff14]/30 mb-4 p-4">
+        <i class="fas fa-shield-halved text-3xl text-[#39ff14]"></i>
+      </div>
+      <h2 class="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#39ff14] to-[#00f2ff]">
+        LABORATOIRE 🚀
+      </h2>
+    </div>
+
+    <div class="flex gap-2 justify-center mb-6">
+      <a href="/" class="text-xs font-medium px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-gray-300 flex items-center gap-2">
+        <i class="fas fa-house"></i> Accueil
+      </a>
+      <a href="/inscription" class="text-xs font-medium px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-gray-300 flex items-center gap-2">
+        <i class="fas fa-user-plus"></i> Inscription
+      </a>
+    </div>
+
+    <div class="glass-shine rounded-3xl p-8">
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-white">Content de te revoir 👋</h1>
+        <p class="text-sm text-gray-400 mt-1">Connecte-toi pour retrouver ton espace.</p>
+      </div>
+
+      <div id="alert" class="alert-premium p-4 rounded-xl mb-6 hidden">
+        <div class="flex gap-3">
+          <i class="fas fa-circle-exclamation text-red-400 mt-1"></i>
+          <div>
+            <p id="alertTitle" class="text-sm font-bold text-red-400"></p>
+            <p id="alertText" class="text-xs text-gray-300 mt-0.5"></p>
+          </div>
+        </div>
+      </div>
+
+      <form action="/acces" method="POST" class="space-y-5">
+        <input type="hidden" name="next" id="next">
+        <input type="hidden" name="need" id="need">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">👤 Identifiant</label>
+          <div class="relative">
+            <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+            <input type="text" name="username" required class="custom-input w-full pl-11 pr-4 py-3.5 rounded-xl text-sm" placeholder="Nom d'utilisateur">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">🔒 Mot de passe</label>
+          <div class="relative">
+            <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+            <input id="password" type="password" name="password" required class="custom-input w-full pl-11 pr-12 py-3.5 rounded-xl text-sm" placeholder="••••••••">
+            <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#39ff14]">
+              <i id="toggleIcon" class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-access w-full py-4 rounded-xl font-bold text-sm shadow-lg shadow-[#39ff14]/10 flex items-center justify-center gap-2">
+          Accéder au Labo <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+      </form>
+
+      <div class="mt-8 pt-6 border-t border-white/5 flex flex-col gap-3">
+        <a href="/acces/mot-de-passe-oublie" class="text-xs text-gray-500 hover:text-[#39ff14] text-center">
+          🔑 J'ai oublié mes accès
+        </a>
+      </div>
+    </div>
+
+    <p class="text-center text-[10px] text-gray-600 mt-8 uppercase tracking-[2px]">
+      &copy; 2026 Laboratoire du Free-Surf - Système Sécurisé 🔐
+    </p>
+  </div>
+
+  <script>
+    (function () {
+      const qs = new URLSearchParams(window.location.search);
+      const err = qs.get('err');
+      const alertBox = document.getElementById('alert');
+      const alertTitle = document.getElementById('alertTitle');
+      const alertText = document.getElementById('alertText');
+
+      if (err) {
+        alertBox.classList.remove('hidden');
+        const need = qs.get('need') || '';
+        if (err === 'account_locked') {
+          alertTitle.textContent = "Compte temporairement verrouillé 🔒";
+          alertText.textContent = "Trop de tentatives incorrectes. Réessayez dans 15 minutes, ou récupérez votre accès ci-dessous.";
+        } else if (err === 'forbidden' && need === 'panel.premium.view') {
+          alertBox.classList.add('alert-info');
+          alertTitle.textContent = "Le Panel VIP t'attend 👑";
+          alertText.innerHTML = "Ton compte actuel ne donne pas encore accès à cet espace. Avec le VIP : accès illimité dans le temps, plus de serveurs, aucune limite d'essai. <a href=\"/abonnement\" style=\"color:#00f2ff;text-decoration:underline;\">Voir comment passer VIP →</a>";
+        } else if (err === 'forbidden' && need === 'panel.reseller.view') {
+          alertBox.classList.add('alert-info');
+          alertTitle.textContent = "Espace Revendeur réservé 💼";
+          alertText.innerHTML = "Cet espace est réservé aux comptes Revendeur, qui peuvent gérer leurs propres clients et fixer leurs tarifs. Contacte l'équipe si tu veux en savoir plus.";
+        } else if (err === 'forbidden') {
+          alertTitle.textContent = "Accès non autorisé";
+          alertText.textContent = "Ton compte actuel ne permet pas d'accéder à cette section.";
+        } else if (err === 'blocked') {
+          alertTitle.textContent = "Compte suspendu";
+          alertText.textContent = "Ton compte est actuellement suspendu. Contacte le support pour plus d'informations.";
+        } else if (err === 'expired') {
+          alertBox.classList.add('alert-info');
+          alertTitle.textContent = "Abonnement expiré ⏳";
+          alertText.innerHTML = "Ton abonnement est arrivé à échéance. <a href=\"/abonnement\" style=\"color:#00f2ff;text-decoration:underline;\">Renouveler maintenant →</a>";
+        } else {
+          alertTitle.textContent = "Erreur d'accès";
+          alertText.textContent = "Vos identifiants semblent incorrects ou votre session a expiré.";
+        }
+      }
+
+      const pass = document.getElementById('password');
+      const btn = document.getElementById('togglePassword');
+      const icon = document.getElementById('toggleIcon');
+
+      btn.addEventListener('click', () => {
+        const isPass = pass.type === 'password';
+        pass.type = isPass ? 'text' : 'password';
+        icon.className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+      });
+    })();
+  </script>
+  <script defer src="{{ url_for('static', path='/js/page-transitions.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,846 @@
+/* ================================================================
+   ANDROID MOBILE OPTIMIZATION LAYER
+   Animations fluides, thème adapté, responsive design
+   ================================================================ */
+
+:root {
+  /* Safe area pour encoche (notch) */
+  --safe-area-inset-top: safe-area-inset-top;
+  --safe-area-inset-bottom: safe-area-inset-bottom;
+  --safe-area-inset-left: safe-area-inset-left;
+  --safe-area-inset-right: safe-area-inset-right;
+
+  /* Mobile motion curves */
+  --motion-android-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-android-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-android-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --motion-android-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Motion timings for Android (Google Material Design 3) */
+  --animation-short: 150ms;
+  --animation-medium: 250ms;
+  --animation-long: 380ms;
+  --animation-extra-long: 500ms;
+
+  /* Touch feedback */
+  --touch-ripple-size: 48px;
+  --touch-ripple-opacity: 0.08;
+  --touch-ripple-duration: 200ms;
+}
+
+/* ================================================================
+   VIEWPORT & LAYOUT FIXES FOR ANDROID
+   ================================================================ */
+
+html {
+  /* Prevent zoom on input focus */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+
+  /* Viewport fit for notches */
+  viewport-fit: cover;
+}
+
+body {
+  /* Remove margin bounce on scroll */
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+
+  /* Optimize rendering performance */
+  -webkit-font-smoothing: antialiased;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+
+  /* Safe padding for notches */
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* ================================================================
+   TYPOGRAPHY FOR ANDROID DEVICES
+   ================================================================ */
+
+@media (max-width: 768px) {
+  html {
+    /* Base font size for Android devices */
+    font-size: 14px;
+  }
+
+  body {
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol";
+    letter-spacing: 0.01em;
+  }
+
+  .orbitron {
+    font-family: "Orbitron", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+
+    /* Reduce animation on mobile for Orbitron */
+    text-shadow: 0 0 8px rgba(57, 255, 20, 0.15);
+  }
+
+  .mono,
+  code,
+  pre {
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 0.9em;
+    letter-spacing: 0.02em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.8em;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  p {
+    margin-bottom: 1em;
+  }
+}
+
+/* ================================================================
+   TOUCH TARGETS & INTERACTIVE ELEMENTS
+   ================================================================ */
+
+@media (max-width: 768px) {
+  /* Ensure touch targets are at least 48x48 (Android standard) */
+  button,
+  a[role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  .btn,
+  .labo-btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 16px;
+    border-radius: 12px;
+
+    /* Disable tap highlight */
+    -webkit-tap-highlight-color: transparent;
+
+    /* Faster touch response */
+    touch-action: manipulation;
+
+    /* Smooth transition for touch events */
+    transition: all var(--animation-short) var(--motion-android-smooth);
+  }
+
+  /* Input fields should be tappable */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  .field,
+  .search-field {
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 12px;
+
+    /* Prevent zoom on input focus on iOS */
+    font-size: 16px;
+
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+
+    transition: border-color var(--animation-short) var(--motion-android-smooth),
+      box-shadow var(--animation-short) var(--motion-android-smooth),
+      background-color var(--animation-short) var(--motion-android-smooth);
+  }
+
+  /* Link targets */
+  a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* ================================================================
+   RIPPLE EFFECT (Material Design 3 for Android)
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .btn::before,
+  button::before,
+  a[role="button"]::before {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: var(--touch-ripple-size);
+    height: var(--touch-ripple-size);
+    background: radial-gradient(
+      circle,
+      rgba(255, 255, 255, var(--touch-ripple-opacity)) 0%,
+      transparent 70%
+    );
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+    transition: transform var(--touch-ripple-duration)
+      var(--motion-android-decelerate);
+    opacity: 0;
+  }
+
+  .btn:active::before,
+  button:active::before,
+  a[role="button"]:active::before {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ================================================================
+   SMOOTH ANIMATIONS FOR MOBILE
+   ================================================================ */
+
+/* Page transitions */
+@keyframes page-slide-in-mobile {
+  from {
+    opacity: 0;
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes page-slide-out-mobile {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+/* Fade in with scale */
+@keyframes mobile-fade-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+/* Bounce up */
+@keyframes mobile-bounce-up {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+/* Shimmer loading */
+@keyframes shimmer-loading {
+  0% {
+    background-position: -480px 0;
+  }
+  100% {
+    background-position: 480px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .motion-page {
+    animation: page-slide-in-mobile var(--animation-medium)
+      var(--motion-android-decelerate) both;
+  }
+
+  .motion-enter {
+    animation: mobile-fade-scale-in var(--animation-medium)
+      var(--motion-android-smooth) both;
+  }
+
+  .motion-stagger > * {
+    opacity: 0;
+    animation: mobile-fade-scale-in var(--animation-medium)
+      var(--motion-android-smooth) both;
+  }
+
+  .motion-stagger > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .motion-stagger > *:nth-child(2) {
+    animation-delay: 30ms;
+  }
+  .motion-stagger > *:nth-child(3) {
+    animation-delay: 60ms;
+  }
+  .motion-stagger > *:nth-child(4) {
+    animation-delay: 90ms;
+  }
+  .motion-stagger > *:nth-child(5) {
+    animation-delay: 120ms;
+  }
+  .motion-stagger > *:nth-child(6) {
+    animation-delay: 150ms;
+  }
+}
+
+/* ================================================================
+   CARD & PANEL ANIMATIONS FOR ANDROID
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .panel-card,
+  .enhanced-panel,
+  .glass {
+    animation: mobile-fade-scale-in var(--animation-long)
+      var(--motion-android-smooth) both;
+
+    /* Reduced hover effects on mobile */
+    transition: transform var(--animation-short)
+        var(--motion-android-smooth),
+      box-shadow var(--animation-short) var(--motion-android-smooth),
+      border-color var(--animation-short) var(--motion-android-smooth);
+  }
+
+  /* Only apply hover styles on devices with hover capability */
+  @media (hover: hover) {
+    .panel-card:hover,
+    .enhanced-panel:hover,
+    .glass:hover {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* For touch devices, use active state instead */
+  @media (pointer: coarse) {
+    .panel-card:active,
+    .enhanced-panel:active,
+    .glass:active {
+      transform: scale(0.98);
+      opacity: 0.95;
+    }
+  }
+}
+
+/* ================================================================
+   BOTTOM SHEET & MODALS FOR MOBILE
+   ================================================================ */
+
+@keyframes bottom-sheet-slide-up {
+  from {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes bottom-sheet-slide-down {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  dialog,
+  .modal,
+  [role="dialog"] {
+    animation: bottom-sheet-slide-up var(--animation-medium)
+      var(--motion-android-decelerate) both;
+    border-radius: 20px 20px 0 0;
+    max-width: 100vw;
+    width: 100%;
+    margin: auto;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  dialog::backdrop,
+  .modal-backdrop,
+  [role="dialog"]::backdrop {
+    animation: fade-in var(--animation-short) var(--motion-android-smooth);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* ================================================================
+   FAST / SMOOTH LIST ANIMATIONS
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .list-item,
+  li,
+  tr {
+    animation: mobile-fade-scale-in var(--animation-medium)
+      var(--motion-android-smooth) both;
+  }
+
+  /* Staggered list animation */
+  ul,
+  ol,
+  table tbody {
+    --stagger-index: 0;
+  }
+
+  ul > li,
+  ol > li,
+  table tbody > tr {
+    animation-delay: calc(var(--stagger-index, 0) * 30ms);
+  }
+
+  ul > li:nth-child(1),
+  ol > li:nth-child(1),
+  table tbody > tr:nth-child(1) {
+    --stagger-index: 0;
+  }
+  ul > li:nth-child(2),
+  ol > li:nth-child(2),
+  table tbody > tr:nth-child(2) {
+    --stagger-index: 1;
+  }
+  ul > li:nth-child(3),
+  ol > li:nth-child(3),
+  table tbody > tr:nth-child(3) {
+    --stagger-index: 2;
+  }
+  ul > li:nth-child(4),
+  ol > li:nth-child(4),
+  table tbody > tr:nth-child(4) {
+    --stagger-index: 3;
+  }
+  ul > li:nth-child(5),
+  ol > li:nth-child(5),
+  table tbody > tr:nth-child(5) {
+    --stagger-index: 4;
+  }
+}
+
+/* ================================================================
+   NAVIGATION BAR FOR ANDROID
+   ================================================================ */
+
+@media (max-width: 768px) {
+  nav,
+  .navbar,
+  .navigation,
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: max(8px, env(safe-area-inset-top)) 8px 8px 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    /* Reduce shadow on mobile */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Tab styling */
+  .tab-btn,
+  [role="tab"],
+  .menu-pill {
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 8px;
+
+    transition: all var(--animation-short) var(--motion-android-smooth);
+
+    /* Touch feedback */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tab-btn:active,
+  [role="tab"]:active,
+  .menu-pill:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+  }
+}
+
+/* ================================================================
+   FAB (FLOATING ACTION BUTTON)
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .fab,
+  #ga-float-btn,
+  .cmdk-fab {
+    position: fixed;
+    min-width: 56px;
+    min-height: 56px;
+    border-radius: 50%;
+
+    /* Safe area padding */
+    bottom: max(16px, env(safe-area-inset-bottom));
+    right: max(16px, env(safe-area-inset-right));
+
+    /* Reduce elevation */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    z-index: 50;
+
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+
+    /* Smooth animations */
+    transition: all var(--animation-short) var(--motion-android-smooth);
+  }
+
+  .fab:active,
+  #ga-float-btn:active,
+  .cmdk-fab:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Hide on scroll down, show on scroll up */
+  .fab.hide-on-scroll,
+  #ga-float-btn.hide-on-scroll {
+    transform: translateY(100px);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .fab.show-on-scroll,
+  #ga-float-btn.show-on-scroll {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ================================================================
+   INPUT FIELD FOCUS STATES
+   ================================================================ */
+
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):focus,
+  select:focus,
+  textarea:focus,
+  .field:focus,
+  .search-field:focus {
+    /* Clear focus ring for better visibility on mobile */
+    outline: none;
+
+    /* Enhanced box shadow instead */
+    box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.15),
+      0 0 12px rgba(57, 255, 20, 0.25) !important;
+
+    border-color: rgba(57, 255, 20, 0.7) !important;
+
+    /* Bring slightly into view */
+    transform: translateY(-1px);
+
+    transition: all var(--animation-short) var(--motion-android-smooth);
+  }
+
+  /* Placeholder color for better visibility */
+  input::placeholder,
+  textarea::placeholder,
+  .field::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+/* ================================================================
+   SCROLLBAR STYLING FOR ANDROID
+   ================================================================ */
+
+@media (max-width: 768px) {
+  /* Webkit scrollbar for Chrome/Edge on Android */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(57, 255, 20, 0.3);
+    border-radius: 3px;
+
+    transition: background var(--animation-short) var(--motion-android-smooth);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(57, 255, 20, 0.5);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-color: rgba(57, 255, 20, 0.3) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+/* ================================================================
+   THEME VARIATIONS FOR ANDROID
+   ================================================================ */
+
+/* Dark theme (default for Android) */
+@media (max-width: 768px) {
+  body {
+    background: #05080a;
+    color: #fff;
+  }
+
+  body.theme-light,
+  body[data-theme="light"] {
+    background: #f5f5f5;
+    color: #1a1a1a;
+  }
+
+  body.theme-dark,
+  body[data-theme="dark"] {
+    background: #000;
+    color: #fff;
+  }
+
+  body.theme-high-contrast,
+  body[data-theme="contrast"] {
+    background: #000;
+    color: #fff;
+
+    --neon: #ffff00;
+    --vip: #ff00ff;
+  }
+}
+
+/* ================================================================
+   OPTIMIZATION FOR REDUCED MOTION
+   ================================================================ */
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .fab,
+  .btn,
+  button {
+    transform: none !important;
+  }
+}
+
+/* ================================================================
+   SPECIFIC BREAKPOINTS FOR DIFFERENT ANDROID DEVICES
+   ================================================================ */
+
+/* Small phones (320px - 480px) */
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+
+  .container,
+  .labo-frame,
+  .panel-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .btn,
+  button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* Stack grid on small screens */
+  .grid,
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Full width cards on small phones */
+  .panel-card,
+  .glass,
+  input,
+  select,
+  textarea {
+    width: 100%;
+  }
+
+  /* Hide low priority content */
+  .hide-sm {
+    display: none;
+  }
+
+  /* Simplified navigation */
+  nav {
+    flex-wrap: wrap;
+  }
+
+  .admin-shell-link,
+  .admin-shell-btn {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+}
+
+/* Medium phones (481px - 768px) */
+@media (481px) and (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .container,
+  .labo-frame,
+  .panel-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .btn,
+  button {
+    padding: 11px 14px;
+    font-size: 14px;
+  }
+
+  /* Two-column layout for medium phones */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .hide-md {
+    display: none;
+  }
+}
+
+/* ================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ================================================================ */
+
+@media (max-width: 768px) {
+  /* Disable expensive animations on lower-end devices */
+  @media (prefers-reduced-data: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 200ms !important;
+      transition-duration: 100ms !important;
+      background-attachment: scroll !important;
+    }
+
+    /* Stop auto-playing animations */
+    .motion-stagger > * {
+      animation: none;
+    }
+
+    /* Simplify gradients */
+    body,
+    .panel-card,
+    .glass {
+      background: solid colors !important;
+    }
+  }
+
+  /* GPU acceleration for smooth scrolling */
+  .scrollable,
+  .list,
+  ul,
+  ol,
+  div[role="list"] {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  /* Optimize form inputs */
+  input,
+  select,
+  textarea,
+  button {
+    -webkit-appearance: none;
+    appearance: none;
+    background-clip: padding-box;
+  }
+
+  /* Fix for z-index stacking context on mobile */
+  .modal-backdrop,
+  dialog::backdrop {
+    z-index: 999;
+  }
+
+  .modal,
+  dialog {
+    z-index: 1000;
+  }
+}
+
+/* ================================================================
+   LANDSCAPE MODE OPTIMIZATIONS
+   ================================================================ */
+
+@media (max-width: 768px) and (orientation: landscape) {
+  body {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  nav,
+  .navbar,
+  .header {
+    min-height: 48px;
+  }
+
+  .fab,
+  #ga-float-btn {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    right: max(8px, env(safe-area-inset-right));
+  }
+
+  /* Reduce vertical spacing in landscape */
+  .container,
+  .panel-card {
+    padding: 8px 12px;
+  }
+}

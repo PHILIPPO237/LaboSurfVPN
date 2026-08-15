@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin | Clés d'activation</title>
+
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+
+    <link rel="stylesheet" href="/static/css/admin-shell.css">
+
+        <link rel="stylesheet" href="/static/css/admin-dns-theme.css">
+
+<script defer src="/static/js/admin-shell.js"></script>
+
+    <style>
+
+        :root {
+
+            --bg: #050505;
+
+            --line: rgba(255, 255, 255, 0.14);
+
+            --glass: rgba(255, 255, 255, 0.05);
+
+            --ok: #39ff14;
+
+            --warn: #f59e0b;
+
+            --bad: #ef4444;
+
+            --cyan: #00f2ff;
+
+        }
+
+
+
+        body {
+
+            background:
+
+                radial-gradient(circle at 14% 10%, rgba(57, 255, 20, 0.11), transparent 35%),
+
+                radial-gradient(circle at 80% 26%, rgba(0, 242, 255, 0.1), transparent 38%),
+
+                radial-gradient(circle at 50% 92%, rgba(245, 158, 11, 0.08), transparent 44%),
+
+                var(--bg);
+
+            color: #fff;
+
+            font-family: 'JetBrains Mono', monospace;
+
+        }
+
+
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+
+
+        .glass {
+
+            background: var(--glass);
+
+            border: 1px solid var(--line);
+
+            backdrop-filter: blur(13px);
+
+        }
+
+
+
+        .field {
+
+            background: rgba(0, 0, 0, 0.4);
+
+            border: 1px solid rgba(255, 255, 255, 0.2);
+
+            color: #fff;
+
+        }
+
+
+
+        .field:focus {
+
+            outline: none;
+
+            border-color: rgba(0, 242, 255, 0.8);
+
+            box-shadow: 0 0 0 3px rgba(0, 242, 255, 0.16);
+
+        }
+
+
+
+        .badge-free {
+
+            color: #b6ffbc;
+
+            border: 1px solid rgba(57, 255, 20, 0.38);
+
+            background: rgba(57, 255, 20, 0.12);
+
+        }
+
+
+
+        .badge-used {
+
+            color: #fecaca;
+
+            border: 1px solid rgba(239, 68, 68, 0.38);
+
+            background: rgba(239, 68, 68, 0.12);
+
+        }
+
+    </style>
+
+  <link rel="stylesheet" href="/static/css/a11y.css">
+
+  <script defer src="/static/js/ui-a11y.js"></script>
+
+</head>
+
+<body class="theme-dns p-6 lg:p-10">
+
+    <main class="max-w-7xl mx-auto">
+
+        <header class="glass rounded-[1.8rem] p-6 md:p-8 mb-7">
+
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-4 text-[10px] uppercase tracking-[0.22em]">
+                        <a href="/admin" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+                            <i class="fas fa-arrow-left"></i> Retour au dashboard admin
+                        </a>
+                        <a href="/admin" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+                            <i class="fas fa-bars"></i> Menu admin
+                        </a>
+                    </div>
+                    <p class="text-[10px] uppercase tracking-[0.32em] text-gray-300">Module admin</p>
+
+                    <h1 class="orbitron text-2xl md:text-3xl font-black tracking-widest uppercase mt-2">
+
+                        Clés <span class="text-lime-300">d'activation</span>
+
+                    </h1>
+
+                    <p class="text-[12px] text-gray-400 mt-3">
+
+                        Generation en lot et suivi de consommation des cles prepayees.
+
+                    </p>
+
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 min-w-[210px]">
+
+                    <div class="glass rounded-xl p-3">
+
+                        <div class="text-[10px] text-gray-400 uppercase">Total clés</div>
+
+                        <div id="kpiTotal" class="text-xl font-black orbitron text-white mt-1">0</div>
+
+                    </div>
+
+                    <div class="glass rounded-xl p-3">
+
+                        <div class="text-[10px] text-gray-400 uppercase">Disponibles</div>
+
+                        <div id="kpiAvailable" class="text-xl font-black orbitron text-lime-300 mt-1">0</div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <section class="glass rounded-[1.6rem] p-6 md:p-8 mb-7">
+
+            <h2 class="orbitron text-sm font-bold tracking-widest uppercase text-lime-300 mb-5">Générer des clés</h2>
+
+            <form id="generate-keys-form" method="post" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div>
+
+                    <label for="quantity" class="block text-[10px] text-gray-400 uppercase mb-2">Quantité</label>
+
+                    <input id="quantity" name="quantity" type="number" min="1" max="500" value="10" required
+
+                        class="field w-full h-11 rounded-xl px-3 text-sm">
+
+                </div>
+
+                <div>
+
+                    <label for="duration_days" class="block text-[10px] text-gray-400 uppercase mb-2">Durée (jours)</label>
+
+                    <input id="duration_days" name="duration_days" type="number" min="1" max="3650" value="30" required
+
+                        class="field w-full h-11 rounded-xl px-3 text-sm">
+
+                </div>
+
+                <div>
+
+                    <label for="user_type" class="block text-[10px] text-gray-400 uppercase mb-2">Type de compte</label>
+
+                    <select id="user_type" name="user_type" required class="field w-full h-11 rounded-xl px-3 text-sm">
+
+                        <option value="VIP" selected>VIP</option>
+
+                        <option value="Revendeur">Revendeur</option>
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <label for="notes" class="block text-[10px] text-gray-400 uppercase mb-2">Notes</label>
+
+                    <input id="notes" name="notes" type="text" placeholder="Ex: Promo Mars"
+
+                        class="field w-full h-11 rounded-xl px-3 text-sm">
+
+                </div>
+
+                <div class="md:col-span-2 xl:col-span-4 flex flex-col md:flex-row md:items-center gap-3 pt-1">
+
+                    <button id="generateBtn" type="submit"
+
+                        class="h-11 px-6 rounded-xl bg-lime-500/20 border border-lime-300/40 hover:bg-lime-500/30 transition orbitron text-xs font-bold tracking-[0.2em] uppercase">
+
+                        G&eacute;n&eacute;rer
+
+                    </button>
+
+                    <span id="form-feedback" class="text-xs text-gray-400">Prêt.</span>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+
+        <section class="glass rounded-[1.6rem] p-6 md:p-8">
+
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+
+                <h2 class="orbitron text-sm font-bold tracking-widest uppercase text-cyan-300">Clés existantes</h2>
+
+                <div class="relative w-full md:w-[320px]">
+
+                    <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+
+                    <input id="searchInput" type="text" placeholder="Filtrer clé / type / statut / notes"
+
+                        class="field w-full h-10 rounded-xl pl-9 pr-3 text-sm">
+
+                </div>
+
+            </div>
+
+
+
+            <div class="overflow-x-auto rounded-xl border border-white/10">
+
+                <table class="w-full text-left text-xs">
+
+                    <thead class="bg-white/10 text-gray-300 uppercase tracking-wider">
+
+                        <tr>
+
+                            <th class="p-3">Clé</th>
+
+                            <th class="p-3">Type</th>
+
+                            <th class="p-3">Durée</th>
+
+                            <th class="p-3">Statut</th>
+
+                            <th class="p-3">Notes</th>
+
+                            <th class="p-3">Création</th>
+
+                            <th class="p-3">Utilisation</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="keys-table-body" class="divide-y divide-white/10">
+
+                        <tr>
+
+                            <td colspan="7" class="p-6 text-center text-gray-400">Chargement...</td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const form = document.getElementById('generate-keys-form');
+
+            const feedbackDiv = document.getElementById('form-feedback');
+
+            const tableBody = document.getElementById('keys-table-body');
+
+            const searchInput = document.getElementById('searchInput');
+
+            const btn = document.getElementById('generateBtn');
+
+            const kpiTotal = document.getElementById('kpiTotal');
+
+            const kpiAvailable = document.getElementById('kpiAvailable');
+
+
+
+            let allKeys = [];
+
+
+
+            function escapeHtml(value) {
+
+                return String(value || '')
+
+                    .replace(/&/g, '&amp;')
+
+                    .replace(/</g, '&lt;')
+
+                    .replace(/>/g, '&gt;')
+
+                    .replace(/"/g, '&quot;')
+
+                    .replace(/'/g, '&#39;');
+
+            }
+
+
+
+            function formatFrDate(dateString) {
+
+                if (!dateString) return '-';
+
+                const date = new Date(String(dateString).replace(' ', 'T'));
+
+                if (Number.isNaN(date.getTime())) return String(dateString);
+
+                return date.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+
+            }
+
+
+
+            function updateKpis(keys) {
+
+                const total = keys.length;
+
+                const available = keys.filter((k) => !k.is_used).length;
+
+                if (kpiTotal) kpiTotal.textContent = String(total);
+
+                if (kpiAvailable) kpiAvailable.textContent = String(available);
+
+            }
+
+
+
+            function buildRow(key) {
+
+                const statusHtml = key.is_used
+
+                    ? '<span class="badge-used inline-flex px-2 py-1 rounded-full text-[10px] font-bold">Utilisee</span>'
+
+                    : '<span class="badge-free inline-flex px-2 py-1 rounded-full text-[10px] font-bold">Disponible</span>';
+
+                const usedInfo = key.is_used
+
+                    ? ('ID ' + escapeHtml(key.used_by_user_id) + ' | ' + escapeHtml(formatFrDate(key.used_at)))
+
+                    : '-';
+
+                const safeKey = escapeHtml(key.key);
+
+                const safeType = escapeHtml(key.user_type || '-');
+
+                const safeNotes = escapeHtml(key.notes || '-');
+
+                const safeDuration = escapeHtml(key.duration_days) + ' jours';
+
+                const safeCreated = escapeHtml(formatFrDate(key.created_at));
+
+                const safeUsed = escapeHtml(usedInfo);
+
+
+
+                return (
+
+                    '<tr class="hover:bg-white/5 transition" data-search="' +
+
+                    (safeKey + ' ' + safeType + ' ' + safeNotes + ' ' + safeUsed + ' ' + (key.is_used ? 'utilisee' : 'disponible')).toLowerCase() + '">' +
+
+                    '<td class="p-3"><div class="flex items-center gap-2">' +
+
+                    '<code class="text-cyan-300 font-bold">' + safeKey + '</code>' +
+
+                    '<button type="button" class="copy-btn px-2 py-1 rounded-lg bg-white/5 border border-white/20 hover:bg-white/10 text-[10px]" data-copy="' + safeKey + '">Copier</button>' +
+
+                    '</div></td>' +
+
+                    '<td class="p-3">' + safeType + '</td>' +
+
+                    '<td class="p-3">' + safeDuration + '</td>' +
+
+                    '<td class="p-3">' + statusHtml + '</td>' +
+
+                    '<td class="p-3 text-gray-300">' + safeNotes + '</td>' +
+
+                    '<td class="p-3 text-gray-300">' + safeCreated + '</td>' +
+
+                    '<td class="p-3 text-gray-300">' + safeUsed + '</td>' +
+
+                    '</tr>'
+
+                );
+
+            }
+
+
+
+            function applyFilter() {
+
+                const q = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
+
+                const rows = tableBody.querySelectorAll('tr[data-search]');
+
+                let visible = 0;
+
+                rows.forEach((row) => {
+
+                    const text = String(row.getAttribute('data-search') || '');
+
+                    const show = !q || text.includes(q);
+
+                    row.classList.toggle('hidden', !show);
+
+                    if (show) visible += 1;
+
+                });
+
+                const empty = document.getElementById('keys-empty-row');
+
+                if (empty) empty.classList.toggle('hidden', visible > 0);
+
+            }
+
+
+
+            function renderKeys(keys) {
+
+                if (!keys || keys.length === 0) {
+
+                    tableBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400">Aucune cle trouvee.</td></tr>';
+
+                    updateKpis([]);
+
+                    return;
+
+                }
+
+
+
+                tableBody.innerHTML = keys.map(buildRow).join('') +
+
+                    '<tr id="keys-empty-row" class="hidden"><td colspan="7" class="p-6 text-center text-gray-500">Aucun résultat pour ce filtre.</td></tr>';
+
+                updateKpis(keys);
+
+                applyFilter();
+
+            }
+
+
+
+            async function loadKeys() {
+
+                try {
+
+                    tableBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400">Chargement...</td></tr>';
+
+                    const response = await fetch('/api/admin/activation-keys');
+
+                    if (!response.ok) throw new Error('Erreur reseau lors du chargement.');
+
+                    const data = await response.json();
+
+                    if (data.status !== 'ok') throw new Error(data.message || 'Erreur API.');
+
+                    allKeys = Array.isArray(data.keys) ? data.keys : [];
+
+                    renderKeys(allKeys);
+
+                } catch (error) {
+
+                    tableBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-red-300">' + escapeHtml(error.message) + '</td></tr>';
+
+                    updateKpis([]);
+
+                }
+
+            }
+
+
+
+            form.addEventListener('submit', async (e) => {
+
+                e.preventDefault();
+
+                if (btn) btn.disabled = true;
+
+                feedbackDiv.textContent = 'Generation en cours...';
+
+                feedbackDiv.className = 'text-xs text-gray-300';
+
+
+
+                const formData = new FormData(form);
+
+                const payload = Object.fromEntries(formData.entries());
+
+                payload.quantity = parseInt(payload.quantity, 10);
+
+                payload.duration_days = parseInt(payload.duration_days, 10);
+
+
+
+                try {
+
+                    const response = await fetch('/api/admin/activation-keys/generate', {
+
+                        method: 'POST',
+
+                        headers: { 'Content-Type': 'application/json' },
+
+                        body: JSON.stringify(payload),
+
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok || result.status !== 'ok') {
+
+                        throw new Error(result.message || 'Echec generation');
+
+                    }
+
+
+
+                    feedbackDiv.textContent = String(result.generated) + ' cle(s) generee(s) avec succes.';
+
+                    feedbackDiv.className = 'text-xs text-lime-300';
+
+
+
+                    form.reset();
+
+                    document.getElementById('quantity').value = '10';
+
+                    document.getElementById('duration_days').value = '30';
+
+                    document.getElementById('user_type').value = 'VIP';
+
+                    await loadKeys();
+
+                } catch (error) {
+
+                    feedbackDiv.textContent = 'Erreur: ' + error.message;
+
+                    feedbackDiv.className = 'text-xs text-red-300';
+
+                } finally {
+
+                    if (btn) btn.disabled = false;
+
+                }
+
+            });
+
+
+
+            tableBody.addEventListener('click', async (e) => {
+
+                const btnCopy = e.target.closest('[data-copy]');
+
+                if (!btnCopy) return;
+
+                const value = btnCopy.getAttribute('data-copy') || '';
+
+                try {
+
+                    await navigator.clipboard.writeText(value);
+
+                    const old = btnCopy.textContent;
+
+                    btnCopy.textContent = 'Copie';
+
+                    setTimeout(() => { btnCopy.textContent = old; }, 1300);
+
+                } catch (_) {
+
+                    alert('Copie impossible');
+
+                }
+
+            });
+
+
+
+            searchInput.addEventListener('input', applyFilter);
+
+            loadKeys();
+
+        });
+
+    </script>
+
+</body>
+
+</html>
+
+
+
+
+

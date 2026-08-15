@@ -1,0 +1,159 @@
+﻿/* Readability tweaks for low-vision users.
+   This project uses Tailwind CDN + many fixed pixel sizes (text-[10px], etc.).
+   We bump microcopy to more legible sizes while keeping layout mostly intact. */
+
+:root {
+  --a11y-base: 17px;
+  --a11y-9: 13px;
+  --a11y-10: 14px;
+  --a11y-11: 15px;
+  --a11y-12: 15px;
+  --a11y-btn: 14px;
+  --a11y-line: 1.35;
+}
+
+html {
+  font-size: var(--a11y-base);
+}
+
+body {
+  font-size: 1rem;
+  line-height: var(--a11y-line);
+}
+
+/* Tailwind arbitrary pixel sizes used throughout templates (micro text). */
+.text-\[9px\],
+.text-\[10px\] {
+  font-size: var(--a11y-10) !important;
+  line-height: var(--a11y-line) !important;
+}
+
+.text-\[9px\] {
+  font-size: var(--a11y-9) !important;
+}
+
+.text-\[11px\] {
+  font-size: var(--a11y-11) !important;
+  line-height: var(--a11y-line) !important;
+}
+
+.text-\[12px\] {
+  font-size: var(--a11y-12) !important;
+  line-height: var(--a11y-line) !important;
+}
+
+/* Tailwind's text-xs is 12px by default: bump slightly. */
+.text-xs {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: var(--a11y-line) !important;
+}
+
+/* Forms: keep inputs readable (and prevent iOS zoom-on-focus). */
+input,
+select,
+textarea {
+  font-size: 1rem !important; /* matches base font-size */
+  line-height: var(--a11y-line);
+}
+
+/* Common custom utility classes in this repo. */
+.btn,
+.chip {
+  font-size: var(--a11y-btn) !important;
+  line-height: var(--a11y-line) !important;
+}
+
+/* Small badges/messages coming from local CSS files. */
+.badge,
+.xui-badge {
+  font-size: 13px !important;
+  line-height: var(--a11y-line) !important;
+}
+
+.msg {
+  font-size: 14px !important;
+  line-height: var(--a11y-line) !important;
+}
+
+/* Strong, consistent focus visibility across the app. */
+:where(
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="link"],
+  [tabindex]
+):focus-visible {
+  outline: 2px solid #00e8ff !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(0, 232, 255, 0.22) !important;
+}
+
+/* Mark non-native clickable blocks enhanced by ui-a11y.js. */
+.ui-clickable {
+  cursor: pointer;
+}
+
+.ui-clickable:focus-visible {
+  border-color: rgba(0, 232, 255, 0.65) !important;
+}
+
+/* Comfortable touch/click targets. */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  min-height: 42px;
+}
+
+
+/* Faster touch response on mobile taps (removes click delay). */
+:where(
+  a,
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [role="button"],
+  [role="link"]
+) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Better readability for placeholders and helper text. */
+::placeholder {
+  color: rgba(255, 255, 255, 0.64);
+}
+
+/* Mobile legibility and spacing harmonization. */
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    line-height: 1.42;
+  }
+
+  .chip,
+  .badge,
+  .xui-badge {
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Fallback for pages that do not import motion.css. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

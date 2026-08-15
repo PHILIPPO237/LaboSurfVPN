@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Coordonnées Paiement</title>
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+    <style>
+        :root {
+            --dark: #050505;
+            --cyan: #00f2ff;
+            --orange: #ff8f00;
+            --green: #39ff14;
+            --danger: #ef4444;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 18% 12%, rgba(0, 242, 255, 0.12), transparent 34%),
+                radial-gradient(circle at 82% 26%, rgba(255, 143, 0, 0.11), transparent 38%),
+                radial-gradient(circle at 50% 92%, rgba(57, 255, 20, 0.08), transparent 42%),
+                var(--dark);
+            color: #fff;
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            backdrop-filter: blur(14px);
+        }
+
+        .field {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .field:focus {
+            border-color: rgba(0, 242, 255, 0.8);
+            box-shadow: 0 0 0 3px rgba(0, 242, 255, 0.16);
+            outline: none;
+        }
+
+        .status-ok { color: var(--green); }
+        .status-error { color: var(--danger); }
+        .status-info { color: #d1d5db; }
+    </style>
+    <link rel="stylesheet" href="/static/css/admin-shell.css">
+        <link rel="stylesheet" href="/static/css/admin-dns-theme.css">
+<script defer src="/static/js/admin-shell.js"></script>
+  <link rel="stylesheet" href="/static/css/a11y.css">
+  <script defer src="/static/js/ui-a11y.js"></script>
+</head>
+<body class="theme-dns min-h-screen p-6 md:p-10">
+    <!-- audit-nav -->
+    <div data-nav-audit="admin" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+      <a href="/admin" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-arrow-left"></i> Retour au dashboard admin
+      </a>
+      <a href="/admin" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-bars"></i> Menu admin
+      </a>
+    </div>
+    <div class="max-w-3xl mx-auto">
+        <header class="glass rounded-[1.6rem] p-6 md:p-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-[10px] uppercase tracking-[0.34em] text-gray-300 mono mb-2">Administration</p>
+                    <h1 class="orbitron text-2xl md:text-3xl font-black tracking-widest uppercase">
+                        Coordonn&eacute;es <span class="text-cyan-300">Paiement</span>
+                    </h1>
+                    <p class="mono text-[12px] text-gray-400 mt-3">
+                        Configurez les numeros utilises pour les paiements manuels Orange Money et MTN MoMo.
+                    </p>
+                </div>
+                <button onclick="location.href='/admin'"
+                    class="h-11 px-5 rounded-xl bg-white/5 border border-white/15 hover:bg-white/10 transition mono text-[11px] font-bold uppercase tracking-wider">
+                    <i class="fas fa-arrow-left mr-2"></i> Retour dashboard
+                </button>
+            </div>
+        </header>
+
+        <section class="glass rounded-[1.6rem] p-6 md:p-8 mt-6">
+            <form id="paymentSettingsForm" method="post" class="space-y-5">
+                <div>
+                    <label for="omNumber" class="flex items-center gap-2 mb-2 text-sm font-semibold text-orange-300">
+                        <i class="fas fa-wallet"></i> Orange Money
+                    </label>
+                    <input id="omNumber" type="text" autocomplete="off" placeholder="Ex: 656770734"
+                        class="field w-full rounded-xl px-4 py-3 mono text-sm">
+                </div>
+
+                <div>
+                    <label for="momoNumber" class="flex items-center gap-2 mb-2 text-sm font-semibold text-yellow-200">
+                        <i class="fas fa-mobile-screen"></i> MTN MoMo
+                    </label>
+                    <input id="momoNumber" type="text" autocomplete="off" placeholder="Ex: 678358503"
+                        class="field w-full rounded-xl px-4 py-3 mono text-sm">
+                </div>
+
+                <div class="flex flex-col md:flex-row md:items-center gap-3 pt-1">
+                    <button id="saveBtn" type="submit"
+                        class="h-11 px-6 rounded-xl bg-cyan-500/20 border border-cyan-300/40 hover:bg-cyan-500/30 transition orbitron text-xs font-bold tracking-[0.2em] uppercase">
+                        Enregistrer
+                    </button>
+                    <button id="reloadBtn" type="button"
+                        class="h-11 px-6 rounded-xl bg-white/5 border border-white/15 hover:bg-white/10 transition mono text-xs font-bold uppercase tracking-wider">
+                        Recharger
+                    </button>
+                    <span id="statusMsg" class="mono text-xs status-info">Chargement...</span>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        const form = document.getElementById('paymentSettingsForm');
+        const omNumber = document.getElementById('omNumber');
+        const momoNumber = document.getElementById('momoNumber');
+        const saveBtn = document.getElementById('saveBtn');
+        const reloadBtn = document.getElementById('reloadBtn');
+        const statusMsg = document.getElementById('statusMsg');
+
+        function setStatus(message, tone) {
+            statusMsg.textContent = message;
+            statusMsg.classList.remove('status-ok', 'status-error', 'status-info');
+            if (tone === 'ok') statusMsg.classList.add('status-ok');
+            else if (tone === 'error') statusMsg.classList.add('status-error');
+            else statusMsg.classList.add('status-info');
+        }
+
+        async function loadSettings() {
+            setStatus('Chargement des coordonnees...', 'info');
+            try {
+                const res = await fetch('/api/revendeur/settings/payment');
+                const data = await res.json();
+                if (!res.ok || data.status !== 'ok') {
+                    throw new Error(data.message || 'Erreur de chargement');
+                }
+
+                omNumber.value = data.om_number || '';
+                momoNumber.value = data.momo_number || '';
+                setStatus('Coordonn\u00e9es charg\u00e9es.', 'ok');
+            } catch (err) {
+                setStatus(`Chargement impossible: ${err.message}`, 'error');
+            }
+        }
+
+        async function saveSettings() {
+            saveBtn.disabled = true;
+            reloadBtn.disabled = true;
+            setStatus('Enregistrement en cours...', 'info');
+
+            try {
+                const payload = {
+                    om_number: omNumber.value.trim(),
+                    momo_number: momoNumber.value.trim()
+                };
+
+                const res = await fetch('/api/revendeur/settings/payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok || data.status !== 'ok') {
+                    throw new Error(data.message || 'Erreur de sauvegarde');
+                }
+
+                setStatus(data.message || 'Coordonn\u00e9es mises \u00e0 jour.', 'ok');
+            } catch (err) {
+                setStatus(`Échec de l'enregistrement: ${err.message}`, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                reloadBtn.disabled = false;
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveSettings();
+        });
+
+        reloadBtn.addEventListener('click', async () => {
+            await loadSettings();
+        });
+
+        document.addEventListener('DOMContentLoaded', loadSettings);
+    </script>
+</body>
+</html>
+
+
+

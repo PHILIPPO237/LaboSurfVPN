@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+
+
+
+<head>
+
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+    <meta charset="UTF-8">
+
+    <title>LABORATOIRE | Gestion Abonnés</title>
+
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+
+    <link rel="stylesheet" href="/static/css/motion.css">
+
+    <link rel="stylesheet" href="/static/css/command-palette.css">
+
+    <link rel="stylesheet" href="/static/css/a11y.css">
+
+    <link rel="stylesheet" href="/static/css/panel-accent.css">
+
+    <script defer src="/static/js/command-palette.js"></script>
+
+    <script defer src="/static/js/panel-accent.js"></script>
+
+    <style>
+
+        :root {
+
+            --neon: #39ff14;
+
+            --dark: #050505;
+
+            --danger: #ff0f0f;
+
+        }
+
+
+
+        body {
+
+            background: var(--dark);
+
+            color: white;
+
+            font-family: 'JetBrains Mono', monospace;
+
+        }
+
+
+
+        .orbitron {
+
+            font-family: 'Orbitron', sans-serif;
+
+        }
+
+
+
+        .glass-card {
+
+            background: rgba(255, 255, 255, 0.05);
+
+            border: 1px solid rgba(57, 255, 20, 0.2);
+
+        }
+
+
+
+        input,
+
+        select,
+
+        textarea {
+
+            background: #000;
+
+            border: 1px solid #333;
+
+            color: white;
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            outline: none;
+
+            width: 100%;
+
+        }
+
+
+
+        input:focus,
+
+        select:focus,
+
+        textarea:focus {
+
+            border-color: var(--neon);
+
+            box-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+
+        }
+
+
+
+        /* Style spécifique pour le calendrier */
+
+        ::-webkit-calendar-picker-indicator {
+
+            filter: invert(1);
+
+            cursor: pointer;
+
+        }
+
+
+
+        .tab-btn {
+
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+
+            border: 1px solid rgba(255, 255, 255, 0.12);
+
+            backdrop-filter: blur(12px);
+
+            color: #d8e5ef;
+
+            transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px rgba(0, 0, 0, 0.22);
+
+        }
+
+
+
+        .tab-btn:hover {
+
+            color: #fff;
+
+            border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.5);
+
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(var(--panel-accent-rgb, 0, 242, 255), 0.08));
+
+            transform: translateY(-1px);
+
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 22px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.14);
+
+        }
+
+
+
+        .tab-btn.active {
+
+            color: #eafaff;
+
+            border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.75);
+
+            background: linear-gradient(135deg, rgba(var(--panel-accent-rgb, 0, 242, 255), 0.22), rgba(255, 255, 255, 0.08));
+
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 22px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.2), 0 10px 22px rgba(0, 0, 0, 0.3);
+
+        }
+
+
+
+        .submenu-chip {
+
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+
+            border: 1px solid rgba(255, 255, 255, 0.12);
+
+            color: #d8e5ef;
+
+            transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px rgba(0, 0, 0, 0.22);
+
+        }
+
+
+
+        .submenu-chip:hover {
+
+            color: #fff;
+
+            border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.5);
+
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(var(--panel-accent-rgb, 0, 242, 255), 0.08));
+
+            transform: translateY(-1px);
+
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 22px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.14);
+
+        }
+
+
+
+        .switch-track {
+
+            width: 48px;
+
+            height: 26px;
+
+            border-radius: 9999px;
+
+            background: rgba(255, 255, 255, 0.15);
+
+            border: 1px solid rgba(255, 255, 255, 0.22);
+
+            position: relative;
+
+            transition: background .2s ease, border-color .2s ease;
+
+            display: inline-flex;
+
+            align-items: center;
+
+            cursor: pointer;
+
+        }
+
+
+
+        .switch-track::after {
+
+            content: "";
+
+            width: 20px;
+
+            height: 20px;
+
+            border-radius: 50%;
+
+            background: #fff;
+
+            position: absolute;
+
+            left: 2px;
+
+            transition: transform .2s ease;
+
+            box-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+
+        }
+
+
+
+        .switch-input:checked + .switch-track {
+
+            background: rgba(57, 255, 20, 0.25);
+
+            border-color: rgba(57, 255, 20, 0.55);
+
+        }
+
+
+
+        .switch-input:checked + .switch-track::after {
+
+            transform: translateX(22px);
+
+            background: #39ff14;
+
+        }
+
+
+
+        /* --- Boutons de Navigation (Header) --- */
+
+        .btn-header {
+
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+        }
+
+        .btn-return-hub {
+
+            background: rgba(255, 255, 255, 0.05);
+
+            border: 1px solid rgba(255, 255, 255, 0.15);
+
+        }
+
+        .btn-return-hub:hover {
+
+            background: rgba(255, 255, 255, 0.12);
+
+            border-color: rgba(255, 255, 255, 0.35);
+
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+
+            transform: translateY(-2px);
+
+        }
+
+        .btn-return-admin {
+
+            background: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.15);
+
+            border: 1px solid rgba(var(--panel-accent-rgb, 0, 242, 255), 0.4);
+
+        }
+
+        .btn-return-admin:hover {
+
+            background: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.25);
+
+            border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.8);
+
+            box-shadow: 0 0 18px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.35);
+
+            transform: translateY(-2px);
+
+        }
+
+
+
+    /* Nouveaux Dropdowns App-Like */
+
+    .dropdown-content {
+
+      opacity: 0;
+
+      visibility: hidden;
+
+      transform: translateY(10px);
+
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    }
+
+    .dropdown-group:hover .dropdown-content,
+
+    .dropdown-group:focus-within .dropdown-content,
+
+    .dropdown-group.dropdown-open .dropdown-content {
+
+      opacity: 1;
+
+      visibility: visible;
+
+      transform: translateY(0);
+
+    }
+
+
+
+    /* Animation fluide pour les résultats de recherche */
+
+    @keyframes rowFadeIn {
+
+        from { opacity: 0; transform: translateY(10px); }
+
+        to { opacity: 1; transform: translateY(0); }
+
+    }
+
+    .row-match {
+
+        animation: rowFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+
+    }
+
+
+        .admin-users-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(320px, .95fr);
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        .admin-users-copy {
+            min-width: 0;
+        }
+
+        .admin-users-title {
+            font-size: clamp(1.75rem, 4.4vw, 2.6rem);
+            line-height: 1.05;
+            letter-spacing: .08em;
+        }
+
+        .admin-users-subtitle {
+            margin-top: .85rem;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #94a3b8;
+        }
+
+        .admin-users-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .8rem;
+            align-items: start;
+        }
+
+        .admin-users-stats {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .65rem;
+        }
+
+        .admin-users-stat {
+            display: flex;
+            flex-direction: column;
+            gap: .25rem;
+            padding: .82rem .95rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-users-stat-label {
+            font-size: 9px;
+            line-height: 1;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+
+        .admin-users-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .admin-users-action-btn {
+            min-height: 44px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .admin-users-tabs {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: .75rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: .25rem;
+            scroll-snap-type: x proximity;
+        }
+
+        .admin-users-tabs .tab-btn {
+            flex: 0 0 auto;
+            min-height: 46px;
+            scroll-snap-align: start;
+        }
+
+        .admin-table-wrap {
+            width: 100%;
+            padding-bottom: .2rem;
+            scrollbar-width: thin;
+        }
+
+        .admin-responsive-table {
+            width: 100%;
+        }
+
+        @media (max-width: 920px) {
+            .admin-users-hero {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-users-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 860px) {
+            .admin-responsive-table thead {
+                display: none;
+            }
+
+            .admin-responsive-table tbody {
+                display: grid;
+                gap: .9rem;
+            }
+
+            .admin-responsive-table tr {
+                display: block;
+                padding: 1rem;
+                border-radius: 1.15rem;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.04);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 18px rgba(0, 0, 0, 0.18);
+            }
+
+            .admin-responsive-table tr.hidden {
+                display: none !important;
+            }
+
+            .admin-responsive-table td {
+                display: block;
+                width: 100%;
+                position: relative;
+                padding: .58rem 0 .58rem 7rem;
+                border: 0 !important;
+                text-align: left !important;
+                min-height: 2rem;
+            }
+
+            .admin-responsive-table td::before {
+                position: absolute;
+                left: 0;
+                top: .58rem;
+                width: 6rem;
+                content: '';
+                font-size: 10px;
+                line-height: 1.2;
+                font-weight: 700;
+                letter-spacing: .14em;
+                text-transform: uppercase;
+                color: #94a3b8;
+            }
+
+            .admin-users-table td:nth-child(1)::before { content: 'Utilisateur'; }
+            .admin-users-table td:nth-child(2)::before { content: 'Type'; }
+            .admin-users-table td:nth-child(3)::before { content: 'Expiration'; }
+            .admin-users-table td:nth-child(4)::before { content: 'Giga'; }
+            .admin-users-table td:nth-child(5)::before { content: 'En ligne'; }
+            .admin-users-table td:nth-child(6)::before { content: 'Notes'; }
+            .admin-users-table td:nth-child(7)::before { content: 'Statut'; }
+            .admin-users-table td:nth-child(8)::before { content: 'Action'; }
+
+            .admin-recovery-table td:nth-child(1)::before { content: 'Pseudo'; }
+            .admin-recovery-table td:nth-child(2)::before { content: 'Contact'; }
+            .admin-recovery-table td:nth-child(3)::before { content: 'Message'; }
+            .admin-recovery-table td:nth-child(4)::before { content: 'Compte'; }
+            .admin-recovery-table td:nth-child(5)::before { content: 'Action'; }
+
+            .admin-responsive-table td[colspan] {
+                padding: 1rem !important;
+                text-align: center !important;
+            }
+
+            .admin-responsive-table td[colspan]::before {
+                display: none;
+            }
+
+            .admin-responsive-table td:last-child {
+                padding-bottom: 0;
+            }
+
+            .admin-responsive-table td:last-child form,
+            .admin-responsive-table td:last-child .flex,
+            .admin-responsive-table td:last-child .inline-flex {
+                justify-content: flex-start !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .admin-users-actions,
+            .admin-users-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-users-title {
+                letter-spacing: .05em;
+            }
+
+            .admin-users-tabs .tab-btn,
+            .admin-users-action-btn,
+            .admin-users-actions .dropdown-group > button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+    </style>
+
+    <link rel="stylesheet" href="/static/css/admin-shell.css">
+
+        <link rel="stylesheet" href="/static/css/admin-dns-theme.css">
+
+<script defer src="/static/js/admin-shell.js"></script>
+
+  <script defer src="/static/js/ui-a11y.js"></script>
+
+  <script src="/static/js/utils.js"></script>
+</head>
+
+
+
+<body class="theme-dns p-4 sm:p-5 lg:p-6 motion-page" data-panel-key="admin">
+    <!-- audit-nav -->
+    <div data-nav-audit="admin" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+      <a href="/admin" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-arrow-left"></i> Retour au dashboard admin
+      </a>
+      <a href="/admin" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-bars"></i> Menu admin
+      </a>
+    </div>
+
+
+
+    <div class="max-w-7xl mx-auto motion-page">
+
+        <header class="admin-users-hero mb-8 border-b border-white/10 pb-6">
+            <div class="admin-users-copy">
+                <p class="text-[10px] text-gray-500 tracking-[0.32em] uppercase">Administration des comptes</p>
+                <h1 class="admin-users-title orbitron font-black panel-accent-text mt-3">Gestion <span class="text-white">Abonn&eacute;s</span></h1>
+                <p class="admin-users-subtitle">Enregistrement, renouvellement, abonn&eacute;s inscrits et sessions en ligne.</p>
+            </div>
+            <div class="admin-users-actions">
+                <div class="admin-users-stats">
+                    <div class="admin-users-stat">
+                        <span class="admin-users-stat-label">Inscrits</span>
+                        <span class="admin-users-stat-value">{{TOTAL_USERS}}</span>
+                    </div>
+                    <div class="admin-users-stat">
+                        <span class="admin-users-stat-label">Actifs</span>
+                        <span class="admin-users-stat-value">{{ACTIVE_USERS}}</span>
+                    </div>
+                    <div class="admin-users-stat">
+                        <span class="admin-users-stat-label">En ligne</span>
+                        <span class="admin-users-stat-value panel-accent-text">{{ONLINE_USERS}}</span>
+                    </div>
+                </div>
+
+                <button onclick="location.href='/dashboard'" class="btn-header btn-return-hub admin-users-action-btn px-4 py-2.5 rounded-xl text-[10px] orbitron font-bold flex items-center gap-2 text-gray-300 hover:text-white transition-all motion-press">
+                  <i class="fas fa-th-large"></i> Hub Central
+                </button>
+
+                <div class="relative dropdown-group z-50">
+                  <button class="btn-header btn-return-admin admin-users-action-btn px-4 py-2.5 rounded-xl text-[10px] orbitron font-bold flex items-center gap-2 text-white transition-all motion-press">
+                    <i class="fas fa-toolbox text-[#39ff14]"></i> Outils Admin <i class="fas fa-chevron-down text-[8px] ml-1 opacity-70"></i>
+                  </button>
+                  <div class="dropdown-content absolute right-0 mt-2 w-56 rounded-2xl bg-[#0a0f16]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.7)] text-left">
+                    <div class="p-2">
+                      <div class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 px-3 pt-2">Administration</div>
+                      <a href="/admin/users" class="flex items-center px-3 py-2.5 rounded-xl bg-white/5 text-xs font-bold text-[#39ff14] transition-all">
+                        <i class="fas fa-users w-5 text-center mr-2"></i> Abonn&eacute;s
+                      </a>
+                      <a href="/admin/config-generator" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-white/5 text-xs font-bold text-gray-300 hover:text-[#39ff14] transition-all">
+                        <i class="fas fa-cogs w-5 text-center mr-2"></i> Config Generator
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="relative dropdown-group z-40">
+                  <button class="btn-header btn-return-hub admin-users-action-btn px-4 py-2.5 rounded-xl text-[10px] orbitron font-bold flex items-center gap-2 text-gray-300 hover:text-white transition-all motion-press border-white/20">
+                    <i class="fas fa-user-circle"></i> Compte <i class="fas fa-chevron-down text-[8px] ml-1 opacity-70"></i>
+                  </button>
+                  <div class="dropdown-content absolute right-0 mt-2 w-48 rounded-2xl bg-[#0a0f16]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.7)] text-left">
+                    <div class="p-2">
+                      <a href="/profil" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-white/5 text-xs font-bold text-gray-300 hover:text-white transition-all">
+                        <i class="fas fa-id-card w-5 text-center mr-2 text-blue-400"></i> Mon profil
+                      </a>
+                      <div class="h-px bg-white/5 my-1 mx-2"></div>
+                      <a href="/logout" onclick="event.preventDefault(); showConfirmModal({ title: 'D\u00e9connexion', message: 'Voulez-vous vraiment vous d\u00e9connecter ?', onConfirm: () => window.location.href='/logout' });" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-xs font-bold text-gray-400 hover:text-red-400 transition-all">
+                        <i class="fas fa-power-off w-5 text-center mr-2"></i> D&eacute;connexion
+                      </a>
+                    </div>
+                  </div>
+                </div>
+            </div>
+        </header>
+
+
+
+        <!-- Sous-menu -->
+
+        <div class="admin-users-tabs">
+
+            <button id="tabRegBtn" data-tab="reg" class="tab-btn px-4 py-3 rounded-2xl text-[10px] orbitron font-black tracking-widest uppercase flex items-center gap-2 motion-press">
+                <i class="fas fa-user-plus"></i> Enregistrement <span class="text-gray-600">/</span> Renouvellement
+            </button>
+
+            <button id="tabListBtn" data-tab="list" class="tab-btn px-4 py-3 rounded-2xl text-[10px] orbitron font-black tracking-widest uppercase flex items-center gap-2 motion-press">
+                <i class="fas fa-users"></i> Abonn&eacute;s Inscrits <span class="text-gray-600">/</span> En Ligne
+            </button>
+
+        </div>
+
+
+
+        <!-- Vue 1: Enregistrement / Renouvellement -->
+
+        <div id="flashBannerMount">{{FLASH_BANNER}}</div>
+
+
+
+        <section id="viewReg" class="hidden motion-enter">
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 motion-stagger">
+
+
+
+                <div class="glass-card motion-lift p-6 rounded-3xl">
+
+                    <h3
+
+                        class="orbitron text-sm font-bold mb-6 panel-accent-text border-b border-white/10 pb-2 flex items-center gap-2">
+
+                        <i class="fas fa-id-card"></i> 🧾 ENREGISTREMENT
+
+                    </h3>
+
+                    <form action="/admin/add-user" method="POST" class="flex flex-col gap-4">
+
+                        <div>
+
+                            <label class="text-[10px] text-gray-500 uppercase">Pseudo</label>
+
+                            <input type="text" name="username" placeholder="Ex: Client_VIP" required>
+
+                        </div>
+
+
+
+                    <div>
+
+                        <label class="text-[10px] text-gray-500 uppercase">Mot de passe provisoire</label>
+
+                        <input type="text" name="password" placeholder="Ex: 123456" required minlength="6">
+
+                    </div>
+
+
+
+                        <div>
+
+                            <label class="text-[10px] text-gray-500 uppercase">Type d'accès</label>
+
+                            <select id="createUserType" name="user_type">
+
+                                <option value="VIP">Membre VIP</option>
+
+                                <option value="Revendeur">Revendeur</option>
+
+                                <option value="Gratuit">Test Gratuit</option>
+
+                            </select>
+
+                        </div>
+
+
+
+                        <div id="createAllowCustomPaymentsBlock" class="rounded-2xl bg-black/40 border border-[#39ff14]/25 p-4 hidden">
+
+                            <div class="flex items-start justify-between gap-4">
+
+                                <div>
+
+                                    <label class="text-[10px] text-gray-500 uppercase tracking-widest">Paiements manuels revendeur</label>
+
+                                    <div class="text-[12px] text-white font-bold mt-1">Autoriser ses propres numéros OM / MTN</div>
+
+                                    <p class="text-[10px] text-gray-600 mt-1">
+
+                                        Si activé, ce revendeur pourra définir ses numéros de réception.
+
+                                    </p>
+
+                                </div>
+
+                                <div class="flex items-center gap-2">
+
+                                    <input type="hidden" name="allow_custom_payments" value="0">
+
+                                    <label class="inline-flex items-center">
+
+                                        <input id="createAllowCustomPayments" type="checkbox" name="allow_custom_payments" value="1"
+
+                                            class="switch-input sr-only">
+
+                                        <span class="switch-track" aria-hidden="true"></span>
+
+                                    </label>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div>
+
+                            <label class="text-[10px] text-gray-500 uppercase">Expiration (Optionnel)</label>
+
+                            <input type="date" name="expiration" class="text-gray-300">
+
+                        </div>
+
+
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                            <div>
+
+                                <label class="text-[10px] text-gray-500 uppercase">Quota Data (GB)</label>
+
+                                <input type="number" step="0.1" min="0" name="quota_gb" placeholder="Ex: 10">
+
+                                <p class="text-[10px] text-gray-700 mt-1 italic">Vide = Illimité</p>
+
+                            </div>
+
+                            <div>
+
+                                <label class="text-[10px] text-gray-500 uppercase">Limite Appareils</label>
+
+                                <input type="number" min="0" name="limit_ip" placeholder="Ex: 2">
+
+                                <p class="text-[10px] text-gray-700 mt-1 italic">0 ou vide = Illimité</p>
+
+                            </div>
+
+                            <div>
+
+                                <label class="text-[10px] text-gray-500 uppercase">Avatar (URL)</label>
+
+                                <input type="text" name="avatar" placeholder="https://... ou /static/avatars/...">
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div>
+
+                            <label class="text-[10px] text-gray-500 uppercase">Phrase secrète (récupération)</label>
+
+                            <input type="text" name="recovery_secret" minlength="4" maxlength="120"
+
+                                placeholder="Ex: nom du premier chien">
+
+                        <p class="text-[10px] text-gray-700 mt-1 italic">Optionnel ici, mais recommandé pour
+
+                            vérifier une demande de mot de passe oublié.</p>
+
+                        </div>
+
+
+
+                        <div>
+
+                            <label class="text-[10px] text-gray-500 uppercase">Note Admin (Mémo)</label>
+
+                            <textarea name="notes" rows="2" placeholder="Ex: Payé OM - 10/02"></textarea>
+
+                        </div>
+
+
+
+                        <button type="submit"
+
+                            class="text-black font-bold py-3 rounded-2xl orbitron text-[10px] hover:scale-[1.02] transition mt-2 shadow-[0_0_15px_rgba(57,255,20,0.35)] motion-press"
+
+                            style="background:var(--panel-accent,#39ff14);box-shadow:0 0 15px rgba(var(--panel-accent-rgb,57,255,20),0.35);">
+
+                            CRÉER L'ACCÈS
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+
+                <div class="glass-card motion-lift p-6 rounded-3xl h-fit">
+
+                    <h3
+
+                        class="orbitron text-sm font-bold mb-6 panel-accent-text border-b border-white/10 pb-2 flex items-center gap-2">
+
+                        <i class="fas fa-rotate"></i> &#x267B;&#xFE0F; RENOUVELLEMENT
+
+                    </h3>
+
+                    <form action="/admin/users/renew" method="POST" class="flex flex-col gap-4">
+
+                        <div>
+
+                            <label class="text-[10px] text-gray-500 uppercase">Choisir l'abonné</label>
+
+                            <select name="user_id" id="renewUserSelect" required>
+
+                                <option value="" selected disabled>-- Sélectionner --</option>
+
+                                {{USERS_OPTIONS}}
+
+                            </select>
+
+                            <div class="flex justify-between items-center mt-2">
+
+                                <p class="text-[10px] text-gray-600">Astuce: ouvre sa fiche pour plus d'options.</p>
+
+                                <a id="openUserLink" href="#"
+
+                                    class="text-[10px] panel-accent-text hover:text-white transition">Ouvrir la fiche</a>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+
+                                <label class="text-[10px] text-gray-500 uppercase">+ Durée (jours)</label>
+
+                                <input type="number" name="days" min="1" max="3650" placeholder="Ex: 30">
+
+                            </div>
+
+                            <div>
+
+                                <label class="text-[10px] text-gray-500 uppercase">+ Data (GB)</label>
+
+                                <input type="number" name="gb" min="0.1" step="0.1" max="100000" placeholder="Ex: 10">
+
+                            </div>
+
+                        </div>
+
+
+
+                        <button type="submit"
+
+                            class="bg-[#ffd700] text-black font-bold py-3 rounded-2xl orbitron text-[10px] hover:scale-[1.02] transition shadow-[0_0_15px_rgba(255,215,0,0.25)] motion-press">
+
+                            APPLIQUER LE RENOUVELLEMENT
+
+                        </button>
+
+                        <p class="text-[10px] text-gray-700 italic">Note: l'&eacute;tat &ldquo;en ligne&rdquo; est bas&eacute; sur les sessions
+
+                            actives du serveur.</p>
+
+                    </form>
+
+                </div>
+
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- Vue 2: Abonnés inscrits / En ligne -->
+
+        <section id="viewList" class="hidden motion-enter">
+
+            <div class="glass-card motion-lift p-6 rounded-3xl">
+
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+
+                    <div>
+
+                        <h3 class="orbitron text-sm font-bold flex items-center gap-2">
+
+                            <i class="fas fa-users"></i> 📋 ABONNÉS INSCRITS
+
+                        </h3>
+
+                        <p class="text-[10px] text-gray-600 mt-2">Filtre: en ligne + recherche instantanée</p>
+
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+
+                        <div class="flex gap-2">
+
+                            <button id="filterAll"
+
+                                class="submenu-chip px-4 py-2 rounded-xl text-[10px] orbitron font-bold transition motion-press">📦
+
+                                TOUS</button>
+
+                            <button id="filterOnline"
+
+                                class="submenu-chip panel-accent-text px-4 py-2 rounded-xl text-[10px] orbitron font-bold transition motion-press">🟢
+
+                                EN LIGNE</button>
+
+                        </div>
+
+                        <div class="relative">
+
+                            <i id="searchIcon" class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 text-[12px] transition-all duration-300"></i>
+
+                            <input id="searchInput" type="text" placeholder="Rechercher pseudo / type / statut..."
+
+                                class="pl-10 text-[11px] rounded-xl w-full sm:w-[320px] focus:border-[#39ff14] focus:ring-1 focus:ring-[#39ff14]/50 transition-all">
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="overflow-x-auto admin-table-wrap">
+
+                    <table class="w-full text-left text-xs admin-responsive-table admin-users-table">
+
+                        <thead class="text-gray-500 border-b border-white/10">
+
+                            <tr>
+
+                                <th class="pb-4 pl-2">UTILISATEUR / INFO</th>
+
+                                <th class="pb-4">TYPE</th>
+
+                                <th class="pb-4">EXPIRATION</th>
+
+                                <th class="pb-4">GIGA</th>
+
+                                <th class="pb-4">EN LIGNE</th>
+
+                                <th class="pb-4">NOTES</th>
+
+                                <th class="pb-4">STATUS</th>
+
+                                <th class="pb-4 text-right pr-2">ACTION</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="usersTbody" class="divide-y divide-white/5">
+
+                            {{USERS_ROWS}}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="glass-card motion-lift p-6 rounded-3xl mt-6">
+
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+
+                    <div>
+
+                        <h3 class="orbitron text-sm font-bold flex items-center gap-2">
+
+                        <i class="fas fa-life-ring text-yellow-300"></i> DEMANDES MOT DE PASSE OUBLIÉ
+
+                        </h3>
+
+                    <p class="text-[10px] text-gray-600 mt-2">Traitement admin: réinitialisation puis validation de la
+
+                            demande</p>
+
+                    </div>
+
+                    <div
+
+                        class="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] orbitron font-black tracking-widest uppercase">
+
+                        En attente: <span class="text-yellow-300">{{RECOVERY_COUNT}}</span>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="overflow-x-auto admin-table-wrap">
+
+                    <table class="w-full text-left text-xs admin-responsive-table admin-recovery-table">
+
+                        <thead class="text-gray-500 border-b border-white/10">
+
+                            <tr>
+
+                                <th class="pb-3 pl-2">PSEUDO / DATE</th>
+
+                                <th class="pb-3">CONTACT</th>
+
+                                <th class="pb-3">MESSAGE</th>
+
+                                <th class="pb-3">COMPTE CIBLE</th>
+
+                                <th class="pb-3 text-right pr-2">ACTION</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody class="divide-y divide-white/5">
+
+                            {{RECOVERY_ROWS}}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+
+    <div id="copyToast"
+
+        class="hidden fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-black/70 border border-white/10 text-[10px] orbitron font-black tracking-widest uppercase panel-accent-text shadow-[0_0_18px_rgba(57,255,20,0.18)]">
+
+        Copié.
+
+    </div>
+
+
+
+    <script>
+
+        // Tabs: sous-menu
+
+        function triggerEnter(el) {
+
+            if (!el) return;
+
+            el.classList.remove('motion-enter');
+
+            void el.offsetWidth; // force reflow, so animation restarts
+
+            el.classList.add('motion-enter');
+
+        }
+
+
+
+        function setTab(tab) {
+
+            const reg = document.getElementById('viewReg');
+
+            const list = document.getElementById('viewList');
+
+            const bReg = document.getElementById('tabRegBtn');
+
+            const bList = document.getElementById('tabListBtn');
+
+
+
+            const isReg = tab === 'reg';
+
+            if (reg) reg.classList.toggle('hidden', !isReg);
+
+            if (list) list.classList.toggle('hidden', isReg);
+
+            if (bReg) bReg.classList.toggle('active', isReg);
+
+            if (bList) bList.classList.toggle('active', !isReg);
+
+
+
+            if (isReg) triggerEnter(reg);
+
+            else triggerEnter(list);
+
+
+
+            const url = new URL(window.location.href);
+
+            url.searchParams.set('tab', isReg ?'reg' : 'list');
+
+            window.history.replaceState({}, '', url.toString());
+
+        }
+
+
+
+        const tabFromUrl = new URLSearchParams(window.location.search).get('tab') || 'list';
+
+        setTab(tabFromUrl === 'reg' ?'reg' : 'list');
+
+
+
+        document.getElementById('tabRegBtn')?.addEventListener('click', () => setTab('reg'));
+
+        document.getElementById('tabListBtn')?.addEventListener('click', () => setTab('list'));
+
+
+
+        // Renouvellement: lien "ouvrir la fiche"
+
+        const renewSel = document.getElementById('renewUserSelect');
+
+        const openLink = document.getElementById('openUserLink');
+
+        function syncOpenLink() {
+
+            if (!renewSel || !openLink) return;
+
+            const uid = renewSel.value;
+
+            openLink.href = uid ?('/admin/users/edit?user_id=' + encodeURIComponent(uid)) : '#';
+
+        }
+
+        renewSel?.addEventListener('change', syncOpenLink);
+
+        syncOpenLink();
+
+
+
+        // Afficher l'option paiements manuels uniquement pour "Revendeur"
+
+        const createUserType = document.getElementById('createUserType');
+
+        const createAllowCustomBlock = document.getElementById('createAllowCustomPaymentsBlock');
+
+        const createAllowCustomToggle = document.getElementById('createAllowCustomPayments');
+
+        function syncCreatePaymentOptions() {
+
+            if (!createUserType || !createAllowCustomBlock) return;
+
+            const isReseller = createUserType.value === 'Revendeur';
+
+            createAllowCustomBlock.classList.toggle('hidden', !isReseller);
+
+            if (!isReseller && createAllowCustomToggle) createAllowCustomToggle.checked = false;
+
+        }
+
+        createUserType?.addEventListener('change', syncCreatePaymentOptions);
+
+        syncCreatePaymentOptions();
+
+
+
+        // Flash banner: auto-hide apres 4 secondes
+
+        const flashMount = document.getElementById('flashBannerMount');
+
+        const flashBanner = flashMount ?flashMount.firstElementChild : null;
+
+        if (flashBanner) {
+
+            setTimeout(() => {
+
+                flashBanner.style.transition = 'opacity .28s ease, transform .28s ease';
+
+                flashBanner.style.opacity = '0';
+
+                flashBanner.style.transform = 'translateY(-6px)';
+
+                setTimeout(() => {
+
+                    if (flashBanner.parentNode) flashBanner.parentNode.removeChild(flashBanner);
+
+                }, 320);
+
+            }, 4000);
+
+        }
+
+
+
+        // Filtre "En ligne" + recherche
+
+        let filterMode = 'all';
+
+        const searchInput = document.getElementById('searchInput');
+
+        const tbody = document.getElementById('usersTbody');
+
+        const searchIcon = document.getElementById('searchIcon'); // Mise en cache hors de la fonction
+
+
+
+        // --- Variables pour le scroll infini ---
+
+        const PAGE_SIZE = 50;
+
+        let currentLimit = PAGE_SIZE;
+
+        let matchedRows = [];
+
+
+
+        // Observer pour détecter quand on atteint le bas du tableau
+
+        const scrollObserver = new IntersectionObserver((entries) => {
+
+            if (entries[0].isIntersecting && matchedRows.length > currentLimit) {
+
+                currentLimit += PAGE_SIZE;
+
+                applyFilters(false); // false = charger la suite sans réinitialiser la recherche
+
+            }
+
+        }, { rootMargin: '150px' }); // 150px avant d'atteindre le bas
+
+
+
+        function applyFilters(reset = true) {
+
+            if (!tbody) return;
+
+            
+
+            if (reset) {
+
+                currentLimit = PAGE_SIZE;
+
+            }
+
+
+
+            const q = (searchInput?.value || '').trim().toLowerCase();
+
+            const rows = tbody.querySelectorAll('tr:not(#noResultRow):not(#scrollSentinel)');
+
+
+
+            // Animation de l'icône pendant la frappe (uniquement si reset)
+
+            if (searchIcon && reset) {
+
+                searchIcon.classList.add('text-[#39ff14]', 'scale-125');
+
+                clearTimeout(window.searchIconTimer);
+
+                window.searchIconTimer = setTimeout(() => {
+
+                    searchIcon.classList.remove('text-[#39ff14]', 'scale-125');
+
+                }, 400);
+
+            }
+
+
+
+            matchedRows = [];
+
+
+
+            rows.forEach((row) => {
+
+                const online = row.getAttribute('data-online') === '1';
+
+                const text = (row.textContent || '').toLowerCase(); // textContent est ~3x plus rapide que innerText
+
+                const matchFilter = (filterMode === 'online') ?online : true;
+
+                const matchSearch = q ?text.includes(q) : true;
+
+                
+
+                if (matchFilter && matchSearch) {
+
+                    matchedRows.push(row);
+
+                } else {
+
+                    row.classList.add('hidden');
+
+                    row.classList.remove('row-match');
+
+                }
+
+            });
+
+
+
+            let visibleCount = 0;
+
+
+
+            // Afficher uniquement les éléments jusqu'à currentLimit
+
+            matchedRows.forEach((row, index) => {
+
+                if (index < currentLimit) {
+
+                    if (row.classList.contains('hidden')) {
+
+                        row.classList.remove('hidden');
+
+                        // Animation seulement si c'est une nouvelle recherche (évite les clignotements au scroll)
+
+                        if (reset) {
+
+                            window.requestAnimationFrame(() => {
+
+                                row.classList.remove('row-match');
+
+                                window.requestAnimationFrame(() => row.classList.add('row-match'));
+
+                            });
+
+                        }
+
+                    }
+
+                    visibleCount++;
+
+                } else {
+
+                    row.classList.add('hidden');
+
+                    row.classList.remove('row-match');
+
+                }
+
+            });
+
+
+
+            // Gérer la ligne "Aucun résultat"
+
+            let noResultRow = document.getElementById('noResultRow');
+
+            if (!noResultRow) {
+
+                noResultRow = document.createElement('tr');
+
+                noResultRow.id = 'noResultRow';
+
+                noResultRow.innerHTML = '<td colspan="8" class="py-10 text-center text-gray-500 text-xs italic"><i class="fas fa-ghost text-3xl mb-3 opacity-40 block"></i>Aucun abonné ne correspond à votre recherche.</td>';
+
+                tbody.appendChild(noResultRow);
+
+            }
+
+            noResultRow.classList.toggle('hidden', visibleCount > 0);
+
+
+
+            // Gérer le sentinel (indicateur de chargement) pour le scroll infini
+
+            let sentinel = document.getElementById('scrollSentinel');
+
+            if (matchedRows.length > currentLimit) {
+
+                if (!sentinel) {
+
+                    sentinel = document.createElement('tr');
+
+                    sentinel.id = 'scrollSentinel';
+
+                    sentinel.innerHTML = '<td colspan="8" class="py-6 text-center text-gray-400 text-[10px] uppercase tracking-widest"><i class="fas fa-circle-notch fa-spin mr-2"></i>Chargement de la suite...</td>';
+
+                    tbody.appendChild(sentinel);
+
+                    scrollObserver.observe(sentinel);
+
+                } else {
+
+                    sentinel.classList.remove('hidden');
+
+                    tbody.appendChild(sentinel); // Le repousser tout en bas du tableau
+
+                }
+
+            } else if (sentinel) {
+
+                sentinel.classList.add('hidden');
+
+            }
+
+        }
+
+
+
+        document.getElementById('filterAll')?.addEventListener('click', () => {
+
+            filterMode = 'all';
+
+            applyFilters(true);
+
+        });
+
+        document.getElementById('filterOnline')?.addEventListener('click', () => {
+
+            filterMode = 'online';
+
+            applyFilters(true);
+
+        });
+
+        searchInput?.addEventListener('input', () => applyFilters(true));
+
+
+
+        // Initialiser la pagination au chargement de la page
+
+        applyFilters(true);
+
+
+
+        function toast(msg) {
+
+            const el = document.getElementById('copyToast');
+
+            if (!el) return;
+
+            el.textContent = msg || 'Copié.';
+
+            el.classList.remove('hidden');
+
+            setTimeout(() => el.classList.add('hidden'), 1400);
+
+        }
+
+
+
+        // Script pour copier la licence / UUID
+
+        document.addEventListener('click', async (e) => {
+
+            const btnLic = e.target.closest('[data-copy-license]');
+
+            const btnUuid = e.target.closest('[data-copy-uuid]');
+
+            const btn = btnLic || btnUuid;
+
+            if (!btn) return;
+
+            const code = btnLic ?(btnLic.getAttribute('data-copy-license') || '') : (btnUuid.getAttribute('data-copy-uuid') || '');
+
+        const label = btnLic ?'Information' : 'UUID';
+
+            try { await navigator.clipboard.writeText(code); toast(label + ' copié.'); }
+
+            catch (err) { toast('Copie impossible.'); }
+
+        });
+
+
+
+        // Les titres restent stables ici pour eviter les decalages visuels.
+
+    </script>
+
+<script defer src="/static/js/dropdown-groups.js"></script>
+
+</body>
+
+
+
+</html>
+
+

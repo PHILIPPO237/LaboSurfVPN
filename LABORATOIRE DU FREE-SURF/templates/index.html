@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LABORATOIRE | Accueil - Laboratoire du Free-Surf</title>
+    
+    <!-- Fonts & Tailwind -->
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+    
+    <!-- CSS Accessibilité & Palette -->
+    <link rel="stylesheet" href="/static/css/a11y.css">
+    <link rel="stylesheet" href="/static/css/command-palette.css">
+    <link rel="stylesheet" href="/static/css/interface-refresh.css">
+    <script defer src="/static/js/command-palette.js"></script>
+    <script defer src="/static/js/ui-a11y.js"></script>
+
+    <style>
+        :root {
+            --neon: #39ff14;
+            --neon-rgb: 57, 255, 20;
+            --cyan: #00f2ff;
+            --cyan-rgb: 0, 242, 255;
+            --dark: #050505;
+            --purple: #b44dff;
+            --purple-rgb: 180, 77, 255;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            scrollbar-gutter: stable both-edges;
+            margin: 0;
+        }
+
+        body.interface-stage--entry::before,
+        body.interface-stage--entry::after {
+            display: none;
+        }
+
+        .interface-stage--entry .cyber-scanner-line {
+            display: block;
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* --- Arrière-plan Cyber --- */
+        .cyber-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(0, 242, 255, 0.08), transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(57, 255, 20, 0.05), transparent 40%);
+        }
+        
+        .cyber-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        }
+
+        /* --- Effets de brillance --- */
+        .text-glow-cyan {
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.4), 0 0 30px rgba(0, 242, 255, 0.2);
+        }
+        .text-glow-neon {
+            text-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+        }
+
+        /* --- Boutons CTA --- */
+        .btn-cyber {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1rem 2.5rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            border-radius: 9999px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1;
+        }
+
+        .btn-cyber i {
+            font-size: 1.1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-cyber:hover i {
+            transform: scale(1.2);
+        }
+
+        /* Effet de balayage lumineux au survol */
+        .btn-cyber::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.5s ease;
+            z-index: 0;
+        }
+
+        .btn-cyber:hover::before {
+            left: 150%;
+        }
+
+        .btn-cyan {
+            background: rgba(0, 242, 255, 0.05);
+            color: var(--cyan);
+            border: 2px solid rgba(0, 242, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.1), inset 0 0 10px rgba(0, 242, 255, 0.1);
+        }
+
+        .btn-cyan:hover {
+            background: var(--cyan);
+            color: #000;
+            border-color: var(--cyan);
+            box-shadow: 0 0 35px rgba(0, 242, 255, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px);
+        }
+
+        .btn-outline {
+            background: rgba(57, 255, 20, 0.03);
+            color: var(--neon);
+            border: 2px solid rgba(57, 255, 20, 0.4);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.05);
+        }
+
+        .btn-outline:hover {
+            background: rgba(57, 255, 20, 0.15);
+            color: #fff;
+            border-color: var(--neon);
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.4), inset 0 0 15px rgba(57, 255, 20, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* --- Cartes Features --- */
+        .feature-card {
+            background: rgba(10, 15, 25, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            display: block;
+            text-decoration: none;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--card-color), transparent);
+            transform: scaleX(0);
+            transition: transform 0.5s ease;
+        }
+
+        /* Halo lumineux diffus derrière l'icône */
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 2rem; left: 2rem;
+            width: 4rem; height: 4rem;
+            background: var(--card-color);
+            filter: blur(45px);
+            opacity: 0.15;
+            z-index: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.6), 
+                inset 0 0 20px rgba(255, 255, 255, 0.03),
+                0 10px 30px rgba(var(--card-color-rgb), 0.15);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover::after {
+            opacity: 0.35;
+        }
+
+        /* Style du conteneur de l'icône */
+        .feature-icon-box {
+            width: 4rem; height: 4rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--card-color);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.02);
+        }
+
+        .feature-card:hover .feature-icon-box {
+            background: rgba(var(--card-color-rgb), 0.15);
+            border-color: var(--card-color);
+            color: #fff;
+            box-shadow: 
+                0 0 25px rgba(var(--card-color-rgb), 0.4),
+                inset 0 0 15px rgba(var(--card-color-rgb), 0.4);
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        /* Animations */
+        .fade-up {
+            animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Effet Machine (Typewriter) --- */
+        .cursor-blink {
+            display: inline-block;
+            width: 8px;
+            height: 1.2em;
+            background-color: var(--cyan);
+            vertical-align: middle;
+            margin-left: 4px;
+            animation: blink 1s step-end infinite;
+            box-shadow: 0 0 8px var(--cyan);
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .machine-subtitle {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.9rem;
+            width: min(100%, 75rem);
+            min-height: 4.75rem;
+            padding: 1.05rem 1.5rem;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 242, 255, 0.18);
+            background: linear-gradient(135deg, rgba(5, 10, 20, 0.86), rgba(10, 18, 34, 0.72));
+            box-shadow: inset 0 0 24px rgba(0, 242, 255, 0.08), 0 12px 40px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+            contain: layout paint;
+        }
+        .machine-subtitle__accent {
+            width: 0.95rem;
+            height: 0.95rem;
+            border-radius: 0.22rem;
+            background: linear-gradient(135deg, rgba(0, 242, 255, 0.95), rgba(57, 255, 20, 0.95));
+            box-shadow: 0 0 18px rgba(0, 242, 255, 0.4), 0 0 26px rgba(57, 255, 20, 0.2);
+            transform: rotate(6deg);
+            flex-shrink: 0;
+        }
+        .machine-subtitle__copy {
+            position: relative;
+            width: 100%;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .machine-subtitle__ghost,
+        .machine-subtitle__text {
+            font-family: "Orbitron", sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            line-height: 1.5;
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+        .machine-subtitle__ghost {
+            visibility: hidden;
+            user-select: none;
+            pointer-events: none;
+        }
+        .machine-subtitle__text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.35s ease, text-shadow 0.35s ease;
+        }
+        .home-hero {
+            position: relative;
+            isolation: isolate;
+            overflow: visible;
+            width: 100%;
+        }
+        .home-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+        .home-hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: clamp(-2rem, 2vw, 1.5rem);
+            width: clamp(12rem, 22vw, 17rem);
+            aspect-ratio: 1;
+            border-radius: 2rem;
+            border: 1px solid rgba(0, 242, 255, 0.22);
+            background:
+                linear-gradient(135deg, rgba(0, 242, 255, 0.16), rgba(9, 15, 28, 0.92)),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 65%);
+            box-shadow:
+                0 22px 50px rgba(0, 0, 0, 0.45),
+                0 0 32px rgba(0, 242, 255, 0.14),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            transform: translateY(-50%) rotate(8deg);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .home-hero::after {
+            content: '';
+            position: absolute;
+            top: calc(50% + 1rem);
+            right: clamp(0.25rem, 4vw, 3.75rem);
+            width: clamp(5.5rem, 10vw, 7.75rem);
+            aspect-ratio: 1;
+            border-radius: 1.1rem;
+            border: 1px solid rgba(57, 255, 20, 0.26);
+            background:
+                linear-gradient(160deg, rgba(57, 255, 20, 0.18), rgba(57, 255, 20, 0.04)),
+                radial-gradient(circle, rgba(57, 255, 20, 0.2), transparent 72%);
+            box-shadow:
+                0 0 24px rgba(57, 255, 20, 0.14),
+                inset 0 0 18px rgba(57, 255, 20, 0.08);
+            transform: translateY(-50%) rotate(-10deg);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero-stage {
+            position: relative;
+            isolation: isolate;
+            overflow: visible;
+            width: 100%;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: clamp(1rem, 4vh, 3rem);
+        }
+        .decorative-frame {
+            position: relative;
+            width: min(100%, 80rem);
+            margin: 0 auto;
+            padding: clamp(1.4rem, 3.2vw, 2.6rem);
+            border-radius: clamp(1.4rem, 3vw, 2.3rem);
+            border: 1px solid rgba(0, 242, 255, 0.28);
+            background:
+                radial-gradient(circle at 15% 18%, rgba(0, 242, 255, 0.16), transparent 34%),
+                radial-gradient(circle at 87% 80%, rgba(57, 255, 20, 0.12), transparent 34%),
+                linear-gradient(145deg, rgba(6, 12, 24, 0.94), rgba(8, 16, 32, 0.88));
+            box-shadow:
+                0 26px 54px rgba(0, 0, 0, 0.55),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+                inset 0 0 36px rgba(0, 242, 255, 0.08);
+            overflow: hidden;
+        }
+        .decorative-frame::before {
+            content: '';
+            position: absolute;
+            inset: 0.55rem;
+            border-radius: inherit;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+        }
+        .decorative-frame::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -38%;
+            width: 58%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: skewX(-18deg);
+            animation: frameSweep 9s linear infinite;
+            pointer-events: none;
+            opacity: 0.32;
+        }
+        .decorative-frame__inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .designer-badge {
+            margin-top: 2.2rem;
+        }
+        @keyframes frameSweep {
+            0% { left: -45%; }
+            100% { left: 145%; }
+        }
+        .operator-logo-strip {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.1rem;
+            flex-wrap: wrap;
+        }
+        .operator-logo-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 6.5rem;
+            min-height: 4.1rem;
+            padding: 0.9rem 1.15rem;
+            border-radius: 1.15rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.03);
+            transition: transform 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+        }
+        .operator-logo-chip:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 242, 255, 0.34);
+            background: rgba(0, 242, 255, 0.08);
+        }
+        .operator-logo-chip img {
+            height: 2.55rem;
+            width: auto;
+            object-fit: contain;
+        }
+
+        @media (min-width: 1024px) {
+            .hero-stage {
+                padding-right: clamp(11rem, 18vw, 16rem);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .decorative-frame {
+                padding: 1.1rem 1rem 1.25rem;
+                border-radius: 1.2rem;
+            }
+            .machine-subtitle {
+                border-radius: 1.5rem;
+                padding: 0.95rem 1rem;
+                gap: 0.75rem;
+            }
+            .machine-subtitle__accent {
+                width: 0.82rem;
+                height: 0.82rem;
+            }
+            .machine-subtitle__ghost,
+            .machine-subtitle__text {
+                font-size: 0.82rem;
+                letter-spacing: 0.05em;
+            }
+            .operator-logo-strip {
+                gap: 0.4rem;
+                flex-wrap: nowrap;
+            }
+            .operator-logo-chip {
+                min-width: 0;
+                flex: 1 1 0;
+                min-height: 2.6rem;
+                padding: 0.4rem 0.35rem;
+            }
+            .operator-logo-chip img {
+                height: 1.5rem;
+            }
+            .btn-cyber {
+                padding: 0.65rem 0.5rem;
+                font-size: 0.68rem;
+                letter-spacing: 0.06em;
+                gap: 0.4rem;
+            }
+            .btn-cyber i {
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .home-hero::before {
+                top: 1.15rem;
+                right: -0.9rem;
+                width: 6.2rem;
+                border-radius: 1.35rem;
+                transform: rotate(10deg);
+                opacity: 0.42;
+                z-index: 0;
+            }
+            .home-hero::after {
+                top: 4.9rem;
+                right: 1.05rem;
+                width: 2.35rem;
+                border-radius: 0.75rem;
+                transform: rotate(-8deg);
+                opacity: 0.55;
+            }
+        }
+
+        /* --- FX Intro & Boot --- */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
+            background-size: 100% 4px; z-index: 9998; pointer-events: none; opacity: 0.5;
+        }
+        .boot-overlay {
+            position: fixed; inset: 0; background: rgba(5, 5, 5, 1);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .boot-panel {
+            width: min(820px, calc(100vw - 2rem)); border: 1px solid rgba(0, 242, 255, 0.4); border-radius: 12px;
+            padding: 1.5rem; box-shadow: 0 0 30px rgba(0, 242, 255, 0.15), inset 0 0 15px rgba(0, 242, 255, 0.1);
+            background: rgba(10, 15, 25, 0.95);
+        }
+        .boot-title { font-family: "Orbitron", sans-serif; letter-spacing: 0.2em; color: var(--cyan); font-weight: 800; display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 1.1rem; text-shadow: 0 0 10px var(--cyan); }
+        .boot-log { font-size: 0.85rem; line-height: 1.6; color: rgba(255, 255, 255, 0.9); height: 220px; overflow-y: auto; padding: 1rem; border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 8px; background: rgba(0, 0, 0, 0.6); font-family: "JetBrains Mono", monospace; }
+        .boot-log .ok { color: var(--neon); font-weight: bold; text-shadow: 0 0 8px var(--neon); }
+        .boot-log .warn { color: #ffd700; font-weight: bold; text-shadow: 0 0 8px #ffd700; }
+        .boot-bar-wrap { margin-top: 1.2rem; border: 1px solid rgba(0, 242, 255, 0.3); border-radius: 999px; height: 8px; background: rgba(0, 0, 0, 0.5); overflow: hidden; }
+        .boot-bar { height: 100%; width: 0%; background: var(--cyan); box-shadow: 0 0 15px var(--cyan); transition: width 0.1s ease; }
+        
+        .glitch-title { position: relative; display: inline-block; }
+        .glitch-title::before, .glitch-title::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; }
+        .glitch-title::before { left: 3px; text-shadow: -2px 0 #00f2ff; clip-path: inset(24% 0 51% 0); animation: none; opacity: 0.18; }
+        .glitch-title::after { left: -3px; text-shadow: -2px 0 #39ff14; clip-path: inset(60% 0 10% 0); animation: none; opacity: 0.12; }
+        @keyframes glitch-anim-1 { 0% { clip-path: inset(20% 0 80% 0); } 20% { clip-path: inset(60% 0 10% 0); } 40% { clip-path: inset(40% 0 50% 0); } 60% { clip-path: inset(80% 0 5% 0); } 80% { clip-path: inset(10% 0 70% 0); } 100% { clip-path: inset(30% 0 20% 0); } }
+        @keyframes glitch-anim-2 { 0% { clip-path: inset(10% 0 60% 0); } 20% { clip-path: inset(30% 0 20% 0); } 40% { clip-path: inset(70% 0 10% 0); } 60% { clip-path: inset(20% 0 50% 0); } 80% { clip-path: inset(50% 0 30% 0); } 100% { clip-path: inset(5% 0 80% 0); } }
+
+        /* --- Effet Scanner --- */
+        .cyber-scanner-line {
+            position: fixed;
+            left: -8%;
+            width: 116%;
+            height: clamp(28px, 4vh, 55px); /* Hauteur réduite */
+            background: linear-gradient(180deg, 
+                transparent 0%,
+                rgba(57, 255, 20, 0.24) 14%, /* Couleur verte */
+                rgba(57, 255, 20, 0.92) 50%, /* Couleur verte */
+                rgba(57, 255, 20, 0.55) 64%,
+                rgba(57, 255, 20, 0.24) 86%, /* Couleur verte */
+                transparent 100%);
+            box-shadow:
+                0 0 24px rgba(57, 255, 20, 0.95), /* Lueur verte */
+                0 0 64px rgba(57, 255, 20, 0.42), /* Lueur verte */
+                inset 0 0 48px rgba(57, 255, 20, 0.22);
+            filter: blur(6px); /* Flou légèrement réduit */
+            z-index: 9997;
+            pointer-events: none;
+            opacity: 0;
+            mix-blend-mode: screen;
+            animation: scanMove 6.5s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+        }
+        .cyber-scanner-line::after {
+            content: '';
+            position: absolute;
+            inset: -16px 0;
+            background: radial-gradient(ellipse at center, rgba(57, 255, 20, 0.48), transparent 72%); /* Lueur verte */
+            filter: blur(20px);
+            opacity: 0.7;
+        }
+        @keyframes scanMove {
+            0% { top: -20vh; opacity: 0; }
+            8% { top: -8vh; opacity: 0.72; }
+            46% { top: 52vh; opacity: 0.84; }
+            54% { top: 110vh; opacity: 0; }
+            100% { top: 110vh; opacity: 0; }
+        }
+    /* Sur mobile, la page d'accueil tient sur un seul écran, sans défilement — même principe
+       que l'app Labo Surf. Le contenu (#mainAppWrapper) est mesuré en JS (fitMobileHome) et
+       réduit proportionnellement s'il dépasse la hauteur réelle de l'écran. Ne touche pas au
+       rendu sur ordinateur (au-dessus de 767px), où le défilement normal reste attendu. */
+    @media (max-width: 767px) {
+      html, body { overflow: hidden; height: 100%; }
+      body { display: flex; align-items: center; justify-content: center; }
+      #mainAppWrapper { transform-origin: center center; }
+    }
+    </style>
+</head>
+<body class="interface-stage interface-stage--entry" data-page-guide="home">
+
+    <div class="scanlines"></div>
+    <div class="cyber-scanner-line"></div>
+
+    <div class="cyber-bg">
+        <div class="cyber-grid"></div>
+    </div>
+
+    <!-- SEQUENCE DE BOOT -->
+    <div class="boot-overlay" id="bootOverlay">
+        <div class="boot-panel">
+            <div class="boot-title"><span>SYSTEM BOOT</span><span>v2.0.0</span></div>
+            <div class="boot-log" id="bootLog"></div>
+            <div class="boot-bar-wrap"><div class="boot-bar" id="bootBar"></div></div>
+            <div class="mt-4 text-[10px] text-center text-cyan-400 tracking-widest uppercase font-bold animate-pulse">INITIALISATION DU LABORATOIRE...</div>
+        </div>
+    </div>
+
+    <div id="mainAppWrapper" class="flex flex-col overflow-x-hidden" style="opacity: 0; display: none; transition: opacity 0.8s ease-in;">
+
+    <!-- Hero Section -->
+    <main class="home-hero relative z-10 flex-1 flex flex-col items-center justify-start w-full px-6 pt-28 pb-10 sm:pb-14 text-center max-w-6xl mx-auto">
+        <section class="hero-stage">
+            <div class="decorative-frame">
+                <div class="decorative-frame__inner">
+                    <div class="fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-xs text-cyan-400 mb-8 font-bold tracking-widest uppercase">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        Syst&egrave;me Op&eacute;rationnel
+                    </div>
+
+                    <h1 class="fade-up delay-100 orbitron text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tight text-white mb-6 leading-tight">
+                        <span class="glitch-title" data-text="Laboratoire">Laboratoire</span>
+                        <span class="text-[#39ff14] text-glow-neon">d</span><span class="glitch-title" data-text="u">u</span> <br/>
+                        <span class="text-[#39ff14] text-glow-neon">Free-Surf</span>
+                    </h1>
+
+                    <div class="fade-up delay-200 w-full text-sm md:text-base lg:text-lg text-gray-300 mb-8 max-w-4xl leading-relaxed min-h-[4.75rem] md:min-h-[3.25rem] flex justify-center">
+                        <div class="machine-subtitle">
+                            <span class="machine-subtitle__accent" aria-hidden="true"></span>
+                            <span class="machine-subtitle__copy">
+                                <span class="machine-subtitle__ghost" aria-hidden="true">&#127760; Gestion Intelligente De Vos Abonnements &amp; Acc&egrave;s &#128225;</span>
+                                <span id="typewriter-text" class="machine-subtitle__text"></span>
+                            </span>
+                            <span class="cursor-blink"></span>
+                        </div>
+                    </div>
+
+                    <div class="fade-up delay-200 operator-logo-strip mb-10">
+                        <div class="operator-logo-chip">
+                            <img src="/static/logo/mtn.png" alt="MTN" loading="lazy" style="filter: drop-shadow(0 0 14px rgba(255,204,0,0.5));" class="transition-all duration-500 hover:drop-shadow-[0_0_22px_rgba(255,204,0,0.9)]">
+                        </div>
+                        <div class="operator-logo-chip">
+                            <img src="/static/logo/orange.png" alt="Orange" loading="lazy" style="filter: drop-shadow(0 0 14px rgba(255,102,0,0.5));" class="transition-all duration-500 hover:drop-shadow-[0_0_22px_rgba(255,102,0,0.9)]">
+                        </div>
+                        <div class="operator-logo-chip">
+                            <img src="/static/logo/camtel.jpg" alt="Camtel" loading="lazy" style="filter: drop-shadow(0 0 14px rgba(0,153,255,0.5)); border-radius: 0.4rem;" class="transition-all duration-500 hover:drop-shadow-[0_0_22px_rgba(0,153,255,0.9)]">
+                        </div>
+                    </div>
+
+                    <div class="fade-up delay-300 flex flex-row gap-3 w-full">
+                        <a href="/acces" class="btn-cyber btn-cyan justify-center flex-1">
+                            <i class="fas fa-right-to-bracket"></i> Se connecter
+                        </a>
+                        <a href="/avant-propos" class="btn-cyber btn-outline justify-center flex-1">
+                            <i class="fas fa-book-journal-whills"></i> Manifeste
+                        </a>
+                    </div>
+
+                    <a href="https://t.me/Philippo237" target="_blank" rel="noopener noreferrer" aria-label="Contacter le concepteur sur Telegram" class="designer-badge fade-up delay-300 relative z-20 flex w-full max-w-md self-center items-center justify-center gap-4 bg-white/5 border border-white/10 px-6 py-3 rounded-full hover:border-cyan-500/30 transition-all duration-300 group cursor-pointer shadow-[0_10px_30px_rgba(0,0,0,0.5)] sm:w-auto">
+                        <div class="relative">
+                            <img src="/static/logo/philippo.jpg" alt="PHILIPPO" class="w-12 h-12 rounded-full border-2 border-cyan-500 object-cover shadow-[0_0_15px_rgba(0,242,255,0.4)] group-hover:scale-110 transition-all duration-300 saturate-150 contrast-110" onerror="this.src='https://ui-avatars.com/api/?name=PHILIPPO&background=00f2ff&color=000&rounded=true&bold=true&size=128'">
+                        </div>
+                        <div class="text-left pr-2">
+                            <p class="text-[9px] uppercase tracking-[0.25em] text-gray-400 mb-0.5">Concepteur du projet</p>
+                            <p class="orbitron text-sm font-bold text-white tracking-widest group-hover:text-cyan-300 transition-colors">PHILIPPO</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center border border-cyan-500/30 group-hover:bg-cyan-500/30 transition-colors">
+                            <i class="fab fa-telegram-plane text-cyan-400 text-lg group-hover:text-white transition-colors animate-pulse"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="relative z-10 border-t border-white/5 py-6 text-center shrink-0">
+        <p class="orbitron text-[10px] tracking-[0.3em] uppercase text-gray-600">
+            Laboratoire du Free-Surf &copy; 2026 - Acc&egrave;s Restreint
+        </p>
+    </footer>
+    </div> <!-- End mainAppWrapper -->
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- SEQUENCE DE BOOT ---
+            const logs = [
+                "Connexion au r\u00E9seau mondial...",
+                "Montage des volumes virtuels... <span class='ok'>[OK]</span>",
+                "V\u00E9rification des protocoles UDP/TCP... <span class='ok'>[OK]</span>",
+                "Synchronisation des profils clients... <span class='ok'>[OK]</span>",
+                "V\u00E9rification des abonnements actifs... <span class='ok'>[OK]</span>",
+                "<span style='color: #ff0f0f; font-weight: bold; text-shadow: 0 0 10px #ff0f0f;'>Vérification de sécurité en cours...</span>",
+                "D\u00E9marrage de l'interface graphique..."
+            ];
+            let step = 0;
+            const logContainer = document.getElementById('bootLog');
+            const bootBar = document.getElementById('bootBar');
+            const bootOverlay = document.getElementById('bootOverlay');
+            const mainWrapper = document.getElementById('mainAppWrapper');
+
+            function playBeep(freq, duration) {
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    const ctx = new AudioCtx();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square'; osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.02, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (duration / 1000));
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.start(); osc.stop(ctx.currentTime + (duration / 1000));
+                } catch(e) {}
+            }
+
+            function addLog() {
+                if (!logContainer) return;
+                if (step < logs.length) {
+                    logContainer.innerHTML += logs[step] + "<br>";
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                    if(bootBar) bootBar.style.width = ((step + 1) / logs.length * 100) + "%";
+                    let delay = 100 + Math.random() * 200; 
+                    if (logs[step].includes("Authentification")) {
+                        delay = 1800 + Math.random() * 800; playBeep(200, 500); 
+                    } else { playBeep(600 + (step*100), 80); }
+                    step++; setTimeout(addLog, delay);
+                } else {
+                    playBeep(1200, 600); 
+                    setTimeout(() => { bootOverlay.style.opacity = '0';
+                        setTimeout(() => { bootOverlay.style.display = 'none'; mainWrapper.style.display = 'block'; void mainWrapper.offsetWidth; mainWrapper.style.opacity = '1'; }, 500);
+                    }, 800);
+                }
+            }
+
+            if (!sessionStorage.getItem('fs_boot_seen')) {
+                setTimeout(addLog, 300); sessionStorage.setItem('fs_boot_seen', 'true');
+            } else {
+                if(bootOverlay) bootOverlay.style.display = 'none';
+                if(mainWrapper) { mainWrapper.style.display = 'block'; mainWrapper.style.opacity = '1'; }
+            }
+
+            // --- EFFET MACHINE A ECRIRE ---
+            const target = document.getElementById("typewriter-text");
+            const colors = ["var(--cyan)", "var(--neon)", "var(--purple)", "#ffd700"];
+            let colorIndex = 0;
+            const networkLeft = String.fromCodePoint(0x1F310);
+            const networkRight = String.fromCodePoint(0x1F4E1);
+            const machineText = `${networkLeft} Gestion Intelligente De Vos Abonnements & Acc\u00E8s ${networkRight}`;
+            
+            async function typeWriterLoop() {
+                if (!target) return;
+                while (true) {
+                    target.style.color = colors[colorIndex];
+                    target.style.textShadow = `0 0 15px ${colors[colorIndex]}`;
+                    target.textContent = "";
+                    
+                    // Effet de frappe
+                    for (let i = 0; i < machineText.length; i++) {
+                        target.textContent += machineText.charAt(i);
+                        await new Promise(r => setTimeout(r, 38 + Math.random() * 26));
+                    }
+                    
+                    // Pause au bout
+                    await new Promise(r => setTimeout(r, 2200));
+                    
+                    // Effacement rapide
+                    for (let i = machineText.length; i >= 0; i--) {
+                        target.textContent = machineText.substring(0, i);
+                        await new Promise(r => setTimeout(r, 16));
+                    }
+                    
+                    // Changement de couleur a la fin de la boucle
+                    colorIndex = (colorIndex + 1) % colors.length;
+                    target.style.color = colors[colorIndex];
+                    target.style.textShadow = `0 0 18px ${colors[colorIndex]}`;
+                    await new Promise(r => setTimeout(r, 420));
+                }
+            }
+            
+            setTimeout(typeWriterLoop, 1200);
+        });
+
+        // Ajustement automatique sur mobile : la page tient sur un seul ecran, sans defiler.
+        // Ne s'applique pas sur ordinateur (le site garde son affichage normal, avec defilement).
+        function fitMobileHome(){
+            if(window.innerWidth > 767) return;
+            const wrap = document.getElementById('mainAppWrapper');
+            if(!wrap) return;
+            wrap.style.transform = 'none';
+            const neededH = wrap.scrollHeight;
+            const availableH = window.innerHeight;
+            if(neededH > availableH && availableH > 0){
+                const scale = Math.max(0.55, availableH / neededH);
+                wrap.style.transform = 'scale(' + scale + ')';
+            }
+        }
+        window.addEventListener('resize', fitMobileHome);
+        window.addEventListener('orientationchange', () => setTimeout(fitMobileHome, 200));
+        // Le boot overlay et le fade-in retardent l'affichage de mainAppWrapper : on verifie
+        // regulierement le temps qu'il devienne visible, puis on arrete.
+        const fitInterval = setInterval(() => {
+            const wrap = document.getElementById('mainAppWrapper');
+            if(wrap && wrap.style.display !== 'none'){
+                fitMobileHome();
+                clearInterval(fitInterval);
+            }
+        }, 200);
+    </script>
+</body>
+</html>

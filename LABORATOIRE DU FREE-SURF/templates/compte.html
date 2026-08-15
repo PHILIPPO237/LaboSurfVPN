@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mon Compte | LABORATOIRE</title>
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+  <link rel="stylesheet" href="/static/css/command-palette.css">
+  <link rel="stylesheet" href="/static/css/a11y.css">
+  <script defer src="/static/js/command-palette.js"></script>
+  <style>
+    :root {
+      --neon: #39ff14;
+      --dark: #050505;
+      --danger: #ff0f0f;
+      --info: #00f2ff;
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 10%, rgba(57, 255, 20, 0.08), transparent 35%),
+        radial-gradient(circle at 80% 30%, rgba(0, 242, 255, 0.10), transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(255, 15, 15, 0.06), transparent 45%),
+        var(--dark);
+    }
+
+    .orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(18px);
+    }
+
+    input {
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: rgba(57, 255, 20, 0.7);
+      box-shadow: 0 0 0 4px rgba(57, 255, 20, 0.12);
+    }
+  </style>
+  <script defer src="/static/js/ui-a11y.js"></script>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-6 text-white">
+    <!-- audit-nav -->
+    <div data-nav-audit="subpage" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-arrow-left"></i> Retour au dashboard
+      </a>
+      <a href="/" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-house"></i> Accueil
+      </a>
+    </div>
+
+  <div class="w-full max-w-2xl glass rounded-[2rem] p-8">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-6">
+      <div class="flex items-start gap-4">
+        <div id="avatar"
+          class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
+          <img id="avatarImg" src="data:," data-avatar="{{AVATAR_URL}}" class="w-full h-full object-cover hidden"
+            alt="Avatar utilisateur">
+          <div id="avatarFallback" class="orbitron font-black text-[#39ff14]">?</div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#39ff14] shadow-[0_0_12px_rgba(57,255,20,0.8)]"></span>
+            <span class="text-[10px] uppercase tracking-[0.35em] text-gray-300 mono">Espace personnel</span>
+          </div>
+          <h1 class="orbitron text-2xl font-black tracking-widest uppercase">Mon compte</h1>
+          <p class="text-[11px] text-gray-400 mt-1 mono">Gardez votre licence secrète. Elle sert de mot de passe.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="location.href='/dashboard'"
+          class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-[10px] mono font-bold">
+          <i class="fas fa-th-large mr-2"></i> 🏠 Hub
+        </button>
+        <button onclick="location.href='/logout'"
+          class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-[10px] mono font-bold">
+          <i class="fas fa-right-from-bracket mr-2"></i> 🚪 Logout
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div class="text-[10px] text-gray-400 mono uppercase tracking-widest">Utilisateur</div>
+        <div id="usernameVal" class="orbitron text-lg font-black tracking-wider mt-2">{{USERNAME}}</div>
+      </div>
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div class="text-[10px] text-gray-400 mono uppercase tracking-widest">Niveau</div>
+        <div class="orbitron text-lg font-black tracking-wider mt-2">{{TYPE}}</div>
+      </div>
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div class="text-[10px] text-gray-400 mono uppercase tracking-widest">Quota</div>
+        <div class="mono text-[12px] text-gray-200 mt-2">{{QUOTA}}</div>
+      </div>
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div class="text-[10px] text-gray-400 mono uppercase tracking-widest">Expiration</div>
+        <div class="mono text-[12px] text-gray-200 mt-2">{{EXPIRATION}}</div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-white/5 border border-cyan-400/20 p-4 mb-6 relative overflow-hidden">
+      <div
+        class="absolute inset-0 pointer-events-none bg-gradient-to-r from-cyan-400/10 via-transparent to-emerald-400/10">
+      </div>
+      <div class="flex items-start justify-between gap-4 mb-3">
+        <div class="relative">
+          <div class="mono text-[10px] text-gray-300 uppercase tracking-widest flex items-center gap-2">
+            <i class="fas fa-fingerprint text-cyan-300"></i>
+            UUID d'accès
+          </div>
+          <div class="mono text-[10px] text-gray-500 mt-1">UUID stable lie au compte pour Xray / V2Ray. Les services a mot de passe utilisent pseudo + mot de passe.</div>
+        </div>
+        <button type="button" id="copyUuidBtn"
+          class="relative px-4 py-2 rounded-xl bg-white/5 border border-cyan-400/20 hover:bg-white/10 transition text-[10px] mono font-bold text-cyan-100">
+          <i class="fas fa-copy mr-2"></i> Copier
+        </button>
+      </div>
+      <input id="uuidSecondaryInput"
+        class="relative w-full rounded-2xl px-4 py-3 mono text-[12px] bg-black/50 border border-white/10 text-cyan-100"
+        type="text" value="{{UUID_SECONDARY}}" readonly autocomplete="off" autocorrect="off" autocapitalize="off"
+        spellcheck="false" />
+      <div id="uuidToast" class="hidden relative mt-3 text-[10px] mono text-cyan-200">UUID copié.</div>
+    </div>
+
+    <div class="rounded-2xl bg-white/5 border border-white/10 p-4 mb-6">
+      <div class="flex flex-col md:flex-row md:items-end gap-4">
+        <div class="flex-1">
+          <div class="text-[10px] text-gray-400 mono uppercase tracking-widest">Code d'action</div>
+          <p class="text-[11px] text-gray-500 mt-2">Utilisez ici un code de recharge, de prolongation ou de mise a niveau genere pour votre compte.</p>
+          <input id="actionTokenInput" type="text" placeholder="FS-XXXXXX-XXXXXX-XXXXXX" class="mt-3 w-full rounded-2xl px-4 py-3 mono text-[12px] bg-black/50 border border-white/10 text-white">
+          <div id="actionTokenStatus" class="hidden mt-3 text-[10px] mono"></div>
+        </div>
+        <button id="redeemActionTokenBtn" type="button"
+          class="px-5 py-3 rounded-2xl bg-cyan-300 text-black font-black orbitron text-[11px] tracking-widest hover:scale-[1.01] transition">
+          APPLIQUER LE CODE
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-col md:flex-row gap-3">
+      <a id="continueBtn" href="/panel-gratuit"
+        class="flex-1 text-center py-3 rounded-2xl bg-[#39ff14] text-black font-black orbitron text-[11px] tracking-widest hover:scale-[1.01] transition shadow-[0_0_18px_rgba(57,255,20,0.35)]">
+        CONTINUER
+      </a>
+      <a id="upgradeBtn" href="/abonnement"
+        class="flex-1 text-center py-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-[11px] orbitron font-black tracking-widest">
+        DEMANDER UNE MISE À NIVEAU
+      </a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const usernameEl = document.getElementById('usernameVal');
+      const username = (usernameEl ? (usernameEl.textContent || '') : '').trim();
+      const qs = new URLSearchParams(window.location.search);
+      const next = qs.get('next') || '/panel-gratuit';
+
+      const avatarImg = document.getElementById('avatarImg');
+      const avatarFallback = document.getElementById('avatarFallback');
+      const initial = (username || '?').trim().slice(0, 1).toUpperCase() || '?';
+      if (avatarFallback) avatarFallback.textContent = initial;
+
+      const avatarUrl = (avatarImg && avatarImg.dataset) ? String(avatarImg.dataset.avatar || '').trim() : '';
+      if (avatarUrl && avatarImg) {
+        avatarImg.onload = () => {
+          avatarImg.classList.remove('hidden');
+          if (avatarFallback) avatarFallback.classList.add('hidden');
+        };
+        avatarImg.onerror = () => {
+          avatarImg.classList.add('hidden');
+          if (avatarFallback) avatarFallback.classList.remove('hidden');
+        };
+        avatarImg.src = avatarUrl;
+        // If cached and already complete, force the toggle.
+        if (avatarImg.complete && avatarImg.naturalWidth > 0) {
+          avatarImg.classList.remove('hidden');
+          if (avatarFallback) avatarFallback.classList.add('hidden');
+        }
+      }
+
+      const continueBtn = document.getElementById('continueBtn');
+      if (continueBtn) continueBtn.href = next;
+
+      const upgradeBtn = document.getElementById('upgradeBtn');
+      if (upgradeBtn) upgradeBtn.href = '/abonnement?username=' + encodeURIComponent(username);
+
+      const actionTokenInput = document.getElementById('actionTokenInput');
+      const actionTokenStatus = document.getElementById('actionTokenStatus');
+      const redeemActionTokenBtn = document.getElementById('redeemActionTokenBtn');
+      function showActionTokenStatus(message, ok) {
+        if (!actionTokenStatus) return;
+        actionTokenStatus.textContent = message || '';
+        actionTokenStatus.classList.remove('hidden', 'text-red-300', 'text-emerald-300');
+        actionTokenStatus.classList.add(ok ? 'text-emerald-300' : 'text-red-300');
+      }
+      if (redeemActionTokenBtn && actionTokenInput) {
+        redeemActionTokenBtn.addEventListener('click', async () => {
+          const token = (actionTokenInput.value || '').trim();
+          if (!token) {
+            showActionTokenStatus('Saisissez un code d'action.', false);
+            return;
+          }
+          redeemActionTokenBtn.disabled = true;
+          redeemActionTokenBtn.classList.add('opacity-60');
+          try {
+            const res = await fetch('/api/user/redeem-action-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+            const payload = await res.json().catch(() => null);
+            if (!res.ok || !payload || payload.status !== 'ok') {
+              showActionTokenStatus((payload && payload.message) ? payload.message : 'Code invalide ou expir?.', false);
+              return;
+            }
+            showActionTokenStatus(payload.message || 'Code appliqu? avec succ?s.', true);
+            setTimeout(() => window.location.reload(), 900);
+          } catch (e) {
+            showActionTokenStatus('Impossible d'appliquer ce code pour le moment.', false);
+          } finally {
+            redeemActionTokenBtn.disabled = false;
+            redeemActionTokenBtn.classList.remove('opacity-60');
+          }
+        });
+      }
+
+      const input = document.getElementById('licenseInput');
+      const toggle = document.getElementById('toggleLicense');
+      const icon = document.getElementById('toggleIcon');
+      if (input && toggle) {
+        toggle.addEventListener('click', () => {
+          const show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+          toggle.setAttribute('title', show ? 'Masquer' : 'Afficher');
+          if (icon) icon.className = show ? 'fas fa-eye-slash text-gray-300' : 'fas fa-eye text-gray-300';
+        });
+      }
+
+      const toast = document.getElementById('toast');
+      const copyBtn = document.getElementById('copyBtn');
+      if (copyBtn && input) {
+        copyBtn.addEventListener('click', async () => {
+          const text = input.value || '';
+          try {
+            await navigator.clipboard.writeText(text);
+            if (toast) {
+              toast.textContent = 'Copié.';
+              toast.classList.remove('hidden');
+              setTimeout(() => toast.classList.add('hidden'), 1400);
+            }
+          } catch (e) {
+            // Fallback: select then copy (best-effort).
+            try { input.type = 'text'; } catch { }
+            input.focus();
+            input.select();
+            document.execCommand('copy');
+            if (toast) {
+              toast.textContent = 'Copié (fallback).';
+              toast.classList.remove('hidden');
+              setTimeout(() => toast.classList.add('hidden'), 1400);
+            }
+          }
+        });
+      }
+
+      const uuidInput = document.getElementById('uuidSecondaryInput');
+      const copyUuidBtn = document.getElementById('copyUuidBtn');
+      const uuidToast = document.getElementById('uuidToast');
+      if (copyUuidBtn && uuidInput) {
+        copyUuidBtn.addEventListener('click', async () => {
+          const text = uuidInput.value || '';
+          try {
+            await navigator.clipboard.writeText(text);
+            if (uuidToast) uuidToast.classList.remove('hidden');
+            setTimeout(() => uuidToast && uuidToast.classList.add('hidden'), 1400);
+          } catch (e) {
+            uuidInput.focus();
+            uuidInput.select();
+            document.execCommand('copy');
+            if (uuidToast) {
+              uuidToast.textContent = 'UUID copié (fallback).';
+              uuidToast.classList.remove('hidden');
+              setTimeout(() => uuidToast.classList.add('hidden'), 1400);
+            }
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+
+</html>

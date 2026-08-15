@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+  <meta charset="UTF-8">
+  <title>LABORATOIRE | Hub Central</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/motion.css">
+  <link rel="stylesheet" href="/static/css/command-palette.css">
+  <link rel="stylesheet" href="/static/css/a11y.css">
+  <link rel="stylesheet" href="/static/css/guide-assistant.css">
+  <link rel="stylesheet" href="/static/css/panel-accent.css">
+  <link rel="stylesheet" href="/static/css/interface-refresh.css">
+  <script defer src="/static/js/command-palette.js"></script>
+  <script defer src="/static/js/guide-assistant.js"></script>
+  <script defer src="/static/js/panel-accent.js"></script>
+  <script defer src="/static/js/letters-wave.js"></script>
+
+  <style>
+    :root {
+      --reseller: #00f2ff;
+      --vip: #ffd700;
+      --admin: #ff0044;
+      --dark: #050505;
+      --success: #39ff14;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 20% 10%, rgba(0, 242, 255, 0.10), transparent 35%),
+        radial-gradient(circle at 80% 30%, rgba(57, 255, 20, 0.08), transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(255, 15, 15, 0.06), transparent 45%),
+        var(--dark);
+      color: white;
+      font-family: 'JetBrains Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    .orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .title-fx {
+      animation: titlePulse 3s ease-in-out infinite;
+      transform-origin: left center;
+    }
+
+    .subtitle-fx {
+      animation: subtitleFloat 4.8s ease-in-out infinite;
+      transform-origin: left center;
+    }
+
+    .letters-wave .char-wave {
+      display: inline-block;
+      animation: letterWave 2.2s ease-in-out infinite;
+      animation-delay: var(--char-delay, 0ms);
+      will-change: transform, text-shadow, opacity;
+    }
+
+    @keyframes titlePulse {
+      0%,
+      100% {
+        transform: translateY(0);
+        text-shadow: 0 0 0 rgba(0, 242, 255, 0);
+      }
+
+      50% {
+        transform: translateY(-1px);
+        text-shadow: 0 0 14px rgba(0, 242, 255, 0.28);
+      }
+    }
+
+    @keyframes subtitleFloat {
+      0%,
+      100% {
+        opacity: .88;
+        transform: translateY(0);
+      }
+
+      50% {
+        opacity: 1;
+        transform: translateY(-2px);
+      }
+    }
+
+    @keyframes letterWave {
+      0%,
+      100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+        text-shadow: 0 0 0 rgba(0, 242, 255, 0);
+      }
+
+      50% {
+        transform: translateY(-3px) rotate(.5deg);
+        opacity: 1;
+        text-shadow: 0 0 10px currentColor;
+      }
+    }
+
+    .dash-frame {
+      max-width: 1200px;
+      margin: 0 auto;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      overflow: visible !important;
+      padding: 0 !important;
+    }
+
+    .dash-frame .scan-line,
+    .dash-frame .grid-bg {
+      display: none !important;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(18px);
+      position: relative;
+      overflow: hidden;
+      transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease, background .28s ease;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .glass::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -130%;
+      width: 52%;
+      height: 100%;
+      transform: skewX(-18deg);
+      background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+      pointer-events: none;
+      transition: left .62s ease;
+    }
+
+    /* Nouveaux Dropdowns App-Like */
+    .dropdown-content {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dropdown-group:hover .dropdown-content,
+    .dropdown-group:focus-within .dropdown-content,
+    .dropdown-group.dropdown-open .dropdown-content {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    
+    /* Scroll horizontal sur Mobile */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .app-card { min-width: 280px; scroll-snap-align: start; }
+    .scroll-container { scroll-snap-type: x mandatory; }
+
+    @media (hover: hover) {
+      .glass:hover {
+        transform: translateY(-4px);
+        border-color: rgba(0, 242, 255, 0.35);
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32), 0 0 22px rgba(0, 242, 255, 0.12);
+        background: rgba(255, 255, 255, 0.07);
+      }
+      .glass:hover::before {
+        left: 165%;
+      }
+    }
+
+    .panel-card {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.10) !important;
+      backdrop-filter: blur(18px);
+      position: relative;
+      overflow: hidden;
+      transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease, background .28s ease !important;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18) !important;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .panel-card::after {
+      background: radial-gradient(circle at 15% 0%, rgba(0, 242, 255, 0.09), transparent 42%) !important;
+    }
+
+    @media (hover: hover) {
+      .panel-card:hover {
+        transform: translateY(-4px) !important;
+        border-color: rgba(0, 242, 255, 0.35) !important;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32), 0 0 22px rgba(0, 242, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.07) !important;
+        filter: none !important;
+      }
+    }
+
+    .panel-card:focus-visible {
+      transform: translateY(-2px) !important;
+      border-color: rgba(0, 232, 255, 0.75) !important;
+      box-shadow:
+        0 0 0 3px rgba(0, 232, 255, 0.18),
+        0 16px 34px rgba(0, 0, 0, 0.32) !important;
+    }
+
+    .panel-card:active {
+      transform: translateY(0) scale(0.98) !important;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .panel-card p {
+      color: rgba(197, 207, 215, 0.92) !important;
+    }
+
+    .panel-card span.text-\[9px\] {
+      color: rgba(187, 199, 209, 0.88) !important;
+    }
+
+    .panel-accent-card {
+      --card-accent: #00f2ff;
+      --card-accent-rgb: 0, 242, 255;
+      border-left: 2px solid rgba(var(--card-accent-rgb), 0.62) !important;
+    }
+
+    .panel-accent-card[data-panel-key="free"] {
+      --card-accent: #39ff14;
+      --card-accent-rgb: 57, 255, 20;
+    }
+
+    .panel-accent-card[data-panel-key="vip"] {
+      --card-accent: #ffd700;
+      --card-accent-rgb: 255, 215, 0;
+    }
+
+    .panel-accent-card[data-panel-key="reseller"] {
+      --card-accent: #00f2ff;
+      --card-accent-rgb: 0, 242, 255;
+    }
+
+    .panel-accent-card[data-panel-key="admin"] {
+      --card-accent: #ff0044;
+      --card-accent-rgb: 255, 0, 68;
+    }
+
+    .panel-accent-card[data-panel-key="chat"] {
+      --card-accent: #00f2ff;
+      --card-accent-rgb: 0, 242, 255;
+    }
+
+    .panel-accent-card .panel-icon {
+      background: rgba(var(--card-accent-rgb), 0.1);
+      color: var(--card-accent);
+      border: 1px solid rgba(var(--card-accent-rgb), 0.32);
+      transition: background .24s ease, color .24s ease, border-color .24s ease;
+    }
+
+    @media (hover: hover) {
+      .panel-accent-card:hover {
+        border-left-color: rgba(var(--card-accent-rgb), 1) !important;
+        border-color: rgba(var(--card-accent-rgb), 0.35) !important;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32), 0 0 22px rgba(var(--card-accent-rgb), 0.12) !important;
+      }
+      .panel-accent-card:hover .panel-icon {
+        background: var(--card-accent);
+        color: #050505;
+        border-color: rgba(var(--card-accent-rgb), 0.95);
+      }
+    }
+
+    .panel-accent-card .panel-tag {
+      color: rgba(var(--card-accent-rgb), 0.95) !important;
+      text-shadow: 0 0 8px rgba(var(--card-accent-rgb), 0.14);
+    }
+
+    .panel-accent-card .panel-title {
+      color: var(--card-accent) !important;
+      text-shadow: 0 0 10px rgba(var(--card-accent-rgb), 0.12);
+    }
+
+    .panel-color-console {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .panel-color-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 0.9rem;
+      padding: 0.7rem 0.8rem;
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    .panel-color-input {
+      width: 2.1rem;
+      height: 2.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 0.7rem;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .panel-color-input::-webkit-color-swatch-wrapper {
+      padding: 0;
+      border-radius: 0.62rem;
+    }
+
+    .panel-color-input::-webkit-color-swatch {
+      border: none;
+      border-radius: 0.62rem;
+    }
+
+    .panel-color-reset {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 0.65rem;
+      padding: 0.35rem 0.55rem;
+      background: rgba(255, 255, 255, 0.05);
+      color: #d6e3ed;
+      transition: border-color .2s ease, background .2s ease, color .2s ease;
+    }
+
+    .panel-color-reset:hover {
+      border-color: rgba(255, 255, 255, 0.34);
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .hud-badge {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: rgba(216, 233, 245, 0.95);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+      border-radius: 9999px;
+      padding: 0.5rem 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    .online-dot {
+      background: var(--reseller) !important;
+      box-shadow: 0 0 12px rgba(0, 242, 255, 0.82) !important;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Bouton retour style panel-revendeur */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      padding: 0.6rem 1.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .64rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: none;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+      transition: transform .2s ease, filter .2s ease, box-shadow .2s ease, background .2s ease;
+      white-space: nowrap;
+      backdrop-filter: blur(14px);
+    }
+
+    @media (hover: hover) {
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.10);
+        filter: brightness(1.04);
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28), 0 0 16px rgba(0, 242, 255, 0.15);
+      }
+    }
+
+    .back-btn:active {
+      transform: translateY(0) scale(.985);
+    }
+
+    /* Adaptation pour Android / écrans mobiles */
+    @media (max-width: 768px) {
+      .hero-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .panel-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      .quick-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .panel-kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      .glass {
+        padding: 1rem !important; /* Réduction des marges massives sur petits écrans */
+      }
+      header.glass {
+        padding: 1.2rem !important;
+      }
+    }
+
+    @media (pointer: coarse) and (max-width: 960px) {
+      .metric-grid,
+      #hubKpiStrip,
+      #panelColorConsole,
+      .hero-grid .utility-row,
+      .section-header .utility-row {
+        display: none !important;
+      }
+
+      .scroll-container {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+        overflow: visible !important;
+        scroll-snap-type: none !important;
+        padding-bottom: 0 !important;
+      }
+
+      .app-card {
+        min-width: 0 !important;
+      }
+
+      .glass,
+      .panel-card {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+      }
+
+      .glass::before,
+      .panel-card::after {
+        display: none !important;
+      }
+
+      .panel-card,
+      .panel-card:active,
+      .panel-card:focus-visible {
+        transform: none !important;
+      }
+
+      .section-shell {
+        margin-bottom: 1.25rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glass,
+      .glass::before,
+      .panel-card {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+      }
+      .dash-letters .dash-char {
+        animation: none !important;
+        transform: none !important;
+      }
+    }
+  </style>
+  <script defer src="/static/js/ui-a11y.js"></script>
+  <script src="/static/js/utils.js"></script>
+</head>
+
+<body class="interface-stage interface-stage--dashboard min-h-screen p-4 lg:p-6 text-white" data-page-guide="dashboard">
+    <!-- audit-nav -->
+    <div data-nav-audit="hub" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-gauge"></i> Dashboard
+      </a>
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-bars"></i> Menu
+      </a>
+      <a href="/" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-house"></i> Accueil
+      </a>
+    </div>
+
+  <div class="dash-frame">
+    <div class="scan-line"></div>
+    <div class="grid-bg"></div>
+
+    <div class="dash-content motion-page">
+
+      {% if SUBSCRIPTION_WARNING %}
+      <div style="background:rgba(255,68,68,0.12);border:1px solid rgba(255,68,68,0.4);border-radius:1rem;padding:0.9rem 1.2rem;margin:0 0 1.25rem 0;color:#ffb4b4;font-size:0.8rem;font-weight:600;">
+        {{ SUBSCRIPTION_WARNING }}
+      </div>
+      {% endif %}
+
+      {% if SUBSCRIPTION_GAUGE and SUBSCRIPTION_GAUGE.show %}
+      <div style="margin:0 0 1.25rem 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+          <span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:#9aa5ad;">Abonnement</span>
+          <span style="font-size:0.72rem;font-weight:700;color:{{ SUBSCRIPTION_GAUGE.color }};">{{ SUBSCRIPTION_GAUGE.label }}</span>
+        </div>
+        <div style="width:100%;height:10px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;">
+          <div style="width:{{ SUBSCRIPTION_GAUGE.percent }}%;height:100%;border-radius:999px;background:{{ SUBSCRIPTION_GAUGE.color }};box-shadow:0 0 10px {{ SUBSCRIPTION_GAUGE.color }}66;transition:width 0.6s ease, background 0.6s ease;"></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- J'ai un code promo -->
+      <div style="margin:0 0 1.25rem 0;">
+        <div id="promoRedeemBox" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <input id="promoRedeemInput" type="text" placeholder="🎟️ J'ai un code promo" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:0.75rem; padding:0.55rem 0.9rem; font-size:0.78rem; color:#f7fcff; flex:1; min-width:180px;" />
+          <button id="promoRedeemBtn" style="background:linear-gradient(135deg,#39ff14,#00c8d4); color:#04110a; font-weight:700; font-size:0.78rem; border:none; border-radius:0.75rem; padding:0.55rem 1.1rem; cursor:pointer;">Valider</button>
+        </div>
+        <div id="promoRedeemMsg" style="font-size:0.75rem; margin-top:0.4rem;"></div>
+      </div>
+      <script>
+        (function () {
+          var btn = document.getElementById('promoRedeemBtn');
+          var input = document.getElementById('promoRedeemInput');
+          var msg = document.getElementById('promoRedeemMsg');
+          if (!btn) return;
+          btn.addEventListener('click', function () {
+            var code = (input.value || '').trim();
+            if (!code) return;
+            msg.style.color = '#9aa5ad';
+            msg.textContent = 'Verification...';
+            fetch('/api/promo-codes/redeem', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: code }),
+            })
+              .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+              .then(function (r) {
+                if (r.ok && r.data.status === 'ok') {
+                  msg.style.color = '#39ff14';
+                  msg.textContent = '✅ ' + r.data.message;
+                  input.value = '';
+                  setTimeout(function () { window.location.reload(); }, 1500);
+                } else {
+                  msg.style.color = '#ff6b6b';
+                  msg.textContent = '⚠️ ' + (r.data.message || 'Code invalide.');
+                }
+              })
+              .catch(function () {
+                msg.style.color = '#ff6b6b';
+                msg.textContent = '⚠️ Erreur reseau.';
+              });
+          });
+        })();
+      </script>
+
+      <!-- Bandeau publicitaire actif (rempli par JS depuis /api/ads/active) -->
+      <div id="activeAdBanner" style="display:none; margin:0 0 1.25rem 0;"></div>
+      <script>
+        (function () {
+          fetch('/api/ads/active?location=dashboard')
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              var ads = (data && data.ads) || [];
+              if (!ads.length) return;
+              var ad = ads[0]; // deja trie par priorite cote serveur
+              var el = document.getElementById('activeAdBanner');
+              if (!el) return;
+              var color = ad.color || '#39ff14';
+              var content =
+                '<div style="background:' + color + '1a;border:1px solid ' + color + '55;border-radius:1rem;' +
+                'padding:0.9rem 1.2rem;display:flex;align-items:center;gap:0.75rem;">' +
+                (ad.image ? '<img src="' + ad.image + '" style="width:2.2rem;height:2.2rem;border-radius:0.5rem;object-fit:cover;flex-shrink:0;">' : '📣') +
+                '<span style="font-size:0.82rem;color:#f1f5f9;flex:1;">' + (ad.text || '') + '</span>' +
+                (ad.link ? '<a href="' + ad.link + '" target="_blank" rel="noopener" style="font-size:0.75rem;font-weight:700;color:' + color + ';white-space:nowrap;">En savoir plus →</a>' : '') +
+                '</div>';
+              el.innerHTML = content;
+              el.style.display = 'block';
+            })
+            .catch(function () { /* silencieux : une pub qui ne charge pas ne doit pas geler la page */ });
+        })();
+      </script>
+
+      <header
+        class="glass rounded-[2rem] p-6 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-3 lg:gap-4 mb-6">
+        <div>
+          <h1 id="dashMainTitle" class="orbitron text-2xl md:text-3xl font-black tracking-tighter uppercase title-fx letters-wave">
+            LABORATOIRE <span class="text-[#39ff14]">FREE-SURF</span>
+          </h1>
+          <p id="dashMainSubtitle" class="text-[9px] md:text-[10px] text-gray-500 tracking-[0.3em] md:tracking-[0.4em] mt-1 subtitle-fx letters-wave">
+            PLATEFORME DE GESTION MULTI-SERVICES
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 flex-wrap">
+          <div class="hud-badge hidden md:inline-flex mr-2">
+            <span class="online-dot"></span>
+            <span>SYSTÈME :</span>
+            <span class="text-white">OPERATIONNEL</span>
+          </div>
+
+          <div class="relative dropdown-group z-50">
+            <button class="back-btn motion-press inline-flex items-center no-underline bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/30 text-cyan-100">
+              <i class="fas fa-compass text-cyan-400 mr-2"></i> Explorer <i class="fas fa-chevron-down ml-2 text-[9px] opacity-70"></i>
+            </button>
+            <div class="dropdown-content absolute right-0 mt-3 w-64 rounded-2xl bg-[#0a0f16]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.8)] text-left">
+              <div class="p-2">
+                <div class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 px-3 pt-2">Espaces de travail</div>
+                <a href="/panel-gratuit" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-emerald-500/10 text-xs font-bold text-gray-300 hover:text-emerald-400 transition-all group/item" {{ DASH_EXPLORER_FREE_ATTR }}>
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center mr-3 text-emerald-400 group-hover/item:scale-110 transition-transform"><i class="fas fa-bolt"></i></div>
+                  Panel Gratuit
+                </a>
+                <a href="/panel-vip" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-yellow-500/10 text-xs font-bold text-gray-300 hover:text-yellow-400 transition-all group/item" {{ DASH_EXPLORER_VIP_ATTR }}>
+                  <div class="w-7 h-7 rounded-lg bg-yellow-500/10 flex items-center justify-center mr-3 text-yellow-400 group-hover/item:scale-110 transition-transform"><i class="fas fa-crown"></i></div>
+                  Panel VIP
+                </a>
+                <a href="/panel-revendeur" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-cyan-500/10 text-xs font-bold text-gray-300 hover:text-cyan-400 transition-all group/item" {{ DASH_EXPLORER_RESELLER_ATTR }}>
+                  <div class="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center mr-3 text-cyan-400 group-hover/item:scale-110 transition-transform"><i class="fas fa-handshake"></i></div>
+                  Panel Revendeur
+                </a>
+                <div class="h-px bg-white/5 my-1 mx-2" {{ DASH_EXPLORER_ADMIN_SECTION_ATTR }}></div>
+                <div class="text-[9px] uppercase tracking-widest text-gray-500 mb-1 px-3 pt-2" {{ DASH_EXPLORER_ADMIN_SECTION_ATTR }}>Administration</div>
+                <a href="/admin" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-xs font-bold text-gray-300 hover:text-red-400 transition-all group/item" {{ DASH_EXPLORER_ADMIN_ATTR }}>
+                  <div class="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center mr-3 text-red-400 group-hover/item:scale-110 transition-transform"><i class="fas fa-shield-halved"></i></div>
+                  Administration
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative dropdown-group z-40">
+            <button class="back-btn motion-press inline-flex items-center no-underline border-white/20">
+              <i class="fas fa-user-circle text-gray-300 mr-2"></i> Compte <i class="fas fa-chevron-down ml-2 text-[9px] opacity-70"></i>
+            </button>
+            <div class="dropdown-content absolute right-0 mt-3 w-56 rounded-2xl bg-[#0a0f16]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.8)] text-left">
+              <div class="p-2">
+                <a href="/profil" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-white/5 text-xs font-bold text-gray-300 hover:text-white transition-all" {{ DASH_QUICK_PROFILE_ATTR }}>
+                  <div class="w-6 text-center mr-2 text-blue-400"><i class="fas fa-id-card"></i></div> Mon Profil
+                </a>
+                <a href="/abonnement" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-white/5 text-xs font-bold text-gray-300 hover:text-white transition-all">
+                  <div class="w-6 text-center mr-2 text-emerald-400"><i class="fas fa-arrow-trend-up"></i></div> Abonnements
+                </a>
+                <div class="h-px bg-white/5 my-1 mx-2" {{ DASH_EXPLORER_ADMIN_SECTION_ATTR }}></div>
+                <a href="/logout" onclick="event.preventDefault(); showConfirmModal({ title: 'Déconnexion', message: 'Voulez-vous vraiment vous déconnecter ?', onConfirm: () => window.location.href='/logout' });" class="flex items-center px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-xs font-bold text-gray-400 hover:text-red-400 transition-all">
+                  <div class="w-6 text-center mr-2 text-red-400"><i class="fas fa-power-off"></i></div> Déconnexion
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid lg:grid-cols-4 gap-6 pb-6 motion-stagger">
+
+        <a href="/avant-propos" data-guide-id="intro" class="app-card panel-card panel-card--rich motion-lift p-6 rounded-3xl group border-t-4 border-t-blue-500/80 hover:border-t-blue-400 block bg-gradient-to-b from-blue-900/10 to-transparent">
+          <div class="flex justify-between items-start mb-4">
+            <div
+              class="p-4 bg-blue-500/10 rounded-2xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition">
+              <i class="fas fa-book-open text-2xl"></i>
+            </div>
+            <span class="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Introduction</span>
+          </div>
+          <h3 class="orbitron text-xl font-bold mb-3 italic">📖 Avant-propos</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Présentation de la plateforme et de son fonctionnement.</p>
+          <div class="card-footer-line"><span>Explorer</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a href="/panel-gratuit" data-guide-id="free" data-panel-key="free" class="app-card panel-card panel-card--rich panel-accent-card motion-lift p-6 rounded-3xl group block bg-gradient-to-br from-emerald-900/10 to-transparent" {{ DASH_PANEL_FREE_ATTR }}>
+          <div class="flex justify-between items-start mb-4">
+            <div class="panel-icon p-4 rounded-2xl">
+              <i class="fas fa-bolt text-2xl"></i>
+            </div>
+            <span class="panel-tag text-[9px] font-bold uppercase tracking-widest">Accès Gratuit</span>
+          </div>
+          <h3 class="orbitron text-xl font-bold mb-3 italic">🆓 Panel gratuit</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Découvrez la plateforme gratuitement, sans engagement.</p>
+          <div class="card-footer-line"><span>Explorer</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a href="/abonnement" data-guide-id="inscription" class="app-card panel-card panel-card--rich motion-lift p-6 rounded-3xl group border-t-4 border-t-[#39ff14]/80 hover:border-t-[#39ff14] block bg-gradient-to-b from-green-900/10 to-transparent">
+          <div class="flex justify-between items-start mb-4">
+            <div
+              class="p-4 bg-[#39ff14]/10 rounded-2xl text-[#39ff14] group-hover:bg-[#39ff14] group-hover:text-black transition">
+              <i class="fas fa-user-plus text-2xl"></i>
+            </div>
+            <span class="text-[9px] text-[#39ff14] font-bold uppercase tracking-widest">User Flow</span>
+          </div>
+          <h3 class="orbitron text-xl font-bold mb-3 text-[#39ff14] italic">📝 INSCRIPTIONS</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Créez votre compte ou faites évoluer votre abonnement.</p>
+          <div class="card-footer-line"><span>Explorer</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a href="/panel-vip" data-guide-id="vip" data-panel-key="vip" class="app-card panel-card panel-card--rich panel-accent-card motion-lift p-6 rounded-3xl group block bg-gradient-to-br from-yellow-900/10 to-transparent" {{ DASH_PANEL_VIP_ATTR }}>
+          <div class="flex justify-between items-start mb-4">
+            <div class="panel-icon p-4 rounded-2xl">
+              <i class="fas fa-crown text-2xl"></i>
+            </div>
+            <span class="panel-tag text-[9px] font-bold uppercase tracking-widest">Abonné VIP</span>
+          </div>
+          <h3 class="orbitron text-xl font-bold mb-3 text-[#ffd700] italic">👑 PANEL VIP</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Profitez d’un accès prioritaire et d’outils exclusifs.</p>
+          <div class="card-footer-line"><span>Explorer</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a href="/panel-revendeur" data-guide-id="reseller" data-panel-key="reseller" class="app-card panel-card panel-card--rich panel-accent-card motion-lift p-6 rounded-3xl group block bg-gradient-to-br from-cyan-900/10 to-transparent" {{ DASH_PANEL_RESELLER_ATTR }}>
+          <div class="flex justify-between items-start mb-4">
+            <div class="panel-icon p-4 rounded-2xl">
+              <i class="fas fa-handshake text-2xl"></i>
+            </div>
+            <span class="panel-tag text-[9px] font-bold uppercase tracking-widest">Revendeur</span>
+          </div>
+          <h3 class="orbitron text-xl font-bold mb-3 text-[#00f2ff] italic">🤝 PANEL REVENDEUR</h3>
+          <p class="text-xs text-gray-400 leading-relaxed">Gérez vos clients et vos abonnements.</p>
+          <div class="card-footer-line"><span>Explorer</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a href="/admin" data-guide-id="admin" data-panel-key="admin" class="app-card panel-card panel-card--rich panel-accent-card motion-lift p-6 rounded-3xl group block bg-gradient-to-br from-red-900/10 to-transparent" {{ DASH_PANEL_ADMIN_ATTR }}>
+          <div class="flex justify-between items-start mb-4">
+            <div class="panel-icon p-4 rounded-2xl">
+              <i class="fas fa-user-secret text-2xl"></i>
+            </div>
+            <span class="panel-tag text-[9px] font-bold uppercase tracking-widest">Administration</span>
+          </div>
+          <h3 class="orbitron text-xl font-bold mb-3 text-[#ff0044] italic">🛡️ PANEL ADMIN</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Supervisez et gérez l’ensemble de la plateforme.</p>
+          <div class="card-footer-line"><span>Explorer</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a href="/tchatch" data-guide-id="chat" data-panel-key="chat" class="app-card panel-card panel-card--rich panel-accent-card motion-lift p-6 rounded-3xl group block bg-gradient-to-br from-indigo-900/10 to-transparent" {{ DASH_PANEL_CHAT_ATTR }}>
+          <div class="flex justify-between items-start mb-4">
+            <div class="panel-icon p-4 rounded-2xl">
+              <i class="fas fa-comments text-2xl"></i>
+            </div>
+            <span class="panel-tag text-[9px] font-bold uppercase tracking-widest">Communauté</span>
+          </div>
+          <h3 class="orbitron text-xl font-bold mb-3 text-[#39ff14] italic">💬 TCHAT LIVE</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">Échangez en direct avec les autres membres.</p>
+          <div class="card-footer-line"><span>Explorer</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      function isCompactTouchUi() {
+        const ua = navigator.userAgent || "";
+        const android = /Android/i.test(ua);
+        const canMatch = typeof window.matchMedia === "function";
+        const coarse = canMatch ? window.matchMedia("(pointer: coarse)").matches : false;
+        const narrow = canMatch ? window.matchMedia("(max-width: 960px)").matches : (window.innerWidth || 0) <= 960;
+        return android || (coarse && narrow);
+      }
+
+      const compactTouchUi = isCompactTouchUi();
+
+      function wrapLetters(root, idxObj) {
+        const nodes = Array.from(root.childNodes);
+        for (const node of nodes) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            const txt = node.nodeValue || "";
+            if (!txt.trim()) continue;
+            const frag = document.createDocumentFragment();
+            for (const ch of txt) {
+              if (ch === " ") {
+                frag.appendChild(document.createTextNode(" "));
+                continue;
+              }
+              const s = document.createElement("span");
+              s.className = "dash-char";
+              s.style.setProperty("--dly", (idxObj.value * 12) + "ms");
+              s.textContent = ch;
+              idxObj.value += 1;
+              frag.appendChild(s);
+            }
+            node.replaceWith(frag);
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            wrapLetters(node, idxObj);
+          }
+        }
+      }
+
+      function applyDashWave(selector) {
+        document.querySelectorAll(selector).forEach((el) => {
+          if (el.dataset.waveReady === "1") return;
+          if (el.dataset.dashWaveReady === "1") return;
+          const idx = { value: 0 };
+          wrapLetters(el, idx);
+          el.classList.add("dash-letters");
+          el.dataset.dashWaveReady = "1";
+        });
+      }
+
+      function applyPanelCardAccents(theme) {
+        if (!theme) return;
+        document.querySelectorAll(".panel-accent-card[data-panel-key]").forEach((card) => {
+          const panelKey = card.getAttribute("data-panel-key");
+          if (!panelKey) return;
+          const color = theme.getColor(panelKey);
+          const rgb = theme.hexToRgb(color) || "0, 242, 255";
+          card.style.setProperty("--card-accent", color);
+          card.style.setProperty("--card-accent-rgb", rgb);
+
+          const title = card.querySelector("h3");
+          if (title) title.style.color = color;
+        });
+      }
+
+      function paintColorRow(panelKey, color, rgb) {
+        const row = document.querySelector('[data-panel-color-row="' + panelKey + '"]');
+        if (!row) return;
+        row.style.borderColor = "rgba(" + rgb + ", 0.42)";
+        row.style.boxShadow = "0 0 16px rgba(" + rgb + ", 0.11)";
+        const label = row.querySelector("span");
+        if (label) label.style.color = color;
+      }
+
+      function init() {
+        if (!compactTouchUi) {
+          applyDashWave("#dashMainTitle, #dashMainSubtitle, .panel-card h3");
+          applyPanelCardAccents(window.PanelAccentTheme);
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init, { once: true });
+      } else {
+        init();
+      }
+    })();
+  </script>
+<script defer src="/static/js/dropdown-groups.js"></script>
+</body>
+
+</html>
+
+

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LABORATOIRE | Panel Revendeur</title>
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+  <link rel="stylesheet" href="/static/css/motion.css">
+  <link rel="stylesheet" href="/static/css/command-palette.css">
+  <link rel="stylesheet" href="/static/css/a11y.css">
+  <link rel="stylesheet" href="/static/css/panel-accent.css">
+  <script defer src="/static/js/command-palette.js"></script>
+  <script defer src="/static/js/panel-accent.js"></script>
+  <style>
+    :root { --revendeur:#00f2ff; --dark:#050505; }
+    body { background: var(--dark); color: white; font-family: 'JetBrains Mono', monospace; }
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+    .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(0,242,255,0.20); }
+    input, select, textarea { background: #000; border: 1px solid #333; color: white; padding: 10px; border-radius: 10px; outline: none; width: 100%; }
+    input:focus, select:focus, textarea:focus { border-color: var(--revendeur); box-shadow: 0 0 6px rgba(0,242,255,0.25); }
+    ::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+    .tab-btn {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      color: #d8e5ef;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px rgba(0, 0, 0, 0.22);
+    }
+    .tab-btn:hover {
+      color: #fff;
+      border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.5);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(var(--panel-accent-rgb, 0, 242, 255), 0.08));
+      transform: translateY(-1px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 22px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.14);
+    }
+    .tab-btn.active {
+      color: #eafaff;
+      border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.75);
+      background: linear-gradient(135deg, rgba(var(--panel-accent-rgb, 0, 242, 255), 0.22), rgba(255, 255, 255, 0.08));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 22px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.2), 0 10px 22px rgba(0, 0, 0, 0.3);
+    }
+    .submenu-chip {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #d8e5ef;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px rgba(0, 0, 0, 0.22);
+    }
+    .submenu-chip:hover {
+      color: #fff;
+      border-color: rgba(var(--panel-accent-rgb, 0, 242, 255), 0.5);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(var(--panel-accent-rgb, 0, 242, 255), 0.08));
+      transform: translateY(-1px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 10px 22px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--panel-accent-rgb, 0, 242, 255), 0.14);
+    }
+  </style>
+  <script defer src="/static/js/ui-a11y.js"></script>
+</head>
+<body class="p-6" data-panel-key="reseller">
+    <!-- audit-nav -->
+    <div data-nav-audit="generic" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+      <a href="/" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-arrow-left"></i> Retour a l'accueil
+      </a>
+      <a href="/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+        <i class="fas fa-bars"></i> Menu
+      </a>
+    </div>
+
+  <div class="max-w-7xl mx-auto motion-page">
+    <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8 border-b border-white/10 pb-6">
+      <div>
+        <h1 class="orbitron text-2xl font-black panel-accent-text">🤝 <span class="scramble-text">PANEL</span> <span class="text-white scramble-text">REVENDEUR</span></h1>
+        <p class="text-[10px] text-gray-500 tracking-widest uppercase">Gestion clients, comptes, renouvellement</p>
+        <p class="text-[10px] text-gray-600 mt-2">Connecté: <span class="text-white font-bold">{{RESELLER_NAME}}</span></p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] text-gray-400 uppercase tracking-widest">
+          <span class="text-gray-500">Clients</span> <span class="text-white font-bold">{{TOTAL_CLIENTS}}</span>
+          <span class="mx-2 text-gray-700">|</span>
+          <span class="text-gray-500">Actifs</span> <span class="text-white font-bold">{{ACTIVE_CLIENTS}}</span>
+          <span class="mx-2 text-gray-700">|</span>
+          <span class="text-gray-500">En ligne</span> <span class="panel-accent-text font-bold">{{ONLINE_CLIENTS}}</span>
+        </div>
+        <button onclick="location.href='/dashboard'" class="menu-pill px-4 py-2 rounded-xl text-[10px] orbitron font-bold motion-press">
+          <i class="fas fa-arrow-left mr-2"></i> 🏠 RETOUR HUB
+        </button>
+      </div>
+    </header>
+
+    <div class="flex flex-wrap gap-2 mb-8">
+      <button id="tabManageBtn" data-tab="manage" class="tab-btn px-4 py-3 rounded-2xl text-[10px] orbitron font-black tracking-widest uppercase flex items-center gap-2 motion-press">
+        <i class="fas fa-user-plus"></i> ➕ CRÉER <span class="text-gray-600">/</span> RENOUVELER
+      </button>
+      <button id="tabListBtn" data-tab="list" class="tab-btn px-4 py-3 rounded-2xl text-[10px] orbitron font-black tracking-widest uppercase flex items-center gap-2 motion-press">
+        <i class="fas fa-users"></i> 📋 LISTE CLIENTS
+      </button>
+    </div>
+
+    <section id="viewManage" class="hidden motion-enter">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 motion-stagger">
+
+        <div class="glass-card motion-lift p-6 rounded-3xl">
+          <h3 class="orbitron text-sm font-bold mb-6 panel-accent-text border-b border-white/10 pb-2 flex items-center gap-2">
+            <i class="fas fa-id-card"></i> 👤➕ CRÉER UN CLIENT
+          </h3>
+          <form action="/revendeur/add-user" method="POST" class="flex flex-col gap-4">
+            <div>
+              <label class="text-[10px] text-gray-500 uppercase">Pseudo</label>
+              <input type="text" name="username" placeholder="Ex: Client_VIP" required>
+            </div>
+
+          <div>
+            <label class="text-[10px] text-gray-500 uppercase">Mot de passe provisoire</label>
+            <input type="text" name="password" placeholder="Ex: 123456" required minlength="6">
+          </div>
+
+            <div>
+              <label class="text-[10px] text-gray-500 uppercase">Type d'accès</label>
+              <select name="user_type">
+                <option value="VIP">VIP</option>
+                <option value="Gratuit">Gratuit</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-[10px] text-gray-500 uppercase">Expiration (Optionnel)</label>
+              <input type="date" name="expiration" class="text-gray-300">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="text-[10px] text-gray-500 uppercase">Quota Data (GB)</label>
+                <input type="number" step="0.1" min="0" name="quota_gb" placeholder="Ex: 10">
+                <p class="text-[10px] text-gray-700 mt-1 italic">Vide = Illimité</p>
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-500 uppercase">Avatar (URL)</label>
+                <input type="text" name="avatar" placeholder="https://... ou /static/avatars/...">
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[10px] text-gray-500 uppercase">Note (Mémo)</label>
+              <textarea name="notes" rows="2" placeholder="Ex: Payé OM - 10/02"></textarea>
+            </div>
+
+            <button type="submit" class="text-black font-bold py-3 rounded-2xl orbitron text-[10px] hover:scale-[1.02] transition mt-2 shadow-[0_0_15px_rgba(0,242,255,0.35)] motion-press"
+              style="background:var(--panel-accent,#00f2ff);box-shadow:0 0 15px rgba(var(--panel-accent-rgb,0,242,255),0.35);">
+              CRÉER L'ACCÈS
+            </button>
+          </form>
+        </div>
+
+        <div class="glass-card motion-lift p-6 rounded-3xl h-fit">
+          <h3 class="orbitron text-sm font-bold mb-6 panel-accent-text border-b border-white/10 pb-2 flex items-center gap-2">
+            <i class="fas fa-rotate"></i> ♻️ RENOUVELLEMENT RAPIDE
+          </h3>
+          <form action="/revendeur/users/renew" method="POST" class="flex flex-col gap-4">
+            <div>
+              <label class="text-[10px] text-gray-500 uppercase">Choisir le client</label>
+              <select name="user_id" required>
+                <option value="" selected disabled>-- Sélectionner --</option>
+                {{CLIENT_OPTIONS}}
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="text-[10px] text-gray-500 uppercase">+ Durée (jours)</label>
+                <input type="number" name="days" min="1" max="3650" placeholder="Ex: 30">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-500 uppercase">+ Data (GB)</label>
+                <input type="number" name="gb" min="0.1" step="0.1" max="100000" placeholder="Ex: 10">
+              </div>
+            </div>
+
+            <button type="submit" class="bg-[#ffd700] text-black font-bold py-3 rounded-2xl orbitron text-[10px] hover:scale-[1.02] transition shadow-[0_0_15px_rgba(255,215,0,0.25)] motion-press">
+              APPLIQUER
+            </button>
+          <p class="text-[10px] text-gray-700 italic">Astuce: tu peux aussi réinitialiser le mot de passe, bloquer, ou supprimer depuis la liste.</p>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="viewList" class="hidden motion-enter">
+      <div class="glass-card motion-lift p-6 rounded-3xl">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div>
+            <h3 class="orbitron text-sm font-bold flex items-center gap-2">
+              <i class="fas fa-users"></i> 👥 CLIENTS
+            </h3>
+            <p class="text-[10px] text-gray-600 mt-2">Filtre: en ligne + recherche instantanée</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div class="flex gap-2">
+              <button id="filterAll" class="submenu-chip px-4 py-2 rounded-xl text-[10px] orbitron font-bold transition motion-press">📦 TOUS</button>
+              <button id="filterOnline" class="submenu-chip panel-accent-text px-4 py-2 rounded-xl text-[10px] orbitron font-bold transition motion-press">🟢 EN LIGNE</button>
+            </div>
+            <div class="relative">
+              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 text-[12px]"></i>
+              <input id="searchInput" type="text" placeholder="Rechercher pseudo / type..." class="pl-10 text-[11px] rounded-xl w-full sm:w-[320px]">
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="text-gray-500 border-b border-white/10">
+              <tr>
+                <th class="pb-4 pl-2">UTILISATEUR / INFO</th>
+                <th class="pb-4">TYPE</th>
+                <th class="pb-4">EXPIRATION</th>
+                <th class="pb-4">GIGA</th>
+                <th class="pb-4">EN LIGNE</th>
+                <th class="pb-4">NOTES</th>
+                <th class="pb-4">STATUS</th>
+                <th class="pb-4 text-right pr-2">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="clientsTbody" class="divide-y divide-white/5">
+              {{CLIENT_ROWS}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Tabs
+    function triggerEnter(el) {
+      if (!el) return;
+      el.classList.remove('motion-enter');
+      void el.offsetWidth; // force reflow, so animation restarts
+      el.classList.add('motion-enter');
+    }
+
+    function setTab(tab) {
+      const manage = document.getElementById('viewManage');
+      const list = document.getElementById('viewList');
+      const bManage = document.getElementById('tabManageBtn');
+      const bList = document.getElementById('tabListBtn');
+
+      const isManage = tab === 'manage';
+      if (manage) manage.classList.toggle('hidden', !isManage);
+      if (list) list.classList.toggle('hidden', isManage);
+      if (bManage) bManage.classList.toggle('active', isManage);
+      if (bList) bList.classList.toggle('active', !isManage);
+
+      if (isManage) triggerEnter(manage);
+      else triggerEnter(list);
+
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', isManage ? 'manage' : 'list');
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    const tabFromUrl = new URLSearchParams(window.location.search).get('tab') || 'list';
+    setTab(tabFromUrl === 'manage' ? 'manage' : 'list');
+
+    document.getElementById('tabManageBtn')?.addEventListener('click', () => setTab('manage'));
+    document.getElementById('tabListBtn')?.addEventListener('click', () => setTab('list'));
+
+    // Filter + search
+    let filterMode = 'all';
+    const searchInput = document.getElementById('searchInput');
+    const tbody = document.getElementById('clientsTbody');
+
+    function applyFilters() {
+      if (!tbody) return;
+      const q = (searchInput?.value || '').trim().toLowerCase();
+      const rows = tbody.querySelectorAll('tr');
+      rows.forEach((row) => {
+        const online = row.getAttribute('data-online') === '1';
+        const text = (row.innerText || '').toLowerCase();
+        const matchFilter = (filterMode === 'online') ? online : true;
+        const matchSearch = q ? text.includes(q) : true;
+        row.classList.toggle('hidden', !(matchFilter && matchSearch));
+      });
+    }
+
+    document.getElementById('filterAll')?.addEventListener('click', () => { filterMode = 'all'; applyFilters(); });
+    document.getElementById('filterOnline')?.addEventListener('click', () => { filterMode = 'online'; applyFilters(); });
+    searchInput?.addEventListener('input', applyFilters);
+
+    // Bloquer / debloquer un client (scope par lignee, gere cote serveur)
+    async function toggleClientStatus(id, action) {
+      const verb = action === 'unblock' ? 'debloquer' : 'bloquer';
+      if (!confirm(`Voulez-vous ${verb} ce client ?`)) return;
+      try {
+        const res = await fetch(`/api/revendeur/users/${action}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.status === 'ok') {
+          location.reload();
+        } else {
+          alert('Erreur: ' + (data.message || `Impossible de ${verb} ce client.`));
+        }
+      } catch (err) {
+        alert('Erreur reseau.');
+      }
+    }
+
+    // Retrograder manuellement un client vers Gratuit (scope par lignee)
+    async function downgradeClient(id) {
+      if (!confirm('Retrograder ce client vers Gratuit maintenant ? Cette action est immediate.')) return;
+      try {
+        const res = await fetch('/api/revendeur/users/downgrade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.status === 'ok') {
+          location.reload();
+        } else {
+          alert('Erreur: ' + (data.message || 'Impossible de retrograder ce client.'));
+        }
+      } catch (err) {
+        alert('Erreur reseau.');
+      }
+    }
+
+    // Reinitialiser le mot de passe d'un client (scope par lignee)
+    async function resetClientPassword(id) {
+      const custom = prompt('Nouveau mot de passe (laisser vide pour en generer un automatiquement) :');
+      if (custom === null) return;
+      if (custom && custom.length < 8) {
+        alert('Le mot de passe doit contenir au moins 8 caracteres.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/revendeur/users/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, new_password: custom || '' }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.status === 'ok') {
+          alert('Mot de passe reinitialise : ' + data.new_password + '\n\nTransmettez-le au client de maniere securisee.');
+        } else {
+          alert('Erreur: ' + (data.message || 'Impossible de reinitialiser.'));
+        }
+      } catch (err) {
+        alert('Erreur reseau.');
+      }
+    }
+
+    // Copy info
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-copy-license]');
+      if (!btn) return;
+      const code = btn.getAttribute('data-copy-license') || '';
+      try { await navigator.clipboard.writeText(code); alert('Information copiée !'); }
+      catch (err) { alert('Erreur copie.'); }
+    });
+
+    // --- EFFET SCRAMBLE DECHIFFREMENT ---
+    const scrambleElements = document.querySelectorAll('.scramble-text');
+    scrambleElements.forEach(el => {
+        const originalText = el.innerText;
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+        let iterations = 0;
+        const interval = setInterval(() => {
+            el.innerText = originalText.split('').map((char, index) => {
+                if (char === ' ') return ' ';
+                if (index < iterations) return originalText[index];
+                return chars[Math.floor(Math.random() * chars.length)];
+            }).join('');
+            if (iterations >= originalText.length) clearInterval(interval);
+            iterations += 1/3;
+        }, 30);
+    });
+  </script>
+</body>
+</html>

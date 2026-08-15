@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+
+
+
+<html lang="fr">
+
+
+
+<head>
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+    <meta charset="UTF-8">
+
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+
+    <title>LABORATOIRE | Admin Dashboard</title>
+
+
+
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+
+
+
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+
+
+
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+
+
+
+    <link rel="stylesheet" href="/static/css/motion.css">
+
+
+
+    <link rel="stylesheet" href="/static/css/style.css">
+
+
+
+    <link rel="stylesheet" href="/static/css/panel-accent.css">
+
+
+
+    <link rel="stylesheet" href="/static/css/command-palette.css">
+
+
+
+    <link rel="stylesheet" href="/static/css/a11y.css">
+
+
+
+    <link rel="stylesheet" href="/static/css/guide-assistant.css">
+
+
+
+    <script defer src="/static/js/command-palette.js"></script>
+
+
+
+    <script defer src="/static/js/guide-assistant.js"></script>
+
+
+
+    <style>
+
+
+
+        :root {
+
+
+
+            --bg: #050505;
+
+
+
+            --glass: rgba(255, 255, 255, 0.05);
+
+
+
+            --line: rgba(255, 255, 255, 0.12);
+
+
+
+            --accent: #00f2ff;
+
+
+
+            --accent2: #39ff14;
+
+
+
+            --warn: #f59e0b;
+
+
+
+        }
+
+
+
+
+
+
+
+        body {
+
+
+
+            font-family: 'Plus Jakarta Sans', sans-serif;
+
+
+
+            background:
+
+
+
+                radial-gradient(circle at 18% 12%, rgba(0, 242, 255, 0.12), transparent 34%),
+
+
+
+                radial-gradient(circle at 82% 22%, rgba(57, 255, 20, 0.1), transparent 36%),
+
+
+
+                radial-gradient(circle at 50% 90%, rgba(245, 158, 11, 0.09), transparent 45%),
+
+
+
+                var(--bg);
+
+
+
+            color: #fff;
+
+
+
+        }
+
+
+
+
+
+
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+
+
+
+
+
+
+        .glass {
+
+
+
+            background: var(--glass);
+
+
+
+            border: 1px solid var(--line);
+
+
+
+            backdrop-filter: blur(14px);
+
+
+
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+
+
+
+        }
+
+
+
+
+
+
+
+        .stat-card {
+
+
+
+            min-height: 128px;
+
+
+
+            transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease;
+
+
+
+        }
+
+
+
+
+
+
+
+        .stat-card:hover {
+
+
+
+            transform: translateY(-3px);
+
+
+
+            border-color: rgba(0, 242, 255, 0.45);
+
+
+
+            box-shadow: 0 18px 30px rgba(0, 0, 0, 0.35), 0 0 16px rgba(0, 242, 255, 0.16);
+
+
+
+        }
+
+
+
+
+
+
+
+        .section-title {
+
+
+
+            letter-spacing: .24em;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-kpi-strip .panel-kpi-card {
+
+
+
+            min-height: 132px;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-kpi-strip .panel-kpi-value {
+
+
+
+            font-size: 1.2rem;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-kpi-strip .panel-kpi-meta {
+
+
+
+            min-height: 1.2em;
+
+
+
+        }
+
+
+
+
+
+
+
+        .module-tile {
+
+
+
+            min-height: 126px;
+
+
+
+            transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease, background .24s ease;
+
+
+
+            cursor: pointer;
+
+
+
+            text-decoration: none;
+
+
+
+            color: inherit;
+
+
+
+        }
+
+
+
+
+
+
+
+        .module-tile:hover {
+
+
+
+            transform: translateY(-3px);
+
+
+
+            background: rgba(255, 255, 255, 0.08);
+
+
+
+            border-color: rgba(57, 255, 20, 0.45);
+
+
+
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3), 0 0 18px rgba(57, 255, 20, 0.11);
+
+
+
+        }
+
+
+
+
+
+
+
+        .module-tile:focus-visible {
+
+
+
+            transform: translateY(-2px);
+
+
+
+            border-color: rgba(0, 232, 255, 0.72);
+
+
+
+            box-shadow:
+
+
+
+                0 0 0 3px rgba(0, 232, 255, 0.18),
+
+
+
+                0 14px 28px rgba(0, 0, 0, 0.3);
+
+
+
+        }
+
+
+
+
+
+
+
+        .module-icon {
+
+
+
+            width: 48px;
+
+
+
+            height: 48px;
+
+
+
+            border-radius: 14px;
+
+
+
+            display: inline-flex;
+
+
+
+            align-items: center;
+
+
+
+            justify-content: center;
+
+
+
+            font-size: 1.1rem;
+
+
+
+            border: 1px solid rgba(255, 255, 255, 0.14);
+
+
+
+        }
+
+
+
+
+
+
+
+        .search-field {
+
+
+
+            background: rgba(0, 0, 0, 0.4);
+
+
+
+            border: 1px solid rgba(255, 255, 255, 0.2);
+
+
+
+            color: #fff;
+
+
+
+        }
+
+
+
+
+
+
+
+        .search-field:focus {
+
+
+
+            outline: none;
+
+
+
+            border-color: rgba(0, 242, 255, 0.8);
+
+
+
+            box-shadow: 0 0 0 3px rgba(0, 242, 255, 0.16);
+
+
+
+        }
+
+
+
+
+
+
+
+        html {
+
+
+
+            scroll-behavior: smooth;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-subnav {
+
+
+
+            display: flex;
+
+
+
+            flex-wrap: nowrap;
+
+
+
+            gap: .75rem;
+
+
+
+            overflow-x: auto;
+
+
+
+            padding-bottom: .3rem;
+
+
+
+            scroll-snap-type: x proximity;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-subnav-chip {
+
+
+
+            display: inline-flex;
+
+
+
+            align-items: center;
+
+
+
+            flex: 0 0 auto;
+
+
+
+            min-height: 46px;
+
+
+
+            gap: .55rem;
+
+
+
+            padding: .82rem 1rem;
+
+
+
+            border-radius: 1rem;
+
+
+
+            border: 1px solid rgba(255, 255, 255, 0.12);
+
+
+
+            background: rgba(255, 255, 255, 0.05);
+
+
+
+            color: #d1d5db;
+
+
+
+            font-family: 'Orbitron', sans-serif;
+
+
+
+            font-size: 11px;
+
+
+
+            font-weight: 700;
+
+
+
+            letter-spacing: .1em;
+
+
+
+            text-transform: uppercase;
+
+
+
+            text-decoration: none;
+
+
+
+            transition: transform .2s ease, border-color .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-subnav-chip:hover,
+
+
+
+        .admin-subnav-chip:focus-visible {
+
+
+
+            transform: translateY(-1px);
+
+
+
+            border-color: rgba(0, 242, 255, 0.38);
+
+
+
+            background: rgba(0, 242, 255, 0.12);
+
+
+
+            color: #fff;
+
+
+
+            box-shadow: 0 0 0 3px rgba(0, 242, 255, 0.12);
+
+
+
+            outline: none;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-subnav-chip--active {
+
+
+
+            border-color: rgba(57, 255, 20, 0.4);
+
+
+
+            background: linear-gradient(135deg, rgba(57, 255, 20, 0.15), rgba(0, 242, 255, 0.08));
+
+
+
+            color: #fff;
+
+
+
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+
+
+
+        }
+
+
+
+
+
+
+
+        .section-anchor {
+
+
+
+            scroll-margin-top: 1.4rem;
+
+
+
+        }
+
+
+
+
+
+
+
+        .admin-hero {
+
+            display: grid;
+
+            grid-template-columns: minmax(0, 1.2fr) minmax(300px, .85fr);
+
+            gap: 1.25rem;
+
+            align-items: start;
+
+        }
+
+
+
+        .admin-hero-copy {
+
+            min-width: 0;
+
+        }
+
+
+
+        .admin-hero-eyebrow {
+
+            font-size: 10px;
+
+            letter-spacing: .32em;
+
+            text-transform: uppercase;
+
+            color: #d1d5db;
+
+        }
+
+
+
+        .admin-hero-title {
+
+            font-size: clamp(1.85rem, 4.6vw, 3rem);
+
+            line-height: 1.06;
+
+            letter-spacing: .14em;
+
+        }
+
+
+
+        .admin-hero-actions {
+
+            display: grid;
+
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+
+            gap: .8rem;
+
+            align-items: start;
+
+        }
+
+
+
+        .admin-hero-actions .lab-signature {
+
+            grid-column: 1 / -1;
+
+            width: 100%;
+
+            align-items: flex-start;
+
+        }
+
+
+
+        .admin-hero-actions .lab-signature-title,
+
+        .admin-hero-actions .lab-signature-sub {
+
+            text-align: left;
+
+        }
+
+
+
+        .admin-hero-action {
+
+            min-height: 44px;
+
+            justify-content: center;
+
+        }
+
+
+
+        .admin-overview-grid {
+
+            display: grid;
+
+            grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+
+            gap: 1rem;
+
+        }
+
+
+
+        .admin-search-card {
+
+            position: sticky;
+
+            top: calc(var(--admin-shell-height, 84px) + 18px);
+
+            z-index: 5;
+
+        }
+
+
+
+
+
+        @media (max-width: 1024px) {
+
+
+
+            .admin-hero {
+
+
+
+                grid-template-columns: 1fr;
+
+
+
+            }
+
+
+
+            .admin-hero-actions {
+
+
+
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+
+
+
+            }
+
+
+
+        }
+
+
+
+
+
+
+
+        @media (max-width: 767px) {
+
+
+
+            .admin-hero-actions {
+
+
+
+                grid-template-columns: 1fr;
+
+
+
+            }
+
+
+
+            .admin-search-card {
+
+
+
+                position: static;
+
+
+
+            }
+
+
+
+            .admin-subnav-chip {
+
+
+
+                padding: .75rem .95rem;
+
+
+
+                font-size: 10px;
+
+
+
+            }
+
+
+
+            .module-tile {
+
+
+
+                min-height: 112px;
+
+
+
+                align-items: flex-start;
+
+
+
+                padding: 1rem;
+
+
+
+            }
+
+
+
+            .module-icon {
+
+
+
+                width: 42px;
+
+
+
+                height: 42px;
+
+
+
+                border-radius: 12px;
+
+
+
+            }
+
+
+
+        }
+
+
+
+
+
+
+
+        @media (max-width: 520px) {
+
+
+
+            .admin-hero-title {
+
+
+
+                letter-spacing: .08em;
+
+
+
+            }
+
+
+
+            .section-title {
+
+
+
+                letter-spacing: .18em;
+
+
+
+            }
+
+
+
+        }
+
+
+
+
+
+
+
+        @media (prefers-reduced-motion: reduce) {
+
+
+
+            .stat-card,
+
+
+
+            .module-tile {
+
+
+
+                transition: none !important;
+
+
+
+                transform: none !important;
+
+
+
+            }
+
+
+
+        }
+
+
+
+    </style>
+
+
+
+    <link rel="stylesheet" href="/static/css/admin-shell.css">
+
+
+
+        <link rel="stylesheet" href="/static/css/admin-dns-theme.css">
+
+
+
+<script defer src="/static/js/admin-shell.js"></script>
+
+
+
+  <script defer src="/static/js/ui-a11y.js"></script>
+
+
+
+</head>
+
+
+
+<body class="theme-dns p-4 sm:p-5 lg:p-10 motion-page" data-page-guide="admin-dashboard">
+
+
+
+    <div class="cyber-grid"></div>
+
+
+
+    <div class="scanlines"></div>
+
+
+
+
+
+
+
+    <main class="max-w-7xl mx-auto relative z-10">
+
+    <!-- audit-nav -->
+
+    <div data-nav-audit="admin" class="flex flex-wrap items-center gap-3 mb-6 text-[11px] uppercase tracking-widest">
+
+      <a href="/admin" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+        <i class="fas fa-arrow-left"></i> Retour au dashboard admin
+
+      </a>
+
+      <a href="/admin" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+        <i class="fas fa-bars"></i> Menu admin
+
+      </a>
+
+    </div>
+
+
+
+        <header class="mb-8 pt-2">
+
+            <h1 class="orbitron text-2xl font-black text-white">Panel <span class="text-cyan-300">Admin</span></h1>
+
+        </header>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <section id="admin-accounts" class="mb-9 section-anchor">
+
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+
+
+                <a href="/admin/users" data-tags="users abonnes licences comptes"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-green-500/20 text-green-300"><i class="fas fa-user-shield"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Gestion abonnés</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Création, édition, renouvellement, licences.</p>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+                <a href="/admin/activation-keys" data-tags="activation keys prepayees"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-yellow-500/20 text-yellow-300"><i class="fas fa-key"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Clés d'activation</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Génération en série des accès prépayés.</p>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+                <a href="/admin/notifications" data-tags="notifications broadcast annonce"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-fuchsia-500/20 text-fuchsia-300"><i class="fas fa-bell"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Notifications globales</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Annonces globales et alertes transverses.</p><div class="mt-3 flex flex-wrap gap-2 text-[10px] font-mono"><span class="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-cyan-200">/admin/notifications</span><span class="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-amber-200">construction</span></div>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <section id="admin-payments" class="mb-9 section-anchor">
+
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+
+
+                <a href="/admin/payments" data-tags="paiements validation manuel orange mtn"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-emerald-500/20 text-emerald-300"><i class="fas fa-receipt"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Validation paiements</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Approuver ou rejeter les demandes manuelles.</p><div class="mt-3 flex flex-wrap gap-2 text-[10px] font-mono"><span class="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-cyan-200">/admin/payments</span><span class="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-1 text-emerald-200">live</span></div>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+                <a href="/admin/settings/payment" data-tags="coordonnees paiement orange mtn"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-orange-500/20 text-orange-300"><i class="fas fa-wallet"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Coordonnées paiement</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Numéros Orange Money et MTN MoMo admin.</p>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <section id="admin-network" class="mb-9 section-anchor">
+
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+
+
+                <a href="/admin/dns-cloudflare" data-tags="dns cloudflare gcp ip domaine"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4" data-guide-id="admin-dns-cloudflare">
+
+
+
+                    <span class="module-icon bg-cyan-500/20 text-cyan-300"><i class="fas fa-network-wired"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">DNS / Cloudflare</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Résolution DNS et vérification CDN/GCP.</p>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+                <a href="/admin/config-generator" data-tags="config generator liens clients"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4" data-guide-id="admin-config-generator">
+
+
+
+                    <span class="module-icon bg-teal-500/20 text-teal-300"><i class="fas fa-gears"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Config generator</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Génération des liens/configs client.</p>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+                <a href="/admin/ip-bans" data-tags="ip ban securite blocage"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-red-500/20 text-red-300"><i class="fas fa-ban"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">IP bannies</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Suivi des blocages et débrayage manuel.</p>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <section id="admin-marketing" class="mb-10 section-anchor">
+
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+
+
+                <a href="/admin/ads" data-tags="ads pub marketing banniere tchat dashboard"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-lime-500/20 text-lime-300"><i class="fas fa-bullhorn"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Gestion pubs</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Bannières tchat et dashboard utilisateur.</p>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+                <a href="/admin/messagerie" data-tags="messagerie support tickets"
+
+
+
+                    class="module-tile glass rounded-[1.6rem] p-5 flex items-center gap-4">
+
+
+
+                    <span class="module-icon bg-pink-500/20 text-pink-300"><i class="fas fa-headset"></i></span>
+
+
+
+                    <div>
+
+
+
+                        <h3 class="font-bold text-white text-lg">Messagerie support</h3>
+
+
+
+                        <p class="text-xs text-gray-400">Messagerie support et suivi des tickets.</p><div class="mt-3 flex flex-wrap gap-2 text-[10px] font-mono"><span class="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-cyan-200">/admin/messagerie</span><span class="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-amber-200">construction</span></div>
+
+
+
+                    </div>
+
+
+
+                </a>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <footer class="text-center text-[10px] text-gray-500 uppercase tracking-[0.26em] mb-2">
+
+
+
+            Philippo_OS v8.6 admin-shell
+
+
+
+        </footer>
+
+
+
+    </main>
+
+
+
+
+
+
+
+    <script>
+
+        // Minimal - pas de KPI ni stats
+
+    </script>
+
+
+
+</body>
+
+
+
+</html>
+
+
+
+
+
+
+

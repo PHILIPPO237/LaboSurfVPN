@@ -1,0 +1,3186 @@
+<!DOCTYPE html>
+
+
+<html lang="fr">
+
+
+<head>
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+    <meta charset="UTF-8">
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <title>Admin | IP Bans</title>
+
+
+    <link rel="stylesheet" href="/static/css/tailwind-build.css">
+
+
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+
+
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+
+
+    <link rel="stylesheet" href="/static/css/admin-shell.css">
+
+
+        <link rel="stylesheet" href="/static/css/admin-dns-theme.css">
+
+
+<script defer src="/static/js/admin-shell.js"></script>
+
+
+    <style>
+
+
+        :root {
+
+
+            --bg: #050505;
+
+
+            --glass-light: rgba(255, 255, 255, 0.08);
+
+
+            --glass-dark: rgba(255, 255, 255, 0.04);
+
+
+            --border-light: rgba(255, 255, 255, 0.18);
+
+
+            --border-dark: rgba(255, 255, 255, 0.08);
+
+
+        }
+
+
+
+
+
+        body {
+
+
+            background:
+
+
+                radial-gradient(circle at 16% 10%, rgba(239, 68, 68, 0.12), transparent 35%),
+
+
+                radial-gradient(circle at 82% 24%, rgba(0, 242, 255, 0.08), transparent 38%),
+
+
+                radial-gradient(circle at 50% 90%, rgba(57, 255, 20, 0.07), transparent 44%),
+
+
+                var(--bg);
+
+
+            color: #fff;
+
+
+            font-family: 'JetBrains Mono', monospace;
+
+
+            background-attachment: fixed;
+
+
+            min-height: 100vh;
+
+
+        }
+
+
+
+
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+
+
+
+
+        /* === GLASSMORPHISM PREMIUM === */
+
+
+        .glass {
+
+
+            background: linear-gradient(135deg, var(--glass-light) 0%, var(--glass-dark) 100%);
+
+
+            border: 1px solid var(--border-light);
+
+
+            backdrop-filter: blur(16px) saturate(180%);
+
+
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+
+
+            box-shadow: 
+
+
+                inset 0 0 20px rgba(255, 255, 255, 0.05),
+
+
+                inset 1px 1px 0 rgba(255, 255, 255, 0.15),
+
+
+                0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+
+            position: relative;
+
+
+            overflow: hidden;
+
+
+        }
+
+
+
+
+
+        .glass::before {
+
+
+            content: '';
+
+
+            position: absolute;
+
+
+            top: 0;
+
+
+            left: 0;
+
+
+            right: 0;
+
+
+            height: 1px;
+
+
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+
+
+            pointer-events: none;
+
+
+        }
+
+
+
+
+
+        .glass:hover {
+
+
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+
+            border-color: rgba(255, 255, 255, 0.25);
+
+
+            box-shadow: 
+
+
+                inset 0 0 25px rgba(255, 255, 255, 0.08),
+
+
+                inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+
+
+                0 12px 48px 0 rgba(0, 0, 0, 0.45);
+
+
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+
+
+        }
+
+
+
+
+
+        /* Stats Cards Enhanced */
+
+
+        .glass-stat {
+
+
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%);
+
+
+            border: 1px solid rgba(255, 255, 255, 0.16);
+
+
+            backdrop-filter: blur(20px);
+
+
+            -webkit-backdrop-filter: blur(20px);
+
+
+            box-shadow: 
+
+
+                inset 0 1px 2px rgba(255, 255, 255, 0.12),
+
+
+                0 8px 24px rgba(0, 0, 0, 0.4);
+
+
+            position: relative;
+
+
+        }
+
+
+
+
+
+        .glass-stat::before {
+
+
+            content: '';
+
+
+            position: absolute;
+
+
+            top: 0;
+
+
+            left: 0;
+
+
+            right: 0;
+
+
+            height: 1px;
+
+
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+
+
+        }
+
+
+
+
+
+        .glass-stat:hover {
+
+
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+
+            border-color: rgba(255, 255, 255, 0.28);
+
+
+            box-shadow: 
+
+
+                inset 0 1px 2px rgba(255, 255, 255, 0.16),
+
+
+                0 12px 36px rgba(0, 0, 0, 0.5);
+
+
+            transform: translateY(-2px);
+
+
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+
+
+        }
+
+
+
+
+
+        /* Input Fields Enhanced */
+
+
+        .field {
+
+
+            background: rgba(0, 0, 0, 0.3);
+
+
+            border: 1px solid rgba(255, 255, 255, 0.15);
+
+
+            color: #fff;
+
+
+            backdrop-filter: blur(10px);
+
+
+            -webkit-backdrop-filter: blur(10px);
+
+
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+
+
+            transition: all 0.3s ease;
+
+
+        }
+
+
+
+
+
+        .field::placeholder {
+
+
+            color: rgba(255, 255, 255, 0.4);
+
+
+        }
+
+
+
+
+
+        .field:focus {
+
+
+            outline: none;
+
+
+            border-color: rgba(0, 242, 255, 0.6);
+
+
+            background: rgba(0, 0, 0, 0.4);
+
+
+            box-shadow: 
+
+
+                inset 0 2px 8px rgba(0, 0, 0, 0.2),
+
+
+                0 0 0 3px rgba(0, 242, 255, 0.15);
+
+
+        }
+
+
+
+
+
+        /* Sidebar Sticky */
+
+
+        aside {
+
+
+            max-height: calc(100vh - 2rem);
+
+
+            overflow-y: auto;
+
+
+        }
+
+
+
+
+
+        aside::-webkit-scrollbar {
+
+
+            width: 6px;
+
+
+        }
+
+
+
+
+
+        aside::-webkit-scrollbar-track {
+
+
+            background: rgba(255, 255, 255, 0.05);
+
+
+            border-radius: 10px;
+
+
+        }
+
+
+
+
+
+        aside::-webkit-scrollbar-thumb {
+
+
+            background: rgba(255, 255, 255, 0.2);
+
+
+            border-radius: 10px;
+
+
+        }
+
+
+
+
+
+        aside::-webkit-scrollbar-thumb:hover {
+
+
+            background: rgba(255, 255, 255, 0.3);
+
+
+        }
+
+
+
+
+
+        /* Table Enhanced */
+
+
+        table {
+
+
+            background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+
+
+        }
+
+
+
+
+
+        thead {
+
+
+            background: linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+
+
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+
+            position: sticky;
+
+
+            top: 0;
+
+
+            z-index: 10;
+
+
+        }
+
+
+
+
+
+        tbody tr {
+
+
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+
+            transition: all 0.2s ease;
+
+
+        }
+
+
+
+
+
+        tbody tr:hover {
+
+
+            background: rgba(255, 255, 255, 0.06);
+
+
+            box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.04);
+
+
+        }
+
+
+
+
+
+        /* Buttons Enhanced */
+
+
+        button {
+
+
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+
+
+            position: relative;
+
+
+            overflow: hidden;
+
+
+        }
+
+
+
+
+
+        button::before {
+
+
+            content: '';
+
+
+            position: absolute;
+
+
+            top: 50%;
+
+
+            left: 50%;
+
+
+            width: 0;
+
+
+            height: 0;
+
+
+            border-radius: 50%;
+
+
+            background: rgba(255, 255, 255, 0.1);
+
+
+            transform: translate(-50%, -50%);
+
+
+            pointer-events: none;
+
+
+        }
+
+
+
+
+
+        button:hover {
+
+
+            background: rgba(34, 197, 94, 0.25) !important;
+
+
+            border-color: rgba(34, 197, 94, 0.5) !important;
+
+
+            box-shadow: 0 0 16px rgba(34, 197, 94, 0.2);
+
+
+            transform: translateY(-1px);
+
+
+        }
+
+
+
+
+
+        button:active {
+
+
+            transform: scale(0.96);
+
+
+        }
+
+
+
+
+
+        .card-glass {
+
+
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+
+
+            border: 1px solid rgba(255, 255, 255, 0.15);
+
+
+            backdrop-filter: blur(18px);
+
+
+            -webkit-backdrop-filter: blur(18px);
+
+
+            box-shadow: 
+
+
+                inset 0 1px 2px rgba(255, 255, 255, 0.1),
+
+
+                0 8px 32px rgba(0, 0, 0, 0.35);
+
+
+            position: relative;
+
+
+        }
+
+
+
+
+
+        .card-glass::before {
+
+
+            content: '';
+
+
+            position: absolute;
+
+
+            top: 0;
+
+
+            left: 0;
+
+
+            right: 0;
+
+
+            height: 1px;
+
+
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+
+
+            pointer-events: none;
+
+
+        }
+
+
+
+
+
+        .card-glass:hover {
+
+
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+
+            border-color: rgba(255, 255, 255, 0.25);
+
+
+            box-shadow: 
+
+
+                inset 0 1px 2px rgba(255, 255, 255, 0.14),
+
+
+                0 12px 40px rgba(0, 0, 0, 0.45);
+
+
+            transform: translateY(-4px) scale(1.01);
+
+
+        }
+
+
+
+
+
+        /* Section Headers */
+
+
+        header.glass {
+
+
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.04) 100%);
+
+
+            border: 1px solid rgba(255, 255, 255, 0.15);
+
+
+        }
+
+
+
+
+
+        /* Animations */
+
+
+        @keyframes fadeIn {
+
+
+            from {
+
+
+                opacity: 0;
+
+
+                transform: translateY(10px);
+
+
+            }
+
+
+            to {
+
+
+                opacity: 1;
+
+
+                transform: translateY(0);
+
+
+            }
+
+
+        }
+
+
+
+
+
+        @keyframes slideInCard {
+
+
+            from {
+
+
+                opacity: 0;
+
+
+                transform: translateY(12px) scale(0.95);
+
+
+            }
+
+
+            to {
+
+
+                opacity: 1;
+
+
+                transform: translateY(0) scale(1);
+
+
+            }
+
+
+        }
+
+
+
+
+
+        .glass, .glass-stat, table {
+
+
+            animation: fadeIn 0.5s ease-out forwards;
+
+
+        }
+
+
+
+
+
+        .card-glass {
+
+
+            animation: slideInCard 0.4s ease-out forwards;
+
+
+        }
+
+
+
+
+
+        .card-glass:nth-child(1) { animation-delay: 0.05s; }
+
+
+        .card-glass:nth-child(2) { animation-delay: 0.1s; }
+
+
+        .card-glass:nth-child(3) { animation-delay: 0.15s; }
+
+
+        .card-glass:nth-child(n+4) { animation-delay: 0.2s; }
+
+
+
+
+
+        /* Responsive Adjustments */
+
+
+        @media (max-width: 768px) {
+
+
+            .glass {
+
+
+                backdrop-filter: blur(12px) saturate(160%);
+
+
+                -webkit-backdrop-filter: blur(12px) saturate(160%);
+
+
+            }
+
+
+
+
+
+            .glass-stat {
+
+
+                backdrop-filter: blur(16px);
+
+
+                -webkit-backdrop-filter: blur(16px);
+
+
+            }
+
+
+
+
+
+            .card-glass {
+
+
+                backdrop-filter: blur(14px);
+
+
+                -webkit-backdrop-filter: blur(14px);
+
+
+            }
+
+
+
+
+
+            aside {
+
+
+                max-height: none;
+
+
+            }
+
+
+        }
+
+
+
+
+
+        /* Enhanced Table Row Hover */
+
+
+        tbody tr:hover {
+
+
+            background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+
+
+            box-shadow: 
+
+
+                inset 0 0 16px rgba(255, 255, 255, 0.05),
+
+
+                inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+
+
+        }
+
+
+
+
+
+        tbody tr:hover td {
+
+
+            color: #fff;
+
+
+        }
+
+
+
+
+
+        /* View Transition */
+
+
+        #tableView, #cardsView {
+
+
+            transition: opacity 0.3s ease;
+
+
+        }
+
+
+
+
+
+        #tableView:not(.hidden), #cardsView:not(.hidden) {
+
+
+            animation: fadeIn 0.4s ease-out;
+
+
+        }
+
+
+
+
+
+        /* Danger Level Colors */
+
+
+        .danger-level-0 { color: #22c55e; }
+
+
+        .danger-level-1 { color: #eab308; }
+
+
+        .danger-level-2 { color: #fb923c; }
+
+
+        .danger-level-3 { color: #ef4444; }
+
+
+        .danger-level-4 { color: #dc2626; }
+
+
+
+
+
+        /* === PARTICLES EFFECT === */
+
+
+        .particles-bg {
+
+
+            position: fixed;
+
+
+            top: 0;
+
+
+            left: 0;
+
+
+            width: 100%;
+
+
+            height: 100%;
+
+
+            pointer-events: none;
+
+
+            z-index: 0;
+
+
+        }
+
+
+
+
+
+        .particle {
+
+
+            position: absolute;
+
+
+            width: 2px;
+
+
+            height: 2px;
+
+
+            border-radius: 50%;
+
+
+            background: rgba(0, 242, 255, 0.3);
+
+
+            animation: float 20s infinite ease-in-out;
+
+
+        }
+
+
+
+
+
+        @keyframes float {
+
+
+            0% {
+
+
+                transform: translateY(100vh) translateX(0) scale(1);
+
+
+                opacity: 0;
+
+
+            }
+
+
+            10% {
+
+
+                opacity: 0.8;
+
+
+            }
+
+
+            90% {
+
+
+                opacity: 0.8;
+
+
+            }
+
+
+            100% {
+
+
+                transform: translateY(-100vh) translateX(100px) scale(0.5);
+
+
+                opacity: 0;
+
+
+            }
+
+
+        }
+
+
+
+
+
+        /* === GLOW EFFECTS === */
+
+
+        .glow-text {
+
+
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3);
+
+
+        }
+
+
+
+
+
+        .glow-danger-low {
+
+
+            text-shadow: 0 0 12px rgba(34, 197, 94, 0.4), 0 0 24px rgba(34, 197, 94, 0.2);
+
+
+        }
+
+
+
+
+
+        .glow-danger-high {
+
+
+            text-shadow: 0 0 12px rgba(239, 68, 68, 0.5), 0 0 24px rgba(239, 68, 68, 0.25);
+
+
+        }
+
+
+
+
+
+        /* === BADGE GLOW === */
+
+
+        .badge-animated {
+
+
+            animation: badgeGlow 2s ease-in-out infinite;
+
+
+        }
+
+
+
+
+
+        @keyframes badgeGlow {
+
+
+            0%, 100% {
+
+
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.1), inset 0 0 8px rgba(255, 255, 255, 0.05);
+
+
+            }
+
+
+            50% {
+
+
+                box-shadow: 0 0 16px rgba(255, 255, 255, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.1);
+
+
+            }
+
+
+        }
+
+
+
+
+
+        /* === FILTER BADGE === */
+
+
+        .filter-badge {
+
+
+            display: inline-block;
+
+
+            padding: 0.25rem 0.75rem;
+
+
+            background: rgba(0, 242, 255, 0.15);
+
+
+            border: 1px solid rgba(0, 242, 255, 0.4);
+
+
+            border-radius: 9999px;
+
+
+            font-size: 11px;
+
+
+            color: #00f2ff;
+
+
+            backdrop-filter: blur(8px);
+
+
+        }
+
+
+
+
+
+        /* === STATS PULSE === */
+
+
+        @keyframes statPulse {
+
+
+            0%, 100% {
+
+
+                box-shadow: 
+
+
+                    inset 0 1px 2px rgba(255, 255, 255, 0.12),
+
+
+                    0 8px 24px rgba(0, 0, 0, 0.4);
+
+
+            }
+
+
+            50% {
+
+
+                box-shadow: 
+
+
+                    inset 0 1px 2px rgba(255, 255, 255, 0.16),
+
+
+                    0 8px 32px rgba(0, 0, 0, 0.5);
+
+
+            }
+
+
+        }
+
+
+
+
+
+        .glass-stat.pulse {
+
+
+            animation: statPulse 3s ease-in-out infinite;
+
+
+        }
+
+
+
+
+
+        /* === SEARCH HIGHLIGHT === */
+
+
+        .search-match {
+
+
+            background: rgba(0, 242, 255, 0.2);
+
+
+            border-left: 3px solid rgba(0, 242, 255, 0.6) !important;
+
+
+        }
+
+
+
+
+
+        /* === MOBILE OPTIMIZATIONS === */
+
+
+        @media (max-width: 640px) {
+
+
+            body {
+
+
+                padding: 0.75rem;
+
+
+            }
+
+
+
+
+
+            main, aside {
+
+
+                gap: 0.75rem !important;
+
+
+            }
+
+
+
+
+
+            .glass {
+
+
+                box-shadow: 
+
+
+                    inset 0 0 16px rgba(255, 255, 255, 0.04),
+
+
+                    inset 1px 1px 0 rgba(255, 255, 255, 0.12),
+
+
+                    0 6px 24px 0 rgba(0, 0, 0, 0.32);
+
+
+                padding: 0.75rem !important;
+
+
+            }
+
+
+
+
+
+            .glass-stat {
+
+
+                p-3 !important;
+
+
+            }
+
+
+
+
+
+            button:active {
+
+
+                transform: scale(0.92) !important;
+
+
+            }
+
+
+
+
+
+            .card-glass {
+
+
+                border-radius: 12px;
+
+
+            }
+
+
+
+
+
+            /* Hide non-essential columns */
+
+
+            .hidden\.md\:table-cell, .hidden\.lg\:table-cell {
+
+
+                display: none;
+
+
+            }
+
+
+
+
+
+            /* Text overflow handling */
+
+
+            .font-mono {
+
+
+                word-break: break-all;
+
+
+                font-size: 11px;
+
+
+            }
+
+
+        }
+
+
+
+
+
+        /* === THEME VARIANTS === */
+
+
+        .theme-danger {
+
+
+            --glass-light: rgba(239, 68, 68, 0.1);
+
+
+            --glass-dark: rgba(239, 68, 68, 0.05);
+
+
+        }
+
+
+
+
+
+        .theme-success {
+
+
+            --glass-light: rgba(34, 197, 94, 0.1);
+
+
+            --glass-dark: rgba(34, 197, 94, 0.05);
+
+
+        }
+
+
+
+
+
+        /* === SCROLLBAR STYLING === */
+
+
+        ::-webkit-scrollbar {
+
+
+            width: 8px;
+
+
+            height: 8px;
+
+
+        }
+
+
+
+
+
+        ::-webkit-scrollbar-track {
+
+
+            background: rgba(255, 255, 255, 0.05);
+
+
+        }
+
+
+
+
+
+        ::-webkit-scrollbar-thumb {
+
+
+            background: rgba(0, 242, 255, 0.3);
+
+
+            border-radius: 4px;
+
+
+        }
+
+
+
+
+
+        ::-webkit-scrollbar-thumb:hover {
+
+
+            background: rgba(0, 242, 255, 0.5);
+
+
+        }
+
+
+
+
+
+        /* === SELECT STYLING === */
+
+
+        select {
+
+
+            appearance: none;
+
+
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300f2ff' d='M1 4l5 4 5-4'/%3E%3C/svg%3E");
+
+
+            background-repeat: no-repeat;
+
+
+            background-position: right 0.75rem center;
+
+
+            padding-right: 2rem;
+
+
+        }
+
+
+
+
+
+        /* === FOCUS STATES === */
+
+
+        *:focus-visible {
+
+
+            outline: 2px solid rgba(0, 242, 255, 0.5);
+
+
+            outline-offset: 2px;
+
+
+        }
+
+
+
+
+
+        /* === LOADING STATE === */
+
+
+        @keyframes spin {
+
+
+            from { transform: rotate(0deg); }
+
+
+            to { transform: rotate(360deg); }
+
+
+        }
+
+
+
+
+
+        .fa-spinner {
+
+
+            animation: spin 1s linear infinite;
+
+
+        }
+
+
+    </style>
+
+
+  <link rel="stylesheet" href="/static/css/a11y.css">
+
+
+  <script defer src="/static/js/ui-a11y.js"></script>
+
+
+</head>
+
+
+<body class="theme-dns p-4 lg:p-6">
+
+
+    <!-- Particles Background -->
+
+
+    <div class="particles-bg" id="particlesBg"></div>
+
+
+    
+
+
+    <div class="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto relative z-10">
+
+
+        <!-- SIDEBAR STATS (Sticky sur PC, Collapse sur mobile) -->
+
+
+        <aside class="w-full lg:w-64 flex-shrink-0">
+
+
+            <!-- Mobile Header Toggle -->
+
+
+            <div class="lg:hidden mb-4">
+
+
+                <button id="statToggle" class="w-full glass rounded-xl p-3 flex items-center justify-between">
+
+
+                    <span class="text-sm font-bold">📊 Statistiques</span>
+
+
+                    <i class="fas fa-chevron-down text-cyan-300"></i>
+
+
+                </button>
+
+
+            </div>
+
+
+
+
+
+            <!-- Stats Container -->
+
+
+            <div id="statsContainer" class="hidden lg:flex flex-col gap-3 lg:sticky lg:top-6">
+
+
+                <div class="glass-stat rounded-xl p-4">
+
+
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400">Bans Actifs</div>
+
+
+                    <div id="kpiCount" class="text-3xl font-black orbitron text-red-400 mt-2">0</div>
+
+
+                    <div id="kpiTrend" class="text-[10px] text-red-300/70 mt-1">↑ +0 dernière heure</div>
+
+
+                </div>
+
+
+
+
+
+                <div class="glass-stat rounded-xl p-4">
+
+
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400">Taux Ban/h</div>
+
+
+                    <div id="kpiBanRate" class="text-3xl font-black orbitron text-amber-400 mt-2">0.0</div>
+
+
+                    <div class="text-[10px] text-amber-300/70 mt-1">Bannissements/heure</div>
+
+
+                </div>
+
+
+
+
+
+                <div class="glass-stat rounded-xl p-4">
+
+
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400">Danger Level</div>
+
+
+                    <div id="dangerLevel" class="flex items-baseline gap-2 mt-2">
+
+
+                        <span id="dangerText" class="text-2xl font-black orbitron text-lime-400">FAIBLE</span>
+
+
+                        <span id="dangerBar" class="text-2xl">▓░░░░</span>
+
+
+                    </div>
+
+
+                    <div class="text-[10px] text-lime-300/70 mt-1">État réseau</div>
+
+
+                </div>
+
+
+
+
+
+                <div class="glass-stat rounded-xl p-4">
+
+
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400">Refresh Auto</div>
+
+
+                    <div class="text-2xl font-black orbitron text-cyan-300 mt-2">5s</div>
+
+
+                    <div class="text-[10px] text-cyan-300/70 mt-1">Mise à jour en direct</div>
+
+
+                </div>
+
+
+
+
+
+                <div class="glass-stat rounded-xl p-3 border-l-2 border-lime-400/50 bg-gradient-to-r from-lime-500/8 to-transparent">
+
+
+                    <div class="text-[10px] text-lime-300 flex items-start gap-2">
+
+
+                        <i class="fas fa-info-circle mt-0.5 flex-shrink-0"></i>
+
+
+                        <span>Déblocage manual possible sans redémarrage.</span>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </aside>
+
+
+
+
+
+        <!-- MAIN CONTENT -->
+
+
+        <main class="flex-1 min-w-0">
+
+
+            <!-- Header -->
+
+
+            <header class="glass rounded-[1.8rem] p-6 md:p-7 mb-6">
+
+
+                <div>
+
+                    <div class="flex flex-wrap items-center gap-2 mb-4 text-[10px] uppercase tracking-[0.22em]">
+
+                        <a href="/admin" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+                            <i class="fas fa-arrow-left"></i> Retour au dashboard admin
+
+                        </a>
+
+                        <a href="/admin" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
+
+                            <i class="fas fa-bars"></i> Menu admin
+
+                        </a>
+
+                    </div>
+
+                    <p class="text-[10px] uppercase tracking-[0.32em] text-gray-300">Securite reseau</p>
+
+
+                    <h1 class="orbitron text-2xl md:text-3xl font-black tracking-widest uppercase mt-2">
+
+
+                        IP <span class="text-red-300">bannies</span>
+
+
+                    </h1>
+
+
+                    <p class="text-[12px] text-gray-400 mt-2">
+
+
+                        Liste dynamique des adresses bloquées temporairement par la protection anti-abus.
+
+
+                    </p>
+
+
+                </div>
+
+
+            </header>
+
+
+
+
+
+            <!-- FILTRES AVANCÉS (Collapsible) -->
+
+
+            <section class="glass rounded-xl p-4 mb-5">
+
+
+                <button id="filterToggle" class="w-full flex items-center justify-between hover:bg-white/5 transition p-2 rounded-lg">
+
+
+                    <div class="flex items-center gap-2">
+
+
+                        <i class="fas fa-sliders text-cyan-300"></i>
+
+
+                        <span class="text-sm font-bold">Filtres Avancés</span>
+
+
+                    </div>
+
+
+                    <i id="filterIcon" class="fas fa-chevron-down text-gray-400"></i>
+
+
+                </button>
+
+
+
+
+
+                <div id="filterPanel" class="hidden mt-3 grid grid-cols-1 md:grid-cols-4 gap-3 pt-3 border-t border-white/10">
+
+
+                    <!-- Recherche IP -->
+
+
+                    <div class="relative">
+
+
+                        <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"></i>
+
+
+                        <input id="searchInput" type="text" placeholder="Filtrer par IP"
+
+
+                            class="field w-full h-9 rounded-lg pl-9 pr-3 text-xs">
+
+
+                        <span id="searchCount" class="text-[9px] text-gray-500 mt-1 block">0 résultats</span>
+
+
+                    </div>
+
+
+
+
+
+                    <!-- Min Échecs -->
+
+
+                    <div>
+
+
+                        <label class="text-[10px] text-gray-400 block mb-1">Min. Échecs</label>
+
+
+                        <input id="filterMinFails" type="number" min="0" value="0" 
+
+
+                            class="field w-full h-9 rounded-lg px-3 text-xs">
+
+
+                    </div>
+
+
+
+
+
+                    <!-- Max Échecs -->
+
+
+                    <div>
+
+
+                        <label class="text-[10px] text-gray-400 block mb-1">Max Échecs</label>
+
+
+                        <input id="filterMaxFails" type="number" min="0" value="999" 
+
+
+                            class="field w-full h-9 rounded-lg px-3 text-xs">
+
+
+                    </div>
+
+
+
+
+
+                    <!-- Tri -->
+
+
+                    <div>
+
+
+                        <label class="text-[10px] text-gray-400 block mb-1">Trier par</label>
+
+
+                        <select id="sortBy" class="field w-full h-9 rounded-lg px-3 text-xs">
+
+
+                            <option value="recent">â±ï¸ Plus récent</option>
+
+
+                            <option value="dangers">🔴 Plus dangereux</option>
+
+
+                            <option value="fails">âŒ Plus d'échecs</option>
+
+
+                            <option value="expires">â³ Expire bientôt</option>
+
+
+                        </select>
+
+
+                    </div>
+
+
+
+
+
+                    <!-- Affichage -->
+
+
+                    <div>
+
+
+                        <label class="text-[10px] text-gray-400 block mb-1">Affichage</label>
+
+
+                        <select id="viewMode" class="field w-full h-9 rounded-lg px-3 text-xs">
+
+
+                            <option value="table">📋 Tableau</option>
+
+
+                            <option value="cards">🎴 Cartes</option>
+
+
+                        </select>
+
+
+                    </div>
+
+
+
+
+
+                    <!-- Auto-Refresh -->
+
+
+                    <div>
+
+
+                        <label class="text-[10px] text-gray-400 block mb-1">Refresh</label>
+
+
+                        <select id="refreshRate" class="field w-full h-9 rounded-lg px-3 text-xs">
+
+
+                            <option value="5000">5 secondes</option>
+
+
+                            <option value="2000">2 secondes</option>
+
+
+                            <option value="10000">10 secondes</option>
+
+
+                            <option value="0">Manuel</option>
+
+
+                        </select>
+
+
+                    </div>
+
+
+
+
+
+                    <!-- Reset Filters -->
+
+
+                    <div class="flex flex-col justify-end">
+
+
+                        <button id="resetFilters" class="px-3 py-1.5 rounded-lg bg-gray-500/20 border border-gray-400/30 text-gray-200 hover:bg-gray-500/30 transition text-xs font-bold h-9 flex items-center justify-center gap-1">
+
+
+                            <i class="fas fa-redo text-[10px]"></i>Réinitialiser
+
+
+                        </button>
+
+
+                    </div>
+
+
+                </div>
+
+
+
+
+
+                <!-- Active Filters Display -->
+
+
+                <div id="activeFilters" class="hidden mt-2 flex flex-wrap gap-2">
+
+
+                    <span class="text-[10px] text-gray-400">Filtres actifs:</span>
+
+
+                    <div id="filtersList" class="flex flex-wrap gap-2"></div>
+
+
+                </div>
+
+
+            </section>
+
+
+
+
+
+            <!-- TABLEAU INTELLIGENT -->
+
+
+            <section id="tableView" class="glass rounded-xl overflow-hidden border border-white/15">
+
+
+                <div class="overflow-x-auto">
+
+
+                    <table class="w-full text-left text-xs">
+
+
+                        <thead class="bg-white/10 text-gray-300 uppercase tracking-wider sticky top-0 z-10">
+
+
+                            <tr>
+
+
+                                <th class="p-3 hidden md:table-cell">Danger</th>
+
+
+                                <th class="p-3">Adresse IP</th>
+
+
+                                <th class="p-3 hidden sm:table-cell">Échecs</th>
+
+
+                                <th class="p-3 hidden lg:table-cell">Expire dans</th>
+
+
+                                <th class="p-3 text-right">Action</th>
+
+
+                            </tr>
+
+
+                        </thead>
+
+
+                        <tbody id="bansTable" class="divide-y divide-white/10">
+
+
+                            <tr>
+
+
+                                <td colspan="5" class="p-8 text-center text-gray-400">
+
+
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>Chargement...
+
+
+                                </td>
+
+
+                            </tr>
+
+
+                        </tbody>
+
+
+                    </table>
+
+
+                </div>
+
+
+            </section>
+
+
+
+
+
+            <!-- GRID CARDS VIEW (Hidden par défaut) -->
+
+
+            <section id="cardsView" class="hidden">
+
+
+                <div id="cardsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+
+            </section>
+
+
+        </main>
+
+
+    </div>
+
+
+
+
+
+    <script>
+
+
+        let bansState = [];
+
+
+        let refreshInterval = null;
+
+
+        let lastRefreshTime = Date.now();
+
+
+
+
+
+        // === PARTICLES GENERATION ===
+
+
+        function createParticles() {
+
+
+            const container = document.getElementById('particlesBg');
+
+
+            for (let i = 0; i < 20; i++) {
+
+
+                const particle = document.createElement('div');
+
+
+                particle.className = 'particle';
+
+
+                particle.style.left = Math.random() * 100 + '%';
+
+
+                particle.style.top = Math.random() * 100 + '%';
+
+
+                particle.style.animationDelay = Math.random() * 10 + 's';
+
+
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+
+
+                container.appendChild(particle);
+
+
+            }
+
+
+        }
+
+
+
+
+
+        function escapeHtml(value) {
+
+
+            return String(value || '')
+
+
+                .replace(/&/g, '&amp;')
+
+
+                .replace(/</g, '&lt;')
+
+
+                .replace(/>/g, '&gt;')
+
+
+                .replace(/"/g, '&quot;')
+
+
+                .replace(/'/g, '&#39;');
+
+
+        }
+
+
+
+
+
+        function formatDuration(seconds) {
+
+
+            const s = Math.max(0, Number(seconds || 0));
+
+
+            const h = Math.floor(s / 3600);
+
+
+            const m = Math.floor((s % 3600) / 60);
+
+
+            const ss = s % 60;
+
+
+            if (h > 0) return `${h}h ${m}m ${ss}s`;
+
+
+            if (m > 0) return `${m}m ${ss}s`;
+
+
+            return `${ss}s`;
+
+
+        }
+
+
+
+
+
+        function getDangerLevel(count) {
+
+
+            const levels = [
+
+
+                { text: 'FAIBLE', bar: '░░░░░', bgColor: '#dcfce7', textColor: '#22c55e', borderColor: '#86efac' },
+
+
+                { text: 'BAS', bar: '▓░░░░', bgColor: '#fef3c7', textColor: '#eab308', borderColor: '#fcd34d' },
+
+
+                { text: 'MOYEN', bar: '▓▓░░░', bgColor: '#fed7aa', textColor: '#fb923c', borderColor: '#fdba74' },
+
+
+                { text: 'ÉLEVÉ', bar: '▓▓▓░░', bgColor: '#fee2e2', textColor: '#ef4444', borderColor: '#fca5a5' },
+
+
+                { text: 'CRITIQUE', bar: '▓▓▓▓▓', bgColor: '#7f1d1d', textColor: '#fca5a5', borderColor: '#dc2626' }
+
+
+            ];
+
+
+            let idx = 0;
+
+
+            if (count >= 5) idx = 1;
+
+
+            if (count >= 15) idx = 2;
+
+
+            if (count >= 30) idx = 3;
+
+
+            if (count >= 50) idx = 4;
+
+
+            return { ...levels[idx], level: idx };
+
+
+        }
+
+
+
+
+
+        function updateStats() {
+
+
+            const count = bansState.length;
+
+
+            const danger = getDangerLevel(count);
+
+
+            
+
+
+            const dangerText = document.getElementById('dangerText');
+
+
+            dangerText.textContent = danger.text;
+
+
+            dangerText.style.color = danger.textColor;
+
+
+            
+
+
+            document.getElementById('dangerBar').textContent = danger.bar;
+
+
+            
+
+
+            const banRate = (count / 60).toFixed(1);
+
+
+            document.getElementById('kpiBanRate').textContent = banRate;
+
+
+            
+
+
+            // Pulse animation si critique
+
+
+            const dangerStat = document.querySelector('[id="dangerLevel"]').closest('.glass-stat');
+
+
+            if (count > 30) {
+
+
+                dangerStat?.classList.add('pulse');
+
+
+            } else {
+
+
+                dangerStat?.classList.remove('pulse');
+
+
+            }
+
+
+        }
+
+
+
+
+
+        function applySorting(list) {
+
+
+            const sortBy = document.getElementById('sortBy').value;
+
+
+            const sorted = [...list];
+
+
+            
+
+
+            switch (sortBy) {
+
+
+                case 'dangers':
+
+
+                    sorted.sort((a, b) => b.fail_count - a.fail_count);
+
+
+                    break;
+
+
+                case 'fails':
+
+
+                    sorted.sort((a, b) => b.fail_count - a.fail_count);
+
+
+                    break;
+
+
+                case 'expires':
+
+
+                    sorted.sort((a, b) => a.remaining_seconds - b.remaining_seconds);
+
+
+                    break;
+
+
+                case 'recent':
+
+
+                default:
+
+
+                    break;
+
+
+            }
+
+
+            return sorted;
+
+
+        }
+
+
+
+
+
+        function renderBans(list) {
+
+
+            const tbody = document.getElementById('bansTable');
+
+
+            const viewMode = document.getElementById('viewMode').value;
+
+
+            
+
+
+            const sorted = applySorting(list);
+
+
+
+
+
+            if (!Array.isArray(sorted) || sorted.length === 0) {
+
+
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500 italic"><i class="fas fa-inbox mr-2"></i>Aucune IP bannie actuellement.</td></tr>';
+
+
+                document.getElementById('kpiCount').textContent = '0';
+
+
+                document.getElementById('cardsList').innerHTML = '';
+
+
+                return;
+
+
+            }
+
+
+
+
+
+            // Rendu Tableau
+
+
+            tbody.innerHTML = sorted.map((ban) => {
+
+
+                const ip = escapeHtml(ban.ip);
+
+
+                const fails = escapeHtml(ban.fail_count);
+
+
+                const remain = escapeHtml(formatDuration(ban.remaining_seconds));
+
+
+                const dangerBan = getDangerLevel(fails);
+
+
+                
+
+
+                return `
+
+
+                    <tr class="hover:transition group relative" data-search="${ip.toLowerCase()}" style="border-left: 3px solid ${dangerBan.borderColor}">
+
+
+                        <td class="p-3 hidden md:table-cell">
+
+
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold backdrop-blur transition-all duration-300 badge-animated" style="background-color: ${dangerBan.bgColor}20; border: 1.5px solid ${dangerBan.borderColor}; color: ${dangerBan.textColor}">
+
+
+                                ${dangerBan.level}
+
+
+                            </span>
+
+
+                        </td>
+
+
+                        <td class="p-3 font-mono font-bold text-red-300 group-hover:text-red-200">
+
+
+                            <span class="flex items-center gap-2">
+
+
+                                <i class="fas fa-shield-alt text-red-500/50"></i>${ip}
+
+
+                            </span>
+
+
+                        </td>
+
+
+                        <td class="p-3 hidden sm:table-cell text-gray-300 group-hover:text-gray-100">${fails}x</td>
+
+
+                        <td class="p-3 hidden lg:table-cell text-amber-300 group-hover:text-amber-200">${remain}</td>
+
+
+                        <td class="p-3 text-right">
+
+
+                            <button onclick="unbanIp('${ip}')" class="px-4 py-1.5 rounded-lg bg-lime-500/20 border border-lime-400/40 text-lime-200 hover:bg-lime-500/30 transition text-[10px] font-bold active:scale-95">
+
+
+                                <i class="fas fa-unlock mr-1"></i>Débloquer
+
+
+                            </button>
+
+
+                        </td>
+
+
+                    </tr>
+
+
+                `;
+
+
+            }).join('');
+
+
+
+
+
+            // Rendu Cards
+
+
+            const cardsList = document.getElementById('cardsList');
+
+
+            cardsList.innerHTML = sorted.map((ban) => {
+
+
+                const ip = escapeHtml(ban.ip);
+
+
+                const fails = escapeHtml(ban.fail_count);
+
+
+                const remain = escapeHtml(formatDuration(ban.remaining_seconds));
+
+
+                const dangerBan = getDangerLevel(fails);
+
+
+                
+
+
+                return `
+
+
+                    <div class="card-glass rounded-xl p-5 border border-white/15 cursor-pointer transition-all duration-300 group hover:border-white/25 hover:shadow-lg" data-search="${ip.toLowerCase()}">
+
+
+                        <div class="flex items-start justify-between mb-4 pb-3 border-b border-white/10">
+
+
+                            <div class="flex-1 min-w-0">
+
+
+                                <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Adresse IP</div>
+
+
+                                <div class="font-mono font-bold text-red-300 text-sm break-all">${ip}</div>
+
+
+                            </div>
+
+
+                            <span class="ml-2 inline-block px-2.5 py-1 rounded-lg text-[9px] font-bold whitespace-nowrap badge-animated" style="background-color: ${dangerBan.bgColor}30; border: 1px solid ${dangerBan.borderColor}; color: ${dangerBan.textColor}">
+
+
+                                ${dangerBan.text}
+
+
+                            </span>
+
+
+                        </div>
+
+
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+
+
+                            <div class="rounded-lg bg-black/20 backdrop-blur p-3">
+
+
+                                <div class="text-[9px] text-gray-500 uppercase tracking-wider">Échecs</div>
+
+
+                                <div class="font-bold text-amber-300 text-lg mt-1">${fails}</div>
+
+
+                            </div>
+
+
+                            <div class="rounded-lg bg-black/20 backdrop-blur p-3">
+
+
+                                <div class="text-[9px] text-gray-500 uppercase tracking-wider">Expire</div>
+
+
+                                <div class="font-bold text-cyan-300 text-xs mt-1">${remain}</div>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                        <button onclick="unbanIp('${ip}')" class="w-full py-2.5 rounded-lg bg-lime-500/20 border border-lime-400/40 text-lime-200 hover:bg-lime-500/30 transition text-xs font-bold active:scale-95">
+
+
+                            <i class="fas fa-unlock mr-2"></i>Débloquer
+
+
+                        </button>
+
+
+                    </div>
+
+
+                `;
+
+
+            }).join('');
+
+
+
+
+
+            document.getElementById('kpiCount').textContent = String(sorted.length);
+
+
+            applyFilter();
+
+
+            updateStats();
+
+
+        }
+
+
+
+
+
+        function updateActiveFilters() {
+
+
+            const search = document.getElementById('searchInput').value.trim();
+
+
+            const minFails = parseInt(document.getElementById('filterMinFails').value || '0');
+
+
+            const maxFails = parseInt(document.getElementById('filterMaxFails').value || '999');
+
+
+            const sortBy = document.getElementById('sortBy').value;
+
+
+            
+
+
+            const filters = [];
+
+
+            if (search) filters.push(`Search: ${search}`);
+
+
+            if (minFails > 0) filters.push(`Min: ${minFails}x`);
+
+
+            if (maxFails < 999) filters.push(`Max: ${maxFails}x`);
+
+
+            if (sortBy !== 'recent') filters.push(`Tri: ${sortBy}`);
+
+
+            
+
+
+            const activeContainer = document.getElementById('activeFilters');
+
+
+            if (filters.length > 0) {
+
+
+                activeContainer.classList.remove('hidden');
+
+
+                document.getElementById('filtersList').innerHTML = filters.map(f => 
+
+
+                    `<span class="filter-badge">${f}</span>`
+
+
+                ).join('');
+
+
+            } else {
+
+
+                activeContainer.classList.add('hidden');
+
+
+            }
+
+
+        }
+
+
+
+
+
+        function applyFilter() {
+
+
+            const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
+
+            const minFails = parseInt(document.getElementById('filterMinFails').value || '0');
+
+
+            const maxFails = parseInt(document.getElementById('filterMaxFails').value || '999');
+
+
+            
+
+
+            // Filter tableau
+
+
+            const rows = document.querySelectorAll('#bansTable tr[data-search]');
+
+
+            let visibleTable = 0;
+
+
+            rows.forEach((r) => {
+
+
+                const txt = r.getAttribute('data-search') || '';
+
+
+                const fails = bansState.find(b => b.ip === txt)?.fail_count || 0;
+
+
+                const show = (!q || txt.includes(q)) && fails >= minFails && fails <= maxFails;
+
+
+                r.classList.toggle('hidden', !show);
+
+
+                r.classList.toggle('search-match', show && q);
+
+
+                if (show) visibleTable += 1;
+
+
+            });
+
+
+
+
+
+            // Filter cartes
+
+
+            const cards = document.querySelectorAll('#cardsList [data-search]');
+
+
+            let visibleCards = 0;
+
+
+            cards.forEach((c) => {
+
+
+                const txt = c.getAttribute('data-search') || '';
+
+
+                const fails = bansState.find(b => b.ip === txt)?.fail_count || 0;
+
+
+                const show = (!q || txt.includes(q)) && fails >= minFails && fails <= maxFails;
+
+
+                c.classList.toggle('hidden', !show);
+
+
+                if (show) visibleCards += 1;
+
+
+            });
+
+
+
+
+
+            // Update result count
+
+
+            const count = q ? visibleTable + visibleCards : bansState.length;
+
+
+            document.getElementById('searchCount').textContent = `${count} ${count === 1 ? 'résultat' : 'résultats'}`;
+
+
+
+
+
+            // Gestion message "aucun résultat"
+
+
+            const viewMode = document.getElementById('viewMode').value;
+
+
+            if (viewMode === 'table' && rows.length > 0 && visibleTable === 0) {
+
+
+                const tbody = document.getElementById('bansTable');
+
+
+                if (!document.getElementById('noResultRow')) {
+
+
+                    tbody.insertAdjacentHTML('beforeend', '<tr id="noResultRow"><td colspan="5" class="p-8 text-center text-gray-500 italic"><i class="fas fa-search mr-2"></i>Aucun résultat.</td></tr>');
+
+
+                }
+
+
+            } else {
+
+
+                document.getElementById('noResultRow')?.remove();
+
+
+            }
+
+
+
+
+
+            updateActiveFilters();
+
+
+        }
+
+
+
+
+
+        async function loadBans() {
+
+
+            try {
+
+
+                const res = await fetch('/api/admin/ip-bans');
+
+
+                const data = await res.json();
+
+
+                bansState = Array.isArray(data.bans) ? data.bans : [];
+
+
+                renderBans(bansState);
+
+
+                lastRefreshTime = Date.now();
+
+
+            } catch (_) {
+
+
+                const tbody = document.getElementById('bansTable');
+
+
+                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i>Erreur de chargement.</td></tr>';
+
+
+            }
+
+
+        }
+
+
+
+
+
+        async function unbanIp(ip) {
+
+
+            if (!confirm(`Débloquer l'IP ${ip} ?`)) return;
+
+
+            try {
+
+
+                const res = await fetch('/api/admin/ip-bans/delete', {
+
+
+                    method: 'POST',
+
+
+                    headers: { 'Content-Type': 'application/json' },
+
+
+                    body: JSON.stringify({ ip }),
+
+
+                });
+
+
+                if (!res.ok) throw new Error('echec');
+
+
+                await loadBans();
+
+
+            } catch (_) {
+
+
+                alert('Erreur lors du déblocage');
+
+
+            }
+
+
+        }
+
+
+
+
+
+        function toggleStats() {
+
+
+            const container = document.getElementById('statsContainer');
+
+
+            const toggle = document.getElementById('statToggle');
+
+
+            container.classList.toggle('hidden');
+
+
+            toggle.querySelector('i').classList.toggle('fa-chevron-down', container.classList.contains('hidden'));
+
+
+            toggle.querySelector('i').classList.toggle('fa-chevron-up', !container.classList.contains('hidden'));
+
+
+        }
+
+
+
+
+
+        function toggleFilters() {
+
+
+            const panel = document.getElementById('filterPanel');
+
+
+            const icon = document.getElementById('filterIcon');
+
+
+            panel.classList.toggle('hidden');
+
+
+            icon.classList.toggle('fa-chevron-down', panel.classList.contains('hidden'));
+
+
+            icon.classList.toggle('fa-chevron-up', !panel.classList.contains('hidden'));
+
+
+        }
+
+
+
+
+
+        function switchViewMode(mode) {
+
+
+            const tableView = document.getElementById('tableView');
+
+
+            const cardsView = document.getElementById('cardsView');
+
+
+            if (mode === 'table') {
+
+
+                tableView.classList.remove('hidden');
+
+
+                cardsView.classList.add('hidden');
+
+
+            } else {
+
+
+                tableView.classList.add('hidden');
+
+
+                cardsView.classList.remove('hidden');
+
+
+            }
+
+
+            applyFilter();
+
+
+        }
+
+
+
+
+
+        function setRefreshRate(rate) {
+
+
+            if (refreshInterval) clearInterval(refreshInterval);
+
+
+            if (rate > 0) {
+
+
+                refreshInterval = setInterval(loadBans, rate);
+
+
+            }
+
+
+        }
+
+
+
+
+
+        function resetFilters() {
+
+
+            document.getElementById('searchInput').value = '';
+
+
+            document.getElementById('filterMinFails').value = '0';
+
+
+            document.getElementById('filterMaxFails').value = '999';
+
+
+            document.getElementById('sortBy').value = 'recent';
+
+
+            document.getElementById('refreshRate').value = '5000';
+
+
+            setRefreshRate(5000);
+
+
+            applyFilter();
+
+
+            renderBans(bansState);
+
+
+        }
+
+
+
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+
+            // Initialize particles
+
+
+            createParticles();
+
+
+
+
+
+            // Setup events
+
+
+            if (document.getElementById('statToggle')) {
+
+
+                document.getElementById('statToggle').addEventListener('click', toggleStats);
+
+
+            }
+
+
+            document.getElementById('filterToggle').addEventListener('click', toggleFilters);
+
+
+            document.getElementById('searchInput').addEventListener('input', applyFilter);
+
+
+            document.getElementById('filterMinFails').addEventListener('change', applyFilter);
+
+
+            document.getElementById('filterMaxFails').addEventListener('change', applyFilter);
+
+
+            document.getElementById('sortBy').addEventListener('change', () => renderBans(bansState));
+
+
+            document.getElementById('viewMode').addEventListener('change', (e) => switchViewMode(e.target.value));
+
+
+            document.getElementById('refreshRate').addEventListener('change', (e) => setRefreshRate(parseInt(e.target.value)));
+
+
+            document.getElementById('resetFilters').addEventListener('click', resetFilters);
+
+
+            
+
+
+            loadBans();
+
+
+            setRefreshRate(5000);
+
+
+            window.unbanIp = unbanIp;
+
+
+        });
+
+
+    </script>
+
+
+</body>
+
+
+</html>
+
+
+
+
+
+
+
+

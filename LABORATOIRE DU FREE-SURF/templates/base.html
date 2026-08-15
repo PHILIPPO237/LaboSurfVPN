@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=0">
+    <!-- Le tag title peut être redéfini par les pages enfants -->
+    <title>{% block title %}LABORATOIRE | Laboratoire du Free-Surf{% endblock %}</title>
+    
+    <!-- Android & PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', path='/manifest.json') }}">
+    <meta name="theme-color" content="#05080a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Favicon / icone app (meme logo que Labo Surf, pour coherence entre les deux produits) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/icons/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/icons/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/apple-touch-icon.png') }}">
+
+    <!-- CDN Globaux -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/tailwind-build.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/fonts/fonts.css') }}">
+    
+    <!-- Styles Globaux -->
+    <!-- Utilisation de url_for() de FastAPI pour le cache busting et la gestion dynamique des chemins -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/a11y.css') }}">
+    <!-- Android Mobile Optimization -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/android-mobile-optimized.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/android-theme-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/guide-assistant.css') }}">
+    <!-- Thème unifié : couleurs de marque + glassmorphism premium (charge en dernier, fait autorité) -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/theme.css') }}">
+    
+    <!-- Emplacement pour injecter des CSS ou tags <head> spécifiques à une page -->
+    {% block head %}{% endblock %}
+</head>
+
+<!-- Permet aux pages enfants de modifier les classes ou d'ajouter des attributs (ex: data-page-guide) -->
+<body class="{% block body_class %}theme-dns p-6 lg:p-10 min-h-screen flex flex-col{% endblock %}" {% block body_attrs %}{% endblock %}>
+
+    <!-- Conteneur Global pour les Toasts -->
+    <div id="toast-container" aria-live="assertive" aria-atomic="false"></div>
+
+    <!-- Navbar / Header optionnel -->
+    {% block header %}
+    {% endblock %}
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+        {% block content %}
+        <!-- C'est ici que le contenu de index.html, dashboard.html, etc. sera injecté -->
+        {% endblock %}
+    </main>
+
+    <!-- Scripts Globaux -->
+    <script defer src="{{ url_for('static', path='/js/ui-a11y.js') }}"></script>
+    <script defer src="{{ url_for('static', path='/js/guide-assistant.js') }}"></script>
+    <script defer src="{{ url_for('static', path='/js/dropdown-groups.js') }}"></script>
+    <script defer src="{{ url_for('static', path='/js/page-transitions.js') }}"></script>
+    
+    <!-- Emplacement pour injecter des scripts spécifiques (comme Chart.js) -->
+    {% block scripts %}
+    {% endblock %}
+
+    <!-- Android Theme & Device Initialization -->
+    <script>
+      function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-theme', theme);
+        document.body.classList.add(`theme-${theme}`);
+      }
+
+      function setTheme(themeName) {
+        localStorage.setItem('theme', themeName);
+        const themes = ['dark', 'light', 'blue', 'purple', 'sunset', 'high-contrast'];
+        document.body.classList.remove(...themes.map(t => `theme-${t}`));
+        document.documentElement.classList.remove(...themes.map(t => `theme-${t}`));
+        document.body.classList.add(`theme-${themeName}`);
+        document.documentElement.classList.add(`theme-${themeName}`);
+      }
+
+      function handleDeviceType() {
+        const isAndroid = /android/i.test(navigator.userAgent);
+        if (isAndroid) document.body.classList.add('is-android');
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        handleDeviceType();
+      });
+    </script>
+
+</body>
+</html>
