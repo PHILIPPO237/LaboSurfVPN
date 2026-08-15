@@ -1075,6 +1075,7 @@ async function realLogin(){
     }
     authToken = login.data.token;
     await loadAndShowAccount(u);
+    loadHomeBanner(); // re-verifie la banniere maintenant que le token est disponible (revendeur potentiel)
   }catch(e){
     err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
     err.classList.add('show');
@@ -1118,6 +1119,7 @@ async function realRegister(){
     authToken = reg.data.token;
     toast('Compte créé — bienvenue !');
     await loadAndShowAccount(u);
+    loadHomeBanner(); // re-verifie la banniere maintenant que le token est disponible
   }catch(e){
     err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
     err.classList.add('show');
@@ -1230,6 +1232,7 @@ function realLogout(){
   emptyCard.style.display = '';
   emptyCard.querySelector('div').textContent = 'Connecte-toi pour voir tes clients.';
   if(document.getElementById('tab-clients').classList.contains('active')) switchTab('connexion');
+  loadHomeBanner(); // repasse sur la banniere par defaut (plus de token = plus de revendeur identifie)
 }
 
 async function fetchSubscriptionFromAccount(){
@@ -1295,9 +1298,14 @@ async function loadHomeBanner(){
   const defaultBlock = document.getElementById('homeBannerDefault');
   const adBlock = document.getElementById('homeBannerAd');
   try{
-    const res = await fetch(`${FREE_SURF_API_BASE}/api/ads/active?location=labo_surf_rail`, { cache: 'no-store' });
+    // apiFetch (pas fetch direct) : transmet le token de connexion si present,
+    // pour que le panel sache identifier le revendeur de l'utilisateur et
+    // renvoyer SA banniere personnalisee au lieu de toujours la banniere par
+    // defaut (voir /api/ads/active cote panel -- avant ce correctif, aucun
+    // utilisateur ne recevait jamais la banniere de son revendeur).
+    const res = await apiFetch('/api/ads/active?location=labo_surf_rail');
     if(!res.ok) return; // panel indisponible -> le modele par defaut reste affiche
-    const data = await res.json();
+    const data = res.data;
     const ad = (data && Array.isArray(data.ads) && data.ads.length) ? data.ads[0] : null;
     if(!ad) return; // aucune pub configuree -> le modele par defaut reste affiche
 
