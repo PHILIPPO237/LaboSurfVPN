@@ -641,6 +641,19 @@
         <div class="pill-btn primary" style="margin-top:10px;" onclick="fetchSubscriptionFromAccount()">↻ Actualiser mon compte</div>
       </div>
 
+      <div class="card" id="activationCard">
+        <div class="card-lbl">Activer un code</div>
+        <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px;">
+          Tu as reçu un code d'activation de ton revendeur ou de l'administrateur ? Entre-le ici.
+        </p>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="activationKeyInput" placeholder="AK-XXXXXXXXXXXX"
+            style="flex:1; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-radius:12px; padding:10px 12px; color:var(--text); font-size:13px; font-family:monospace; text-transform:uppercase;">
+          <div class="pill-btn primary" id="activateKeyBtn" style="padding:0 18px; white-space:nowrap;" onclick="activateKey()">Activer</div>
+        </div>
+        <div class="acc-error" id="activationError"></div>
+      </div>
+
       <div class="card" id="renewalCard">
         <div class="card-lbl">Renouveler / Passer VIP</div>
         <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px;">
@@ -663,6 +676,14 @@
           <div class="pill-btn" style="margin-top:12px; font-size:11px;" onclick="resetRenewalForm()">Faire une nouvelle demande</div>
         </div>
         <div class="acc-error" id="renewalError"></div>
+      </div>
+
+      <div class="card" id="announcementsCard" style="display:none;">
+        <div class="card-lbl" style="display:flex; align-items:center; justify-content:space-between;">
+          <span><i class="fas fa-bullhorn mr-2"></i>Annonces</span>
+          <span id="announcementsCardBadge" style="display:none; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#ff5c7a; color:#fff; font-size:10.5px; font-weight:800; line-height:18px; text-align:center;"></span>
+        </div>
+        <div id="announcementsList" style="max-height:220px; overflow-y:auto; margin-top:8px;"></div>
       </div>
 
       <div class="card" id="messagesCard">
@@ -1121,9 +1142,9 @@ async function realLogin(){
     authToken = login.data.token;
     await loadAndShowAccount(u);
     loadHomeBanner(); // re-verifie la banniere maintenant que le token est disponible (revendeur potentiel)
-    loadAppMessages(); // charge immediatement si deja sur l onglet Compte
+    loadAppMessages(); loadAnnouncements(true); // charge immediatement si deja sur l onglet Compte
     clearInterval(msgPollInterval);
-    msgPollInterval = setInterval(pollUnreadMessages, 20000); // signal discret toutes les 20s
+    msgPollInterval = setInterval(pollAccountSignals, 20000); // signal discret toutes les 20s (messages + annonces)
   }catch(e){
     err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
     err.classList.add('show');
@@ -1168,9 +1189,9 @@ async function realRegister(){
     toast('Compte créé — bienvenue !');
     await loadAndShowAccount(u);
     loadHomeBanner(); // re-verifie la banniere maintenant que le token est disponible
-    loadAppMessages(); // charge immediatement si deja sur l onglet Compte
+    loadAppMessages(); loadAnnouncements(true); // charge immediatement si deja sur l onglet Compte
     clearInterval(msgPollInterval);
-    msgPollInterval = setInterval(pollUnreadMessages, 20000);
+    msgPollInterval = setInterval(pollAccountSignals, 20000);
   }catch(e){
     err.textContent = 'Connexion au panel impossible. Vérifie ta connexion internet.';
     err.classList.add('show');
@@ -1207,11 +1228,13 @@ async function loadPendingRequests(){
     container.innerHTML = requests.map(r => {
       const kindLabel = r.kind === 'upgrade' ? `Passer ${r.target_plan || 'VIP'}` : `Renouvellement (${r.duration_days || 30}j)`;
       const msg = r.message ? `<div style="font-size:11px; color:var(--text-muted); margin:4px 0 8px; font-style:italic;">"${String(r.message).replace(/</g,'&lt;')}"</div>` : '';
+      const proofBadge = r.has_payment_proof ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:8px; background:rgba(0,242,255,0.14); border:1px solid rgba(0,242,255,0.35); color:#00f2ff; font-size:9.5px; font-weight:700; margin-top:4px;"><i class="fas fa-receipt"></i> Justificatif envoyé</span>` : '';
       return `<div class="card" style="margin-bottom:8px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>
             <div style="font-weight:700; font-size:13px;">${(r.username || '').replace(/</g,'&lt;')}</div>
             <div style="font-size:11px; color:var(--accent);">${kindLabel}</div>
+            ${proofBadge}
           </div>
         </div>
         ${msg}
@@ -1359,6 +1382,47 @@ function resetRenewalForm(){
   document.getElementById('renewalMessage').value = '';
 }
 
+async function activateKey(){
+  const errEl = document.getElementById('activationError');
+  errEl.classList.remove('show');
+  if(!authToken){ toast('Connecte-toi pour activer un code.'); return; }
+
+  const input = document.getElementById('activationKeyInput');
+  const key = input.value.trim().toUpperCase();
+  if(!key){ errEl.textContent = 'Entre un code d\'activation.'; errEl.classList.add('show'); return; }
+
+  const btn = document.getElementById('activateKeyBtn');
+  if(btn.dataset.sending === '1') return; // protection anti double-clic, meme principe que le renouvellement
+  btn.dataset.sending = '1';
+  const originalLbl = btn.textContent;
+  btn.textContent = '...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  try{
+    const res = await apiFetch('/api/user/activate', {
+      method: 'POST',
+      body: JSON.stringify({ key }),
+    });
+    if(res.ok && res.data && res.data.status === 'ok'){
+      toast('Code activé avec succès !');
+      input.value = '';
+      await loadAndShowAccount(); // rafraichit le plan/quota affiches immediatement
+    } else {
+      errEl.textContent = (res.data && res.data.message) || 'Code invalide ou deja utilise.';
+      errEl.classList.add('show');
+    }
+  }catch(e){
+    errEl.textContent = 'Connexion au panel impossible. Réessaie.';
+    errEl.classList.add('show');
+  }finally{
+    btn.textContent = originalLbl;
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
+    btn.dataset.sending = '0';
+  }
+}
+
 // ===== Messagerie privee =====
 let msgPendingAttachment = null;
 let msgPollInterval = null;
@@ -1411,18 +1475,86 @@ function renderAppMessages(messages){
   thread.scrollTop = thread.scrollHeight;
 }
 
+let unreadMessagesCountCache = 0;
+
 function updateMessageBadges(count){
+  unreadMessagesCountCache = count;
+  updateCombinedAccountBadge();
+}
+
+function setAccountBadgeDisplay(count){
   const railBadge = document.getElementById('msgBadge');
   const cardBadge = document.getElementById('messagesCardBadge');
   if(count > 0){
     railBadge.textContent = count > 9 ? '9+' : String(count);
     railBadge.style.display = '';
-    cardBadge.textContent = count > 9 ? '9+' : String(count);
-    cardBadge.style.display = '';
   } else {
     railBadge.style.display = 'none';
+  }
+  // Le badge sur la carte "Mes messages" reste specifique aux messages
+  // (pas la somme combinee), pour rester precis une fois qu'on est dedans.
+  if(unreadMessagesCountCache > 0){
+    cardBadge.textContent = unreadMessagesCountCache > 9 ? '9+' : String(unreadMessagesCountCache);
+    cardBadge.style.display = '';
+  } else {
     cardBadge.style.display = 'none';
   }
+}
+
+// ===== Annonces diffusees (notifications admin) =====
+let unreadAnnouncementsCount = 0;
+
+function renderAnnouncements(items){
+  const list = document.getElementById('announcementsList');
+  const card = document.getElementById('announcementsCard');
+  if(!items || !items.length){
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  list.innerHTML = items.map(n => `
+    <div style="padding:8px 0; border-bottom:1px solid var(--border,#1f2b25);">
+      <div style="font-size:12px; font-weight:700; ${n.is_read ? 'color:var(--text-muted);' : ''}">${(n.title||'').replace(/</g,'&lt;')}</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${(n.message||'').replace(/</g,'&lt;')}</div>
+    </div>
+  `).join('');
+}
+
+async function loadAnnouncements(markSeen){
+  if(!authToken) return;
+  try{
+    const res = await apiFetch('/api/user/notifications');
+    if(res.ok && res.data && res.data.notifications){
+      const items = res.data.notifications;
+      renderAnnouncements(items);
+      unreadAnnouncementsCount = items.filter(n => !n.is_read).length;
+      const cardBadge = document.getElementById('announcementsCardBadge');
+      if(unreadAnnouncementsCount > 0){
+        cardBadge.textContent = unreadAnnouncementsCount > 9 ? '9+' : String(unreadAnnouncementsCount);
+        cardBadge.style.display = '';
+      } else {
+        cardBadge.style.display = 'none';
+      }
+      if(markSeen){
+        // Marque comme lues UNE FOIS que la personne a vraiment vu l'onglet Compte
+        // (pas au simple sondage en arriere-plan, pour ne pas "consommer" le
+        // badge avant qu'elle n'ait rien regarde).
+        await Promise.all(items.filter(n => !n.is_read).map(n =>
+          apiFetch(`/api/user/notifications/${n.id}/read`, { method: 'POST' })
+        ));
+        unreadAnnouncementsCount = 0;
+      }
+      updateCombinedAccountBadge();
+    }
+  }catch(e){ /* silencieux */ }
+}
+
+function updateCombinedAccountBadge(){
+  // Le badge sur l'icone Compte (rail) combine messages non lus + annonces
+  // non lues, pour ne pas multiplier les indicateurs sur une icone deja
+  // petite. La carte "Mes messages" garde son propre badge specifique.
+  const total = unreadMessagesCountCache + unreadAnnouncementsCount;
+  setAccountBadgeDisplay(total);
 }
 
 async function loadAppMessages(silent){
@@ -1437,6 +1569,13 @@ async function loadAppMessages(silent){
       if(!silent) updateMessageBadges(0);
     }
   }catch(e){ /* silencieux, pas grave si ca echoue en arriere-plan */ }
+}
+
+function pollAccountSignals(){
+  // Sondage discret combine (messages prives + annonces diffusees) --
+  // appele en arriere-plan toutes les 20s, ne marque rien comme lu.
+  pollUnreadMessages();
+  loadAnnouncements(false);
 }
 
 async function pollUnreadMessages(){
@@ -1542,7 +1681,7 @@ function switchTab(name){
   const rb = document.getElementById('railBtn-'+name);
   if(rb) rb.classList.add('active');
   if(name === 'clients'){ loadPendingRequests(); loadResellerClients(); }
-  if(name === 'compte') loadAppMessages();
+  if(name === 'compte'){ loadAppMessages(); loadAnnouncements(true); }
 }
 
 function toggleRailGroup(name){
