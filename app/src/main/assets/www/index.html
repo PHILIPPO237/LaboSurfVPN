@@ -1314,8 +1314,12 @@ async function submitRenewalForm(){
   const kind = document.getElementById('renewalKindSelect').value;
   const message = document.getElementById('renewalMessage').value.trim();
   const submitBtn = document.getElementById('renewalSubmitBtn');
+  if(submitBtn.dataset.sending === '1') return; // protege contre les taps rapides/multiples
+  submitBtn.dataset.sending = '1';
   const originalLbl = submitBtn.textContent;
   submitBtn.textContent = 'Envoi...';
+  submitBtn.style.opacity = '0.6';
+  submitBtn.style.pointerEvents = 'none';
 
   const body = { kind, message };
   if(kind === 'renewal') body.duration_days = 30;
@@ -1343,6 +1347,9 @@ async function submitRenewalForm(){
     errEl.classList.add('show');
   }finally{
     submitBtn.textContent = originalLbl;
+    submitBtn.style.opacity = '';
+    submitBtn.style.pointerEvents = '';
+    submitBtn.dataset.sending = '0';
   }
 }
 
