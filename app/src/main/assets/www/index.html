@@ -808,6 +808,25 @@
 
   <!-- ===== MES CLIENTS (revendeur / admin uniquement) ===== -->
   <div class="tab-content" id="tab-clients">
+    <div class="card" id="createClientCard" style="margin-bottom:16px;">
+      <div class="card-lbl" onclick="toggleCreateClientForm()" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+        <span><i class="fas fa-user-plus mr-2"></i>Créer un client</span>
+        <span id="createClientChevron" style="transition:transform 0.2s;">▾</span>
+      </div>
+      <div id="createClientForm" style="display:none; margin-top:10px;">
+        <input type="text" id="ccUsername" placeholder="Pseudo (ex: Client_VIP)" style="width:100%; margin-bottom:8px; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-radius:10px; padding:9px 10px; color:var(--text); font-size:12.5px;">
+        <input type="text" id="ccPassword" placeholder="Mot de passe provisoire (min. 6)" style="width:100%; margin-bottom:8px; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-radius:10px; padding:9px 10px; color:var(--text); font-size:12.5px;">
+        <select id="ccUserType" style="width:100%; margin-bottom:8px; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-radius:10px; padding:9px 10px; color:var(--text); font-size:12.5px;">
+          <option value="VIP">VIP</option>
+          <option value="Gratuit">Gratuit</option>
+        </select>
+        <input type="number" id="ccQuota" placeholder="Quota Go (vide = illimité)" style="width:100%; margin-bottom:8px; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-radius:10px; padding:9px 10px; color:var(--text); font-size:12.5px;">
+        <input type="text" id="ccNotes" placeholder="Note (ex: Payé OM 15/08)" style="width:100%; margin-bottom:10px; background:var(--card-bg,#121815); border:1px solid var(--border,#1f2b25); border-radius:10px; padding:9px 10px; color:var(--text); font-size:12.5px;">
+        <div class="pill-btn primary" id="ccSubmitBtn" onclick="submitCreateClient()">Créer l'accès</div>
+        <div class="acc-error" id="ccError"></div>
+      </div>
+    </div>
+
     <div class="section-lbl">Demandes en attente<span class="add" onclick="loadPendingRequests()">↻ Actualiser</span></div>
     <div id="pendingRequestsList" style="margin-bottom:16px;">
       <div class="card" style="text-align:center; padding:16px;"><div style="font-size:11.5px; color:var(--text-muted);">Chargement...</div></div>
@@ -1205,6 +1224,66 @@ function toggleRegisterForm(show){
   document.getElementById('accRegisterCard').style.display = show ? '' : 'none';
   const cta = document.querySelector('.cta-signup');
   if(cta) cta.style.display = show ? 'none' : '';
+}
+
+function toggleCreateClientForm(){
+  const form = document.getElementById('createClientForm');
+  const chevron = document.getElementById('createClientChevron');
+  const isOpen = form.style.display !== 'none';
+  form.style.display = isOpen ? 'none' : '';
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+async function submitCreateClient(){
+  const errEl = document.getElementById('ccError');
+  errEl.classList.remove('show');
+  if(!authToken){ toast('Connecte-toi pour creer un client.'); return; }
+
+  const username = document.getElementById('ccUsername').value.trim();
+  const password = document.getElementById('ccPassword').value.trim();
+  if(!username){ errEl.textContent = 'Le pseudo est obligatoire.'; errEl.classList.add('show'); return; }
+  if(password.length < 6){ errEl.textContent = 'Le mot de passe doit faire au moins 6 caracteres.'; errEl.classList.add('show'); return; }
+
+  const btn = document.getElementById('ccSubmitBtn');
+  if(btn.dataset.sending === '1') return; // protection anti double-clic
+  btn.dataset.sending = '1';
+  const originalLbl = btn.textContent;
+  btn.textContent = 'Creation...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  const quotaRaw = document.getElementById('ccQuota').value.trim();
+  const payload = {
+    username,
+    password,
+    user_type: document.getElementById('ccUserType').value,
+    notes: document.getElementById('ccNotes').value.trim(),
+  };
+  if(quotaRaw) payload.quota_gb = parseFloat(quotaRaw);
+
+  try{
+    const res = await apiFetch('/api/revendeur/users/create', { method: 'POST', body: JSON.stringify(payload) });
+    if(res.ok && res.data && res.data.status === 'ok'){
+      toast(res.data.message || 'Client cree avec succes.');
+      document.getElementById('ccUsername').value = '';
+      document.getElementById('ccPassword').value = '';
+      document.getElementById('ccQuota').value = '';
+      document.getElementById('ccNotes').value = '';
+      toggleCreateClientForm();
+      loadResellerClients();
+    } else {
+      errEl.textContent = (res.data && res.data.message) || 'Impossible de creer ce client.';
+      errEl.classList.add('show');
+    }
+  }catch(e){
+    errEl.textContent = 'Connexion au panel impossible.';
+    errEl.classList.add('show');
+  }finally{
+    btn.textContent = originalLbl;
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
+    btn.dataset.sending = '0';
+  }
 }
 
 async function loadPendingRequests(){
