@@ -2,7 +2,7 @@
 // Met en cache l'interface pour qu'elle s'ouvre meme sans reseau.
 // Ne gere PAS le tunnel VPN (ca, ce sera du code natif Android plus tard).
 
-const CACHE_NAME = "labo-surf-v41";
+const CACHE_NAME = "labo-surf-v43";
 const ASSETS = [
   "./index.html",
   "./manifest.json",

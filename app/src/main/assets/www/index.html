@@ -536,8 +536,8 @@
       <div class="card" id="accLoginCard">
         <div class="card-lbl">Se connecter</div>
         <div class="acc-field">
-          <div class="acc-label">Nom d'utilisateur</div>
-          <input type="text" id="accUsername" class="acc-input" placeholder="Ton pseudo Laboratoire du Free-Surf" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <div class="acc-label">Nom d'utilisateur ou code licence</div>
+          <input type="text" id="accUsername" class="acc-input" placeholder="Ton pseudo, ou ton code LIC-XXXXXXXX" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
         </div>
         <div class="acc-field">
           <div class="acc-label">Mot de passe</div>
@@ -551,6 +551,49 @@
         </div>
         <div class="pill-btn primary" id="accLoginBtn" onclick="realLogin()">Se connecter</div>
         <div class="acc-error" id="accError">Identifiants incorrects. Réessaie.</div>
+        <div style="text-align:center; margin-top:10px;">
+          <span onclick="showForgotPasswordCard()" style="font-size:11.5px; color:var(--text-muted); text-decoration:underline; cursor:pointer;">Mot de passe oublié ?</span>
+        </div>
+      </div>
+
+      <div class="card" id="forgotPasswordCard" style="display:none;">
+        <div class="card-lbl">Mot de passe oublié</div>
+        <div id="fpStep1">
+          <p style="font-size:11.5px; color:var(--text-muted); margin:0 0 10px;">
+            Entre les informations que tu avais fournies à l'inscription.
+          </p>
+          <div class="acc-field">
+            <div class="acc-label">Nom d'utilisateur</div>
+            <input type="text" id="fpUsername" class="acc-input" autocapitalize="off" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="acc-field">
+            <div class="acc-label">Contact (email ou téléphone)</div>
+            <input type="text" id="fpContact" class="acc-input" autocapitalize="off">
+          </div>
+          <div class="acc-field">
+            <div class="acc-label">Phrase de récupération</div>
+            <input type="text" id="fpRecoverySecret" class="acc-input" autocapitalize="off" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="pill-btn primary" id="fpVerifyBtn" onclick="submitForgotPasswordVerify()">Vérifier mon identité</div>
+        </div>
+        <div id="fpStep2" style="display:none;">
+          <p style="font-size:11.5px; color:var(--text-muted); margin:0 0 10px;">
+            Identité vérifiée. Choisis ton nouveau mot de passe.
+          </p>
+          <div class="acc-field">
+            <div class="acc-label">Nouveau mot de passe</div>
+            <input type="password" id="fpNewPassword" class="acc-input" autocomplete="new-password">
+          </div>
+          <div class="acc-field">
+            <div class="acc-label">Confirme le mot de passe</div>
+            <input type="password" id="fpConfirmPassword" class="acc-input" autocomplete="new-password">
+          </div>
+          <div class="pill-btn primary" id="fpResetBtn" onclick="submitForgotPasswordReset()">Changer mon mot de passe</div>
+        </div>
+        <div class="acc-error" id="fpError"></div>
+        <div style="text-align:center; margin-top:10px;">
+          <span onclick="hideForgotPasswordCard()" style="font-size:11.5px; color:var(--text-muted); text-decoration:underline; cursor:pointer;">Retour à la connexion</span>
+        </div>
       </div>
 
       <div class="card" id="accRegisterCard" style="display:none;">
@@ -1136,6 +1179,125 @@ async function loadRealServers(){
     }));
     renderServers(); updateInfoCard();
   }catch(e){ /* liste de demo conservee en repli, aucune erreur visible */ }
+}
+
+function showForgotPasswordCard(){
+  document.getElementById('accLoginCard').style.display = 'none';
+  document.getElementById('forgotPasswordCard').style.display = '';
+  document.getElementById('fpStep1').style.display = '';
+  document.getElementById('fpStep2').style.display = 'none';
+  document.getElementById('fpError').classList.remove('show');
+}
+
+function hideForgotPasswordCard(){
+  document.getElementById('forgotPasswordCard').style.display = 'none';
+  document.getElementById('accLoginCard').style.display = '';
+  document.getElementById('fpUsername').value = '';
+  document.getElementById('fpContact').value = '';
+  document.getElementById('fpRecoverySecret').value = '';
+  document.getElementById('fpNewPassword').value = '';
+  document.getElementById('fpConfirmPassword').value = '';
+}
+
+let fpResetToken = null;
+
+async function submitForgotPasswordVerify(){
+  const errEl = document.getElementById('fpError');
+  errEl.classList.remove('show');
+  const username = document.getElementById('fpUsername').value.trim();
+  const contact = document.getElementById('fpContact').value.trim();
+  const recoverySecret = document.getElementById('fpRecoverySecret').value.trim();
+  if(!username || !contact || !recoverySecret){
+    errEl.textContent = 'Remplis tous les champs.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('fpVerifyBtn');
+  if(btn.dataset.sending === '1') return;
+  btn.dataset.sending = '1';
+  const originalLbl = btn.textContent;
+  btn.textContent = 'Verification...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  try{
+    const res = await fetch(`${FREE_SURF_API_BASE}/api/auth/forgot-password/verify`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, contact, recovery_secret: recoverySecret }),
+    });
+    const data = await res.json().catch(() => null);
+    if(res.ok && data && data.status === 'ok'){
+      fpResetToken = data.reset_token;
+      document.getElementById('fpStep1').style.display = 'none';
+      document.getElementById('fpStep2').style.display = '';
+    } else {
+      errEl.textContent = (data && data.message) || "Aucun compte ne correspond a ces informations.";
+      errEl.classList.add('show');
+    }
+  }catch(e){
+    errEl.textContent = 'Connexion au panel impossible.';
+    errEl.classList.add('show');
+  }finally{
+    btn.textContent = originalLbl;
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
+    btn.dataset.sending = '0';
+  }
+}
+
+async function submitForgotPasswordReset(){
+  const errEl = document.getElementById('fpError');
+  errEl.classList.remove('show');
+  const newPassword = document.getElementById('fpNewPassword').value.trim();
+  const confirmPassword = document.getElementById('fpConfirmPassword').value.trim();
+  if(!fpResetToken){
+    errEl.textContent = 'Session expiree, recommence depuis le debut.';
+    errEl.classList.add('show');
+    return;
+  }
+  if(newPassword.length < 6){
+    errEl.textContent = 'Le mot de passe doit faire au moins 6 caracteres.';
+    errEl.classList.add('show');
+    return;
+  }
+  if(newPassword !== confirmPassword){
+    errEl.textContent = 'Les mots de passe ne correspondent pas.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('fpResetBtn');
+  if(btn.dataset.sending === '1') return;
+  btn.dataset.sending = '1';
+  const originalLbl = btn.textContent;
+  btn.textContent = 'Changement...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  try{
+    const res = await fetch(`${FREE_SURF_API_BASE}/api/auth/forgot-password/reset`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reset_token: fpResetToken, new_password: newPassword, confirm_password: confirmPassword }),
+    });
+    const data = await res.json().catch(() => null);
+    if(res.ok && data && data.status === 'ok'){
+      toast('Mot de passe change avec succes !');
+      fpResetToken = null;
+      hideForgotPasswordCard();
+    } else {
+      errEl.textContent = (data && data.message) || "Impossible de changer le mot de passe.";
+      errEl.classList.add('show');
+    }
+  }catch(e){
+    errEl.textContent = 'Connexion au panel impossible.';
+    errEl.classList.add('show');
+  }finally{
+    btn.textContent = originalLbl;
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
+    btn.dataset.sending = '0';
+  }
 }
 
 async function realLogin(){
