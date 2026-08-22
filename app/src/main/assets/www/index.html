@@ -228,6 +228,27 @@
     opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:100; max-width:80%; text-align:center; }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
+  .expiry-floating-banner{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+    z-index:200; width:calc(100% - 24px); max-width:360px;
+    background:rgba(20,10,0,0.97); border:1px solid rgba(250,180,60,0.5);
+    border-radius:14px; padding:12px 14px; box-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(250,180,60,0.15);
+    display:flex; flex-direction:column; gap:8px;
+    animation: expiryBannerSlideIn 0.4s ease-out;
+  }
+  @keyframes expiryBannerSlideIn{ from{ transform:translateX(-50%) translateY(30px); opacity:0; } to{ transform:translateX(-50%) translateY(0); opacity:1; } }
+  .expiry-floating-banner__text{ font-size:12px; color:#ffd68a; line-height:1.4; }
+  .expiry-floating-banner__text i{ margin-right:6px; color:#fab43c; }
+  .expiry-floating-banner__actions{ display:flex; align-items:center; justify-content:flex-end; gap:8px; }
+  .expiry-floating-banner__cta{
+    background:#fab43c; color:#1a1000; border:none; border-radius:8px;
+    padding:7px 14px; font-size:11.5px; font-weight:800; cursor:pointer;
+  }
+  .expiry-floating-banner__close{
+    background:transparent; border:none; color:#ffd68a; font-size:18px;
+    cursor:pointer; line-height:1; padding:4px 8px; opacity:0.7;
+  }
+
   .timer{ text-align:center; font-family:var(--mono); font-weight:700; font-size:26px; letter-spacing:0.04em; color:var(--text-muted); margin-bottom:4px; }
   .timer.on{ color:var(--accent); }
   .status-sub{ text-align:center; font-size:12px; color:var(--danger); font-weight:600; margin-bottom:18px; transition:color 0.3s; }
@@ -405,6 +426,15 @@
 </head>
 <body>
 <div class="toast" id="toastEl"></div>
+<div class="expiry-floating-banner" id="expiryFloatingBanner" style="display:none;">
+  <div class="expiry-floating-banner__text">
+    <i class="fas fa-triangle-exclamation"></i><span id="expiryFloatingBannerText"></span>
+  </div>
+  <div class="expiry-floating-banner__actions">
+    <button class="expiry-floating-banner__cta" onclick="dismissExpiryBanner(); switchTab('compte'); setTimeout(function(){ var f = document.getElementById('renewalCard'); if(f) f.scrollIntoView({behavior:'smooth'}); }, 150);">Renouveler</button>
+    <button class="expiry-floating-banner__close" onclick="dismissExpiryBanner()" title="Fermer">&times;</button>
+  </div>
+</div>
 <div class="device">
 
   <div class="rail" id="rail">
@@ -1105,6 +1135,7 @@ function renderAccountCard(acc){
     document.getElementById('accGaugeLabel').textContent = acc.daysLeft + ' jour(s) restant(s)';
     document.getElementById('accGaugePct').textContent = pct + '%';
   }
+  maybeShowExpiryBanner(acc.daysLeft, acc.plan);
 
   const quotaBlock = document.getElementById('quotaGaugeBlock');
   if(!acc.quotaGB){
@@ -1128,6 +1159,37 @@ function daysLeftFromExpiration(expIso){
   if(isNaN(exp.getTime())) return null;
   const diffMs = exp.getTime() - Date.now();
   return Math.max(0, Math.ceil(diffMs / 86400000));
+}
+
+// Bannière flottante d'expiration -- meme principe que sur le site web
+// (paliers 7/3/1 jours), mais absente jusqu'ici de l'app. Se souvient d'une
+// fermeture manuelle pour la journee en cours, pour ne pas s'imposer a
+// repetition si la personne l'a deja vue et fermee.
+function dismissExpiryBanner(){
+  document.getElementById('expiryFloatingBanner').style.display = 'none';
+  try{ localStorage.setItem('expiryBannerDismissedOn', new Date().toDateString()); }catch(e){}
+}
+
+function maybeShowExpiryBanner(daysLeft, planKey){
+  const banner = document.getElementById('expiryFloatingBanner');
+  if(!banner) return;
+  if(planKey === 'gratuit' || daysLeft === null || daysLeft > 7){
+    banner.style.display = 'none';
+    return;
+  }
+  let dismissedToday = false;
+  try{ dismissedToday = localStorage.getItem('expiryBannerDismissedOn') === new Date().toDateString(); }catch(e){}
+  if(dismissedToday){
+    banner.style.display = 'none';
+    return;
+  }
+  const textEl = document.getElementById('expiryFloatingBannerText');
+  if(daysLeft <= 1){
+    textEl.textContent = ' Ton abonnement expire demain ! Renouvelle des maintenant pour eviter toute coupure.';
+  } else {
+    textEl.textContent = ` Il te reste ${daysLeft} jour(s) avant la fin de ton abonnement.`;
+  }
+  banner.style.display = 'flex';
 }
 
 // Logique partagee apres une authentification reussie (connexion OU inscription) :
