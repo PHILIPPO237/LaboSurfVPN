@@ -15,13 +15,13 @@ Ce qui est déjà fait et fonctionnel :
 L'application est un **client** du Laboratoire du Free-Surf : elle ne parle jamais à l'agent ni à PRO, uniquement à `POST /api/user/connect`.
 Audit complet, matrice VPN/Panel/PRO, doublons et capacités backend manquantes : [`docs/AUDIT_LABOSURFVPN.md`](docs/AUDIT_LABOSURFVPN.md).
 
-- **Adresse de l'API** : fixée à la compilation, HTTPS obligatoire. `./gradlew assembleRelease -PlabosurfPanelBaseUrl=https://mon-panel.example` ;
+- **Adresse de l'API** : fixée à la compilation, HTTPS obligatoire. `gradle assembleDebug -PlabosurfPanelBaseUrl=https://mon-panel.example` ;
   build debug sur émulateur : `-PlabosurfPanelBaseUrl=http://10.0.2.2:8000` (le clair n'est toléré que sur la boucle locale, en debug).
   Dans un navigateur (développement) : `index.html?api=http://127.0.0.1:8000`.
 - **États de connexion** : `off` → `connecting` → `on` → `disconnecting` → `error`. `on` (et le chronomètre) n'existent que lorsque le moteur natif
   répond `window.onNativeVpnState('connected')` ; jamais avant, jamais simulé. Trafic et quota : « indisponible » tant qu'ils ne sont pas mesurés.
 - **Moteur** : `LaboVpnService.ENGINE_INTEGRATED = false` → l'app refuse de se connecter (et n'appelle pas le backend) tant qu'aucun moteur n'est intégré.
-- **Tests** : `node --test tests/js/` (Node ≥ 18, aucune dépendance). Faux panel pour piloter l'interface dans un navigateur :
+- **Tests** : `node --test tests/js/*.test.js` (Node ≥ 18, aucune dépendance). Faux panel pour piloter l'interface dans un navigateur :
   `python tests/mock_panel.py 8000` puis `index.html?api=http://127.0.0.1:8000` (identifiant quelconque, mot de passe `ok`).
 - `design-previews/` : anciennes maquettes, **hors APK**, à supprimer quand tu veux.
 

@@ -158,7 +158,7 @@ reçu doit être supporté par le moteur (`getEngineInfo`) ; **`CONNECTED` et le
 
 ## 9. Tests effectués
 
-* **47 tests Node** (`node --test tests/js/`), sur le **vrai code de l'interface** chargé dans un contexte `vm` (DOM, réseau et pont natif simulés) :
+* **47 tests Node** (`node --test tests/js/*.test.js`), sur le **vrai code de l'interface** chargé dans un contexte `vm` (DOM, réseau et pont natif simulés) :
   contrat (14 codes, retry, santé, Access, hors-contrat, secrets), adresse (HTTPS, natif vs navigateur), flux de connexion (moteur absent → aucun appel backend ;
   configuration exacte transmise au natif ; `CONNECTED`/chronomètre seulement sur réponse du natif ; watchdog ; 401 ; réseau/hors-ligne/timeout ;
   protocole non supporté ; expiration réelle ; navigateur ; mode aperçu), compte (jauge, quota, session, déconnexion), traductions (FR = EN, aucune clé manquante),
