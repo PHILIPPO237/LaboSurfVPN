@@ -17,6 +17,7 @@
   if(el){
     el.addEventListener('animationend', function(e){ if(e.target === el && e.animationName === 'spOut') finish(); });
     el.addEventListener('click', skip);
+    try{ if(sessionStorage.getItem('ls.cacheCleared')) el.classList.add('is-skipped'); }catch(e){}   // rechargement volontaire : pas d'animation
     setTimeout(finish, 6500);               // filet de sécurité si aucun événement d'animation n'arrive
   }
 

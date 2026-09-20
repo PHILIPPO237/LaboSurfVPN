@@ -30,7 +30,7 @@
     'assistant.categories': '🗂️', 'act.logTitle': '📜', 'cli.pending': '⏳', 'cli.myClients': '👥',
 
     // Choix (onglets / contrôles segmentés)
-    'act.sessions': '🕘', 'act.log': '📜',
+    'act.sessions': '🕘', 'act.log': '📜', 'cache.section': '💾', 'cache.title': '♻️',
     'set.themeSystem': '🖥️', 'set.themeLight': '☀️', 'set.themeDark': '🌙',
     'guide.tabGuide': '📖', 'guide.tabAssistant': '🤖',
 

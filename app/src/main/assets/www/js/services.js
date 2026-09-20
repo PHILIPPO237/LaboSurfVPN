@@ -77,6 +77,10 @@ function renderServices(){
     host.innerHTML = Services.list.map(serviceCardHtml).join('');
   }
 
+  // Sans service à afficher (non connecté, erreur, liste vide) : mode d'emploi fixe, jamais une donnée inventée
+  if(Services.state !== 'loading' && !(Services.state === 'ready' && Services.list.length))
+    host.innerHTML += primerHtml('primer.svc.title', ['primer.svc.1', 'primer.svc.2', 'primer.svc.3']);
+
   // Ligne « Serveurs » : état réel de la liste
   const sub = $('svcServersSub');
   if(Servers.state === 'idle') sub.textContent = t('svc.serversLogin');

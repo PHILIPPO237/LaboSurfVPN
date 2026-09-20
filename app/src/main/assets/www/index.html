@@ -79,6 +79,7 @@
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
   <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
   <symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
   <!-- Drapeaux (SVG, identiques sur tous les appareils : les emojis-drapeaux ne s'affichent pas partout) -->
@@ -93,8 +94,9 @@
 
   <main class="screens">
     <nav class="rail" id="rail" data-i18n-attr="aria-label:nav.label">
-      <button class="rail-btn" type="button" id="railBtn-account" data-action="nav" data-screen="account" data-i18n-attr="title:nav.account;aria-label:nav.account"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="rail-badge" id="accountBadge" hidden></span></button>
+      <button class="rail-btn active" type="button" id="railBtn-home" data-action="nav" data-screen="home" data-i18n-attr="title:nav.home;aria-label:nav.home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg></button>
       <button class="rail-btn" type="button" id="railBtn-services" data-action="nav" data-screen="services" data-i18n-attr="title:nav.services;aria-label:nav.services"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></button>
+      <button class="rail-btn" type="button" id="railBtn-account" data-action="nav" data-screen="account" data-i18n-attr="title:nav.account;aria-label:nav.account"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="rail-badge" id="accountBadge" hidden></span></button>
       <div class="rail-group" id="railGroup">
         <button class="rail-btn" type="button" id="railBtn-settings" data-action="nav" data-screen="settings" data-i18n-attr="title:nav.settings;aria-label:nav.settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg></button>
         <button class="rail-caret" type="button" id="railCaret" data-action="toggleRail" aria-expanded="false" aria-controls="railExpand" data-i18n-attr="aria-label:nav.shortcutsShow"><svg class="ic" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
@@ -103,8 +105,8 @@
           <button class="rail-mini" type="button" id="miniLang" data-action="quickLang" data-i18n-attr="title:set.language;aria-label:set.language"><svg class="flag" aria-hidden="true"><use href="#f-fr"/></svg></button>
         </div>
       </div>
+      <button class="rail-btn" type="button" id="railBtn-logs" data-action="nav" data-screen="logs" data-i18n-attr="title:nav.logs;aria-label:nav.logs"><svg class="ic" aria-hidden="true"><use href="#i-terminal"/></svg></button>
       <button class="rail-btn" type="button" id="railBtn-about" data-action="nav" data-screen="about" data-i18n-attr="title:nav.about;aria-label:nav.about"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg></button>
-      <button class="rail-btn active" type="button" id="railBtn-home" data-action="nav" data-screen="home" data-i18n-attr="title:nav.home;aria-label:nav.home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg></button>
     </nav>
 
 
@@ -134,6 +136,7 @@
           <div class="power-rings" aria-hidden="true"><i></i><i></i><i></i></div>
           <button class="power-btn" id="powerBtn" type="button" data-action="togglePower">
             <span class="power-spinner" aria-hidden="true"></span>
+            <svg class="ic power-ic" aria-hidden="true"><use href="#i-user"/></svg>
             <span class="power-lbl" id="powerLbl" data-i18n="home.btn.start"></span>
             <span class="power-hint" id="powerHint" aria-hidden="true"></span>
           </button>
@@ -188,17 +191,25 @@
               </svg>
             </div>
             <div class="bn-body" id="homeBannerBody">
-              <div id="homeBannerDefault">
+              <div id="homeBannerDefault" class="bd">
                 <div class="bd-badges">
                   <span class="badge badge-ok" data-i18n="banner.official"></span>
                   <span class="badge bd-badge-premium">Premium</span>
                 </div>
-                <div class="bd-mark">VPN</div>
-                <div class="bd-tagline" data-i18n="banner.tagline"></div>
+                <div class="bd-head">
+                  <div class="bd-mark">VPN</div>
+                  <div class="bd-rule" aria-hidden="true"><i></i><b></b><i></i></div>
+                </div>
+                <div class="bd-tagline"><span class="sr-only" data-i18n="banner.tagline"></span><span class="tw" id="bdTagline" aria-hidden="true"></span></div>
                 <p class="bd-sub" data-i18n="banner.sub"></p>
+                <ul class="bd-perks">
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg><span data-i18n="banner.perk.news"></span></li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span data-i18n="banner.perk.help"></span></li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span data-i18n="banner.perk.community"></span></li>
+                </ul>
                 <div class="bd-actions">
-                  <a class="btn btn-primary btn-sm" href="https://t.me/laboratoire_du_free_surf" target="_blank" rel="noopener"><span data-i18n="banner.channel"></span><svg class="ic" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
-                  <a class="btn btn-secondary btn-sm" href="https://t.me/laboratoire_du_free_surf_chat" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-telegram"/></svg><span data-i18n="banner.group"></span></a>
+                  <a class="btn btn-primary btn-sm" href="https://t.me/laboratoire_du_free_surf" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-telegram"/></svg><span data-i18n="banner.channel"></span></a>
+                  <a class="btn btn-secondary btn-sm" href="https://t.me/laboratoire_du_free_surf_chat" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span data-i18n="banner.group"></span></a>
                 </div>
               </div>
               <div id="homeBannerAd" hidden>
@@ -246,6 +257,7 @@
         <input class="input" id="srvSearch" type="search" autocomplete="off" data-i18n-attr="placeholder:srv.search;aria-label:srv.search">
       </div>
       <div id="srvList" role="radiogroup" data-i18n-attr="aria-label:srv.title"></div>
+      <div id="srvLegend"></div>
     </section>
 
     <!-- ===================== HISTORIQUE ===================== -->
@@ -257,10 +269,6 @@
         <div class="info-row"><span class="k" data-i18n="home.server"></span><span class="v" id="infoServer">—</span></div>
         <div class="info-row"><span class="k" data-i18n="act.duration"></span><span class="v" id="infoDuration">00:00:00</span></div>
       </div>
-      <div class="segmented" id="segActivity" role="group" style="margin-bottom:var(--sp-4)" data-i18n-attr="aria-label:act.title">
-        <button type="button" data-action="setActivityView" data-value="sessions" aria-pressed="true" data-i18n="act.sessions"></button>
-        <button type="button" data-action="setActivityView" data-value="log" aria-pressed="false" data-i18n="act.log"></button>
-      </div>
       <div id="actSessions">
         <div class="card" id="actSummary" hidden>
           <div class="stat-row">
@@ -270,9 +278,13 @@
         </div>
         <div id="histList" aria-live="polite"></div>
       </div>
-      <div id="actLog" hidden>
-        <div class="section-title"><span data-i18n="act.logTitle"></span></div>
-        <div class="log-feed" id="logFeed"></div>
+      <div class="card primer" id="actPrimer" hidden>
+        <div class="card-title" data-i18n="act.primer.title"></div>
+        <p class="hint" data-i18n="act.primer.text"></p>
+        <ul class="legend">
+          <li><span class="badge badge-ok" data-i18n="act.status.ok"></span><span data-i18n="act.primer.ok"></span></li>
+          <li><span class="badge badge-err" data-i18n="act.status.failed"></span><span data-i18n="act.primer.failed"></span></li>
+        </ul>
       </div>
       <p class="hint" id="actLocalNote" style="margin-top:var(--sp-2)" data-i18n="act.localNote"></p>
       <div class="btn-row" style="margin-top:var(--sp-3)" id="actClearRow">
@@ -609,6 +621,32 @@
       <div class="sig sig-about"><i class="sig-rule"></i><div class="sig-org"><span class="sig-g">Laboratoire</span> <span class="sig-w">du Free-Surf</span></div><div class="sig-credit"><span class="sig-by" data-i18n="sig.by"></span> <b class="sig-name">Philippo</b></div><i class="sig-rule"></i></div>
     </section>
 
+    <!-- ===================== DOCUMENTS LÉGAUX ===================== -->
+    <section class="screen" id="screen-legal" aria-labelledby="legalTitle">
+      <div class="screen-head"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="legalBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="legalTitle"></h1></div></div>
+      <div class="legal" id="legalBody"></div>
+    </section>
+
+    <!-- ===================== JOURNAL ET CACHE ===================== -->
+    <section class="screen" id="screen-logs" aria-labelledby="logsTitle">
+      <div class="screen-head"><h1 id="logsTitle" data-i18n="logs.title"></h1></div>
+      <div class="section-title" data-i18n="diag.title"></div>
+      <div class="card" id="diagCard"></div>
+      <div class="btn-row" style="margin-bottom:var(--sp-2)">
+        <button class="btn btn-secondary btn-sm" type="button" data-action="copyReport"><svg class="ic " aria-hidden="true"><use href="#i-file"/></svg><span data-i18n="diag.copy"></span></button>
+      </div>
+      <div class="section-title"><span data-i18n="act.logTitle"></span></div>
+      <p class="hint" data-i18n="logs.hint"></p>
+      <div class="log-feed" id="logFeed"></div>
+      <div class="btn-row" style="margin-top:var(--sp-3)" id="logClearRow">
+        <button class="btn btn-secondary btn-sm" type="button" data-action="clearLog"><svg class="ic " aria-hidden="true"><use href="#i-trash"/></svg><span data-i18n="act.clearLog"></span></button>
+      </div>
+      <div class="section-title" data-i18n="cache.section"></div>
+      <div class="list">
+        <button class="row" type="button" data-action="clearCache"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-refresh"/></svg></span><div class="row-main"><div class="row-title" data-i18n="cache.title"></div><div class="row-sub" data-i18n="cache.sub"></div></div></button>
+      </div>
+    </section>
+
     <!-- ===================== RÉGLAGES ===================== -->
     <section class="screen" id="screen-settings" aria-labelledby="setTitle">
       <div class="screen-head"><h1 id="setTitle" data-i18n="set.title"></h1></div>
@@ -758,21 +796,24 @@
         <section class="assistant-slot" aria-labelledby="assistantTitle">
           <div class="assistant-head">
             <span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-message"/></svg></span>
-            <div class="assistant-title"><span id="assistantTitle" data-i18n="assistant.title"></span><span class="badge" data-i18n="assistant.soon"></span></div>
+            <div class="assistant-title"><span id="assistantTitle" data-i18n="assistant.title"></span><span class="badge badge-ok" data-i18n="assistant.badge"></span></div>
           </div>
           <p class="assistant-text" data-i18n="assistant.intro"></p>
         </section>
-        <div class="section-title" data-i18n="assistant.categories"></div>
+        <div class="asst-thread" id="asstThread" aria-live="polite"></div>
+        <div class="section-title" data-i18n="assistant.suggest"></div>
+        <div class="asst-chips" id="asstChips"></div>
+        <form class="assistant-input" id="asstForm" data-submit="askAssistant" novalidate>
+          <input class="input" id="asstInput" type="text" autocomplete="off" enterkeyhint="send" maxlength="200" data-i18n-attr="placeholder:assistant.placeholder;aria-label:assistant.placeholder">
+          <button class="icon-btn" type="submit" data-i18n-attr="aria-label:assistant.send" style="background:var(--brand);color:var(--on-brand);border-color:var(--brand)"><svg class="ic " aria-hidden="true"><use href="#i-send"/></svg></button>
+        </form>
+        <div class="section-title" data-i18n="assistant.browse"></div>
         <div class="list">
         <button class="row" type="button" data-action="openGuide" data-topic="connect"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-shield"/></svg></span><div class="row-main"><div class="row-title" data-i18n="assistant.cat.connect"></div><div class="row-sub" data-i18n="assistant.cat.sub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="openGuide" data-topic="access"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-card"/></svg></span><div class="row-main"><div class="row-title" data-i18n="assistant.cat.access"></div><div class="row-sub" data-i18n="assistant.cat.sub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="openGuide" data-topic="trouble"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-alert-circle"/></svg></span><div class="row-main"><div class="row-title" data-i18n="assistant.cat.trouble"></div><div class="row-sub" data-i18n="assistant.cat.sub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="openGuide" data-topic="server"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-server"/></svg></span><div class="row-main"><div class="row-title" data-i18n="assistant.cat.server"></div><div class="row-sub" data-i18n="assistant.cat.sub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="openGuide" data-topic="states"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-info"/></svg></span><div class="row-main"><div class="row-title" data-i18n="assistant.cat.app"></div><div class="row-sub" data-i18n="assistant.cat.sub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
-        </div>
-        <div class="assistant-input" aria-disabled="true">
-          <input class="input" type="text" disabled tabindex="-1" data-i18n-attr="placeholder:assistant.placeholder;aria-label:assistant.placeholder">
-          <button class="icon-btn" type="button" disabled tabindex="-1" data-i18n-attr="aria-label:assistant.send"><svg class="ic " aria-hidden="true"><use href="#i-send"/></svg></button>
         </div>
       </div>
     </div>
@@ -821,6 +862,8 @@
 <script src="js/settings.js"></script>
 <script src="js/banner.js"></script>
 <script src="js/guide.js"></script>
+<script src="js/assistant.js"></script>
+<script src="js/legal.js"></script>
 <script src="js/onboarding.js"></script>
 <script src="js/emoji.js"></script>
 <script src="js/app.js"></script>

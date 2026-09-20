@@ -20,7 +20,7 @@
     document.documentElement.setAttribute('data-theme', r);
     document.dispatchEvent(new CustomEvent('themechange', { detail: r }));
     var meta = document.getElementById('metaTheme');
-    if(meta) meta.setAttribute('content', r === 'dark' ? '#050705' : '#f3f6f4');
+    if(meta) meta.setAttribute('content', r === 'dark' ? '#050705' : '#f2efe7');
     // Barre d'état / de navigation Android alignées sur le thème (pont natif, si présent)
     try{
       if(window.LaboSurfNative && typeof window.LaboSurfNative.setSystemBars === 'function'){

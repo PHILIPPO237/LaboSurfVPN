@@ -53,7 +53,7 @@ function homeReadiness(){
 
 // Bouton d'action sous le statut : n'apparaît que quand il y a une vraie prochaine étape à proposer
 const HOME_ACTIONS = {
-  login:    { key: 'home.cta.login',   action: 'nav', screen: 'account', primary: true, guide: true },
+  login:    { guide: true, noButton: true },   // sans compte, c'est le bouton START qui mène à la connexion au compte
   expired:  { key: 'home.cta.renew',   action: 'openRenewal', primary: true },
   noServer: { key: 'home.cta.refresh', action: 'refreshServers' },
   srvError: { key: 'common.retry',     action: 'refreshServers' },
@@ -64,6 +64,8 @@ function renderHomeAction(ready){
   $('homeAction').hidden = !cfg;
   if(!cfg) return;
   const cta = $('homeCta');
+  cta.hidden = !!cfg.noButton;
+  if(cfg.noButton){ $('homeCtaGuide').hidden = !cfg.guide; return; }
   cta.textContent = t(cfg.key);
   cta.dataset.action = cfg.action;
   if(cfg.screen) cta.dataset.screen = cfg.screen; else delete cta.dataset.screen;
@@ -95,9 +97,10 @@ function renderHome(){
   $('homeErrorText').textContent = VPN.errorSpec ? errorText(VPN.errorSpec) : '';
 
   const btn = $('powerBtn');
-  btn.setAttribute('aria-label', t(st === 'on' ? 'home.power.disconnect' : (busy ? 'home.power.wait' : 'home.power.connect')));
+  const needLogin = st === 'off' && ready === 'login';
+  btn.setAttribute('aria-label', t(st === 'on' ? 'home.power.disconnect' : (busy ? 'home.power.wait' : (needLogin ? 'home.cta.login' : 'home.power.connect'))));
   btn.setAttribute('aria-disabled', String(busy));
-  $('powerLbl').textContent = t({ on: 'home.btn.on', connecting: 'home.btn.connecting', disconnecting: 'home.btn.disconnecting' }[st] || 'home.btn.start');
+  $('powerLbl').textContent = t({ on: 'home.btn.on', connecting: 'home.btn.connecting', disconnecting: 'home.btn.disconnecting' }[st] || (needLogin ? 'home.btn.login' : 'home.btn.start'));
   $('powerHint').textContent = t('home.btn.stop');   // affiché par le CSS seulement quand connecté : un appui arrête la connexion
   $('heroBrand').classList.toggle('on', st === 'on');
 
@@ -131,7 +134,10 @@ function fitHomeScreen(){
   const around = (foot && banner ? foot.offsetHeight - banner.offsetHeight : 0) + (parseFloat(getComputedStyle($('home')).rowGap) || 0);
   // la bannière réclame la hauteur de son contenu (entre le minimum et l'idéal) ; au-delà, son corps défile
   const inner = document.querySelector('#homeBannerDefault:not([hidden]), #homeBannerAd:not([hidden])'), bs = getComputedStyle($('homeBannerBody'));
-  const natural = inner ? inner.offsetHeight + parseFloat(bs.paddingTop) + parseFloat(bs.paddingBottom) : HOME_BANNER_MIN;
+  fitBannerDefault();
+  // bloc par défaut : il se réduit jusqu'à BN_SCALE_MIN, on lui réserve donc 90 % de sa hauteur naturelle (75 % sur écran court, où le logo et START passent avant)
+  const dflt = $('homeBannerDefault'), nat = dflt && !dflt.hidden ? parseFloat(dflt.dataset.natural) : 0;
+  const natural = (nat ? nat * (innerHeight < 700 ? 0.75 : 0.9) : (inner ? inner.offsetHeight : 0)) + parseFloat(bs.paddingTop) + parseFloat(bs.paddingBottom) || HOME_BANNER_MIN;
   const reserve = Math.min(Math.max(natural, HOME_BANNER_MIN), HOME_BANNER_IDEAL) + around;
   let scale = 1;
   if(need > avail - reserve && avail > 0) scale = Math.max(0.62, (avail - reserve) / need);
@@ -147,6 +153,7 @@ function fitHomeScreen(){
     const railBottom = rail.getBoundingClientRect().top + 5 + n * btn + (n - 1) * gap + 6;   // rail replié
     foot.classList.toggle('is-inset', railBottom > banner.getBoundingClientRect().top - 6);
   }
+  fitBannerDefault();   // la hauteur finale de la bannière est connue : le contenu s'y ajuste
 }
 window.addEventListener('resize', fitHomeScreen);
 window.addEventListener('orientationchange', () => setTimeout(fitHomeScreen, 200));
@@ -317,6 +324,7 @@ function disconnectVpn(){
 }
 
 Actions.togglePower = () => {
+  if(!authToken && (VPN.state === 'off' || VPN.state === 'error')){ showScreen('account'); return; }   // sans compte : START mène à la connexion au compte
   if(VPN.state === 'on') disconnectVpn();
   else if(VPN.state === 'off' || VPN.state === 'error') connectVpn();
   // connecting / disconnecting : on ignore les taps (le bouton affiche un indicateur)

@@ -3,8 +3,7 @@
 // de #guideBody (traduit par i18n.js), aucun appel réseau.
 //
 // Onglet « Guide » : 8 rubriques (id = "guide-" + nom) : start, service, server, connect, states, access, history, trouble.
-// Onglet « Assistant » : catégories qui renvoient vers ces rubriques. La conversation n'existe pas encore : l'interface
-// est prête à recevoir un backend (voir Assistant.ask), et n'affiche AUCUNE réponse simulée.
+// Onglet « Assistant » : voir js/assistant.js (questions courantes, réponses locales tirées du guide).
 //
 // Usage : Guide.open('trouble')  ·  Guide.open('start', 'assistant')  ·  <button data-action="openGuide" data-topic="server">.
 
@@ -50,13 +49,6 @@ const Guide = {
   },
 };
 
-// Point d'extension du futur assistant conversationnel : à brancher sur un endpoint du panel quand il existera.
-// Tant que `available` vaut false, l'interface propose uniquement les catégories du guide.
-const Assistant = {
-  available: false,
-  ask(){ return Promise.reject(new Error('assistant_backend_unavailable')); },
-};
-
 Actions.openGuide = (el) => Guide.open(el && el.dataset ? el.dataset.topic : 'start', 'guide');
 Actions.openAssistant = () => Guide.open('start', 'assistant');
 Actions.guideView = (el) => Guide.setView(el.dataset.value);
@@ -67,7 +59,7 @@ document.addEventListener('keydown', (e) => {
   if(!Guide.isOpen()) return;
   if(e.key === 'Escape'){ e.preventDefault(); Guide.close(); return; }
   if(e.key === 'Tab'){   // piège du focus dans la feuille (champs désactivés et vues masquées ignorés)
-    const items = Array.prototype.slice.call($('guideSheet').querySelectorAll('button:not([disabled]), summary')).filter((el) => el.offsetParent !== null);
+    const items = Array.prototype.slice.call($('guideSheet').querySelectorAll('button:not([disabled]), summary, input:not([disabled])')).filter((el) => el.offsetParent !== null);
     if(!items.length) return;
     const i = items.indexOf(document.activeElement);
     e.preventDefault();

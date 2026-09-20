@@ -27,20 +27,4 @@ Actions.openVpnSettings = () => {
   try{ window.LaboSurfNative.openVpnSettings(); }catch(e){ toast(t('err.generic'), 'error'); }
 };
 // Lignes légales : lien externe si une URL http(s) a été fournie (setLegalUrls, api.js), sinon « Bientôt disponible »
-function renderLegalRows(){
-  document.querySelectorAll('[data-legal-tail]').forEach((tail) => {
-    const kind = tail.dataset.legalTail;
-    const row = tail.closest('.row');
-    const available = !!legalUrl(kind);
-    row.classList.toggle('is-disabled', !available);
-    row.setAttribute('aria-disabled', String(!available));
-    tail.innerHTML = available ? ic('external', 'row-chev') : `<span class="badge">${esc(t('common.comingSoon'))}</span>`;
-  });
-}
-Actions.openLegal = (el) => {
-  const url = legalUrl(el.dataset.value);
-  if(url) openExternal(url);
-  else toast(t('common.comingSoon'), 'info');
-};
-
-document.addEventListener('langchange', () => { renderSettings(); renderLegalRows(); });
+document.addEventListener('langchange', renderSettings);

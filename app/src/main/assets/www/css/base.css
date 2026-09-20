@@ -16,7 +16,7 @@ a{ color:inherit; }
 
 /* Structure : [ rail de navigation latéral (fixe) ] + [ écrans (scroll) ] + [ bandeau d'expiration ] */
 .app{
-  --rail-btn:52px; --rail-left:14px; --rail-gap:11px; --rail-n:4;
+  --rail-btn:52px; --rail-left:14px; --rail-gap:11px; --rail-n:6;
   position:relative; display:flex; flex-direction:column;
   height:100vh; height:100dvh; max-width:var(--maxw); margin:0 auto;
   padding-top:env(safe-area-inset-top);
@@ -31,7 +31,20 @@ a{ color:inherit; }
 @media (max-height:760px){ .app{ --rail-btn:48px; --rail-gap:8px; } }
 @media (max-height:640px), (max-width:370px){ .app{ --rail-btn:44px; --rail-gap:6px; --rail-left:10px; } .screen{ padding-right:var(--sp-3); } }
 @media (max-width:340px){ .app{ --rail-left:8px; } }
-.screen.active{ display:block; animation:screenIn var(--dur) var(--ease); }
+/* Transition entre écrans (bouton du rail) : l'ancien écran s'efface en glissant, le nouveau arrive du même côté que le bouton touché
+   (--dir = +1 vers le bas du rail / une sous-page, -1 vers le haut / un retour), puis son contenu se pose en cascade.
+   Uniquement transform + opacity ; « backwards » : aucun état d'animation n'est conservé une fois terminée. */
+.screen{ --dir:1; }
+.screen.active{ display:block; z-index:1; animation:railScreenIn .46s cubic-bezier(.22,1,.36,1) backwards; }
+.screen.is-leaving{ display:block; z-index:0; pointer-events:none; animation:railScreenOut .24s cubic-bezier(.4,0,1,1) both; }
+@keyframes railScreenIn{ from{ opacity:0; transform:translate3d(0, calc(var(--dir) * 26px), 0) scale(.982); } to{ opacity:1; transform:none; } }
+@keyframes railScreenOut{ to{ opacity:0; transform:translate3d(0, calc(var(--dir) * -18px), 0) scale(.982); } }
+.screen.active:not(#screen-home) > *{ animation:railChildIn .55s cubic-bezier(.22,1,.36,1) backwards; }
+.screen.active:not(#screen-home) > :nth-child(1){ animation-delay:.05s; } .screen.active:not(#screen-home) > :nth-child(2){ animation-delay:.09s; }
+.screen.active:not(#screen-home) > :nth-child(3){ animation-delay:.13s; } .screen.active:not(#screen-home) > :nth-child(4){ animation-delay:.17s; }
+.screen.active:not(#screen-home) > :nth-child(5){ animation-delay:.21s; } .screen.active:not(#screen-home) > :nth-child(6){ animation-delay:.25s; }
+.screen.active:not(#screen-home) > :nth-child(n+7){ animation-delay:.29s; }
+@keyframes railChildIn{ from{ opacity:0; transform:translate3d(0, calc(var(--dir) * 16px), 0); } to{ opacity:1; transform:none; } }
 
 @keyframes screenIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
 @keyframes spin{ to{ transform:rotate(360deg); } }

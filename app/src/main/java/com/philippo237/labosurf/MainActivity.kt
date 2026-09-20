@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun setSystemBars(dark: Boolean) {
             runOnUiThread {
-                val color = android.graphics.Color.parseColor(if (dark) "#000000" else "#F3F6F4")
+                val color = android.graphics.Color.parseColor(if (dark) "#000000" else "#F2EFE7")
                 window.statusBarColor = color
                 window.navigationBarColor = color
                 webView.setBackgroundColor(color)
@@ -158,6 +158,13 @@ class MainActivity : AppCompatActivity() {
                 controller.isAppearanceLightNavigationBars = !dark
             }
         }
+
+        /** Journal et cache > Vider le cache : vide le cache web (images de banniere, fichiers). Ne touche ni au compte ni aux reglages. */
+        @JavascriptInterface
+        fun clearWebCache() {
+            runOnUiThread { webView.clearCache(true) }
+        }
+
         @JavascriptInterface
         fun getDeviceId(): String {
             // Identifiant d'appareil stable (survit a la desinstallation/reinstallation

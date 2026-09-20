@@ -89,9 +89,22 @@ function emptyBlock(icon, titleKey, textKey, actionHtml){
   return `<div class="empty">${ic(icon)}<div class="empty-title">${esc(t(titleKey))}</div>${textKey ? `<div>${esc(t(textKey))}</div>` : ''}${actionHtml || ''}</div>`;
 }
 
+// Contenu d'aide FIXE (texte de l'application, jamais une donnée du panel) affiché sous les états vides ou en attente de connexion.
+function primerHtml(titleKey, stepKeys){
+  return `<div class="card primer"><div class="card-title">${esc(t(titleKey))}</div><ol class="steps">${stepKeys.map((k) => `<li><span>${esc(t(k))}</span></li>`).join('')}</ol></div>`;
+}
+// Légende des pastilles de statut d'un serveur (mêmes libellés et couleurs que les lignes de la liste)
+function serverLegendHtml(){
+  const row = (cls, label, text) => `<li><span class="badge ${cls}">${esc(t(label))}</span><span>${esc(t(text))}</span></li>`;
+  return `<div class="card primer"><div class="card-title">${esc(t('srv.legend.title'))}</div><ul class="legend">`
+    + row('badge-ok', 'srv.legend.up', 'srv.legend.upText') + row('badge-warn', 'srv.status.busy', 'srv.legend.busyText')
+    + row('badge-warn', 'srv.status.maintenance', 'srv.legend.maintText') + row('badge-err', 'srv.status.offline', 'srv.legend.offText') + '</ul></div>';
+}
+
 function renderServers(){
   const host = $('srvList');
   const searchWrap = $('srvSearchWrap');
+  $('srvLegend').innerHTML = Servers.state === 'loading' ? '' : serverLegendHtml();   // légende des statuts (texte fixe)
   searchWrap.hidden = !(Servers.state === 'ready' && Servers.list.length > SEARCH_THRESHOLD);
 
   if(Servers.state === 'idle'){

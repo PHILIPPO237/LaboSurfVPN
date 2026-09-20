@@ -3,7 +3,7 @@
    ========================================================================== */
 
 /* ---------- Accueil (identité d'origine : hexagone lumineux, gros bouton START/STOP) ---------- */
-.home{ --hex:clamp(98px, 17.5vh, 150px); --power-size:clamp(140px, 24vh, 170px); display:flex; flex-direction:column; align-items:center; gap:var(--sp-3); height:100%; }
+.home{ --hex:clamp(98px, 17.5vh, 150px); --power-size:clamp(150px, 26vh, 184px); display:flex; flex-direction:column; align-items:center; gap:var(--sp-3); height:100%; }
 /* Commandes (logo, START, état, accès, serveur) : seule cette partie est réduite si l'écran est court ; la bannière garde sa taille */
 .home-main{ width:100%; display:flex; flex-direction:column; align-items:center; gap:var(--sp-2); transform-origin:top center; }
 #screen-home{ overflow:hidden; }
@@ -53,6 +53,12 @@
 .power-lbl{ font:700 26px/1 var(--font-display); letter-spacing:.04em; text-align:center; }
 .power-hint{ display:none; font:700 10px/1 var(--font-mono); letter-spacing:.16em; opacity:.72; }
 .home[data-state="on"] .power-hint{ display:block; }
+/* Sans compte : START devient « S'IDENTIFIER » (icône + libellé) et ouvre l'écran Compte ; plus de bouton séparé */
+.power-ic{ display:none; width:calc(var(--power-size) * .2); height:calc(var(--power-size) * .2); stroke-width:1.8; }
+.home[data-state="off"][data-ready="login"] .power-ic{ display:block; }
+.home[data-state="off"][data-ready="login"] .power-btn{ color:var(--brand); }
+.home[data-state="off"][data-ready="login"] .power-lbl{ font-size:calc(var(--power-size) * .105); letter-spacing:.03em; }
+.home[data-state="off"][data-ready="login"] .power-zone::before{ opacity:.2; animation:haloIdle 6s ease-in-out infinite; }
 /* Libellés longs (CONNECTÉ, CONNEXION…, DÉCONNEXION…) : taille proportionnelle au bouton, jamais coupés */
 .home[data-state="on"] .power-lbl{ font-size:calc(var(--power-size) * .132); }
 .home[data-state="connecting"] .power-lbl{ font-size:calc(var(--power-size) * .105); letter-spacing:.05em; }
@@ -174,31 +180,72 @@
 .bn-dots i{ width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.3); transition:width var(--dur), background var(--dur); }
 .bn-dots i.on{ width:14px; border-radius:3px; background:var(--bn-accent); }
 
-/* Bannière par défaut : sombre dans les deux thèmes, avec relief (dégradés, filet lumineux, ombre portée) */
+/* Bannière par défaut : verre dépoli (glassmorphism). Deux halos colorés dérivent DERRIÈRE le cadre (.home-foot::before / ::after) ;
+   le cadre les floute (backdrop-filter), reflète la lumière (reflet en haut à gauche, filet clair, bord biseauté) et garde une
+   teinte fumée pour que le texte clair reste lisible dans les deux thèmes (--glass-tint). */
+.home-foot{ position:relative; isolation:isolate; }
+.home-foot::before, .home-foot::after{ content:''; position:absolute; z-index:-1; border-radius:50%; pointer-events:none; will-change:transform; }
+.home-foot::before{ width:62%; aspect-ratio:1; left:-8%; top:4%; background:radial-gradient(circle at 40% 40%, #39ff6a, rgba(57,255,106,0) 68%); opacity:.65;
+  animation:glassOrbA 17s ease-in-out infinite alternate; }
+.home-foot::after{ width:52%; aspect-ratio:1; right:-6%; bottom:18%; background:radial-gradient(circle at 50% 50%, #ffd147, rgba(255,209,71,0) 68%); opacity:.5;
+  animation:glassOrbB 21s ease-in-out infinite alternate; }
+@keyframes glassOrbA{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(38%,22%,0) scale(1.15); } }
+@keyframes glassOrbB{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(-42%,-26%,0) scale(1.12); } }
+:root{ --glass-tint:rgba(9,18,12,.42); }
+:root[data-theme="light"]{ --glass-tint:rgba(9,18,12,.72); }   /* sur fond clair, plus de teinte pour garder un texte lisible (≥ 4,5:1) */
 .banner-style-default{
-  color:#f1f5f2; border:1px solid rgba(57,255,106,.26);
+  color:#f1f5f2; border:1px solid rgba(255,255,255,.22);
   background:
-    radial-gradient(120% 90% at 88% 0%, rgba(57,255,106,.16), transparent 60%),
-    linear-gradient(160deg, #0f1a13 0%, #08100b 55%, #050805 100%);
-  box-shadow:0 18px 40px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
+    linear-gradient(135deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.05) 38%, rgba(255,255,255,.02) 62%, rgba(255,255,255,.10) 100%),
+    var(--glass-tint);
+  -webkit-backdrop-filter:blur(22px) saturate(170%); backdrop-filter:blur(22px) saturate(170%);
+  box-shadow:0 22px 48px rgba(0,0,0,.34), 0 2px 8px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.42), inset 0 -1px 0 rgba(255,255,255,.08), inset 0 0 36px rgba(255,255,255,.05);
 }
+/* Reflet de verre : tache de lumière en haut à gauche + fine ligne lumineuse sur le bord haut */
+.banner-style-default::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
+  background:radial-gradient(120% 70% at 0% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%); }
 .banner-style-default::after{ content:''; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
-  background:linear-gradient(180deg, rgba(57,255,106,.55), rgba(57,255,106,0) 42%, rgba(255,209,71,.28));
+  background:linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 34%, rgba(255,255,255,0) 60%, rgba(57,255,106,.35));
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask-composite:exclude; }
-.banner-style-default .bd-mark{ font:700 40px/1 var(--font-mono); letter-spacing:.14em; padding-left:.14em;
+.banner-style-default .bn-halo{ opacity:.18; }   /* le décor interne s'efface : le verre laisse voir les halos du fond */
+.banner-style-default .bn-net{ opacity:.35; }
+.banner-style-default .bn-body{ text-shadow:0 1px 8px rgba(0,0,0,.35); }   /* lisibilité sur les halos colorés qui passent derrière le verre */
+/* Contenu par défaut : tout tient sans défilement. Tout est en « em » et js/banner.js règle --bn-s (0,6 → 1,25) pour que le bloc
+   remplisse exactement la hauteur disponible ; les éléments se répartissent dans l'espace restant (space-evenly). */
+.bn-body:has(> .bd:not([hidden])){ overflow:hidden; padding:var(--sp-3) var(--sp-4); }
+.bd{ --bn-s:1; font-size:calc(16px * var(--bn-s)); flex:1 1 auto; margin:0 !important; width:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:space-evenly; gap:.45em; }
+.bd[hidden]{ display:none; }
+.bd-badges{ display:flex; justify-content:center; gap:.5em; flex-wrap:wrap; }
+.bd .badge{ font-size:max(10px, .68em); padding:.34em .9em; letter-spacing:.09em; text-transform:uppercase; }
+.bd-head{ display:flex; flex-direction:column; align-items:center; gap:.3em; }
+.bd-mark{ font:700 3.1em/1 var(--font-display); letter-spacing:.24em; padding-left:.24em;
   background:linear-gradient(90deg, #c4ffd3, #39ff6a 55%, #16c751); -webkit-background-clip:text; background-clip:text; color:transparent;
-  filter:drop-shadow(0 0 14px rgba(57,255,106,.4)); }
-.banner-style-default .bd-tagline{ font:700 var(--fs-lg)/1.3 var(--font-display); margin:var(--sp-2) 0 var(--sp-1); }
-.bd-sub{ margin:0 auto var(--sp-3); max-width:30ch; font-size:var(--fs-sm); line-height:1.45; color:#b6c4bc; text-wrap:balance; }
-.bd-badges{ display:flex; justify-content:center; gap:var(--sp-2); margin-bottom:var(--sp-3); flex-wrap:wrap; }
-.banner-style-default .badge-ok{ background:rgba(57,255,106,.14); color:#39ff6a; }
-.bd-badge-premium{ background:rgba(255,209,71,.14); color:#ffd147; }
-.bd-actions{ display:flex; justify-content:center; gap:var(--sp-2); flex-wrap:wrap; }
+  filter:drop-shadow(0 0 .32em rgba(57,255,106,.42)); }
+.bd-rule{ display:flex; align-items:center; gap:.55em; width:9em; }
+.bd-rule i{ flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(57,255,106,.7)); }
+.bd-rule i:last-child{ background:linear-gradient(270deg, transparent, rgba(57,255,106,.7)); }
+.bd-rule b{ width:.42em; height:.42em; background:#ffd147; transform:rotate(45deg); box-shadow:0 0 .6em rgba(255,209,71,.7); }
+.bd-tagline{ font:700 1.16em/1.25 var(--font-display); letter-spacing:.01em; text-wrap:balance; }
+.bd-sub{ margin:0; max-width:24em; font:500 max(11px, .84em)/1.45 var(--font-body); color:#d6e1db; text-wrap:balance; }
+.bd-perks{ list-style:none; margin:0; padding:0; display:flex; justify-content:center; flex-wrap:wrap; gap:.4em; }
+.bd-perks li{ display:inline-flex; align-items:center; gap:.32em; padding:.4em .66em; border-radius:999px; white-space:nowrap;
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.24); box-shadow:inset 0 1px 0 rgba(255,255,255,.25); font:600 max(10px, .76em)/1 var(--font-body); color:#f4f8f5; }
+.bd-perks .ic{ width:1.15em; height:1.15em; color:#39ff6a; }
+.bd-actions{ display:flex; justify-content:center; gap:.55em; flex-wrap:wrap; }
+.bd-actions .btn{ min-height:max(38px, 2.7em); padding:0 1.1em; font-size:max(12.5px, .86em); gap:.45em; }
+.bd-actions .ic{ width:1.15em; height:1.15em; }
+/* Bannière étroite (le rail occupe le côté, petit écran) : marges réduites et pastilles sans icône, pour rester sur une seule ligne */
+.home-foot.is-inset .bn-body:has(> .bd:not([hidden])){ padding:var(--sp-3) var(--sp-2); }
+.home-foot.is-inset .bd-perks{ flex-wrap:nowrap; }
+.home-foot.is-inset .bd-perks .ic{ display:none; }
+.banner-style-default .badge-ok{ background:rgba(57,255,106,.2); color:#8dffab; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
+.bd-badge-premium{ background:rgba(255,209,71,.2); color:#ffe08a; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
 /* La bannière est sombre dans les deux thèmes : ses boutons gardent le vert vif (le vert du thème clair y serait peu lisible) */
 .banner-card .bc-link, .banner-style-default .btn-primary{ background:#39ff6a; border-color:#39ff6a; color:#04140a; }
 .banner-style-default .btn-primary{ box-shadow:0 6px 18px rgba(57,255,106,.26); }
-.banner-style-default .btn-secondary{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2); color:#f1f5f2; }
+.banner-style-default .btn-secondary{ background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.34); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); color:#f7faf8; }
 /* Styles reprenant ceux du panel admin (Publicités) */
 .banner-style-neon{ border:1px solid #39ff6a; box-shadow:0 0 22px rgba(57,255,106,.25); background:rgba(57,255,106,.06); }
 .banner-style-gradient{ border:1px solid transparent; background:linear-gradient(#0b0c0b,#0b0c0b) padding-box, linear-gradient(120deg,#4facfe,#00f2fe) border-box; }
@@ -290,25 +337,13 @@
 .about-org{ font:500 var(--fs-xs)/1.4 var(--font-mono); color:var(--gold); margin-top:4px; }
 .about-text{ font-size:var(--fs-sm); color:var(--text-muted); line-height:1.65; margin-top:var(--sp-3); }
 
-/* ----- Bannière par défaut sur écran court : on garde l'essentiel (marque, accroche, boutons) sans la rogner ----- */
-@media (max-height:780px){ .bd-sub{ display:none; } }
-@media (max-height:700px){
-  .bn-body{ padding:var(--sp-4) var(--sp-3); }
-  .banner-style-default .bd-mark{ font-size:32px; }
-  .banner-style-default .bd-tagline{ font-size:var(--fs-md); margin:4px 0 var(--sp-2); }
-  .bd-badges, .bd-sub{ display:none; }
-}
-@media (max-height:600px){
-  .bn-body{ padding:var(--sp-3); }
-  .banner-style-default .bd-mark{ font-size:24px; line-height:1.1; letter-spacing:.1em; }
-  .banner-style-default .bd-tagline{ font-size:var(--fs-sm); margin:2px 0 var(--sp-2); }
-}
 @media (prefers-reduced-motion: reduce){
+  .home-foot::before, .home-foot::after{ animation:none !important; }
   .bn-halo, .bn-net, .bn-net path, .bn-net circle, .bn-shine, .bn-dot, .power-zone::before, .status-title::before, .bn-body.is-swap > *{ animation:none !important; }
 }
 /* ----- Accueil compact : petits téléphones (≤ 640 px de haut) — on réduit l'intrinsèque plutôt que de tout mettre à l'échelle ----- */
 @media (max-height:640px){
-  .home{ --hex:68px; --power-size:128px; }
+  .home{ --hex:68px; --power-size:136px; }
   .home-main{ gap:5px; }
   .app-title{ font-size:24px; margin-top:3px; }
   .app-subtitle{ font-size:10.5px; }
@@ -364,3 +399,16 @@
 .about-p{ margin:0; font-size:var(--fs-sm); line-height:1.65; color:var(--text-muted); }
 .chain-arrow{ display:flex; justify-content:center; padding:1px 0; color:var(--brand); border-bottom:1px solid var(--border); }
 .chain-arrow .ic{ width:16px; height:16px; }
+
+/* Accroche de la bannière : effet machine à écrire (js/banner.js). Tous les caractères sont déjà dans la page (masqués puis révélés),
+   donc la mise en page ne bouge jamais pendant la frappe. La couleur change à chaque tour de boucle. */
+.sr-only{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+.bd-tagline .tw{ color:var(--tw, #f5f8f6); text-shadow:0 0 14px var(--tw-glow, rgba(255,255,255,.3)); }
+.tw-w{ display:inline-block; white-space:nowrap; }
+.tw-c{ position:relative; visibility:hidden; }
+.tw-c.on{ visibility:visible; }
+.tw-c.cur::after, .tw-c.cur-l::before{ content:''; position:absolute; top:.1em; bottom:.04em; width:.09em; background:currentColor; border-radius:1px;
+  animation:twBlink .9s steps(1) infinite; }
+.tw-c.cur::after{ right:-.1em; } .tw-c.cur-l::before{ left:-.1em; }
+@keyframes twBlink{ 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+@media (prefers-reduced-motion: reduce){ .tw-c.cur::after, .tw-c.cur-l::before{ animation:none; } }

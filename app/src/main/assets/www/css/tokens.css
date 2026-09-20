@@ -57,6 +57,7 @@
 
   /* Mouvement */
   --ease:cubic-bezier(.2,.7,.2,1);
+  --spring:cubic-bezier(.3,1.5,.5,1);   /* léger rebond : rail latéral */
   --dur-fast:.15s;
   --dur:.24s;
   --dur-slow:.42s;
@@ -67,7 +68,7 @@
 
   --brand:#076a27;
   --brand-strong:#055c21;
-  --on-brand:#ffffff;
+  --on-brand:#fbf9f3;
   --brand-soft:rgba(7,106,39,.10);
   --brand-line:rgba(7,106,39,.36);
   --brand-glow:rgba(7,106,39,.30);
@@ -78,23 +79,23 @@
   --danger:#b3173a; --danger-soft:rgba(179,23,58,.09); --danger-line:rgba(179,23,58,.38);
   --warning:#8f5000;--warning-soft:rgba(143,80,0,.11); --warning-line:rgba(143,80,0,.38);
 
-  --bg:#f3f6f4;
+  --bg:#f2efe7;
   --bg-glow:radial-gradient(circle at 50% 0%, rgba(7,106,39,.08), transparent 55%);
-  --btn-off:#d9e1dc;
-  --btn-off-hi:#f6f9f7; --btn-off-lo:#c6d2cb; --btn-off-edge:rgba(14,30,20,.16);
+  --btn-off:#dedacd;
+  --btn-off-hi:#f8f5ed; --btn-off-lo:#cbc7b9; --btn-off-edge:rgba(14,30,20,.16);
   --brand-hi:#2bb45c;
   --power-drop:rgba(20,40,30,.24);
-  --rail-bg:#ffffff;
+  --rail-bg:#faf8f2;
   --rail-line:rgba(11,138,54,.32);
-  --surface:#ffffff;
-  --surface-2:#e8eeea;
+  --surface:#faf8f2;
+  --surface-2:#ebe7dc;
   --border:rgba(14,30,20,.12);
   --border-strong:rgba(14,30,20,.26);
   --text:#0e1a13;
   --text-muted:#526059;
-  --text-faint:#66736c;
-  --input-bg:#f6f9f7;
-  --nav-bg:rgba(255,255,255,.96);
+  --text-faint:#5a655f;
+  --input-bg:#f6f3ec;
+  --nav-bg:rgba(250,248,242,.96);
   --overlay:rgba(10,20,15,.45);
   --shadow:0 8px 24px rgba(20,40,30,.12);
 }

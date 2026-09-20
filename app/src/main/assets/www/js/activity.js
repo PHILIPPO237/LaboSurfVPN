@@ -20,7 +20,6 @@ const SessionStore = {
 };
 
 const Activity = {
-  view: 'sessions',
   state: SessionStore.available() ? 'ready' : 'error',   // ready | loading | error
   sessions: SessionStore.load(),         // { server, ts (fin de session / tentative), seconds, ok }
   log: [],                               // { ts, tag, key, params } — traduit à l'affichage
@@ -35,7 +34,7 @@ const Activity = {
 function logEvent(tag, key, params){
   Activity.log.unshift({ ts: Date.now(), tag, key, params });
   if(Activity.log.length > 200) Activity.log.pop(); // évite une liste sans fin lors d'un usage prolongé
-  renderActivity();
+  renderLogs();
 }
 
 function fmtDayLabel(ts){
@@ -94,29 +93,59 @@ function renderSessions(){
 }
 
 function renderActivity(){
-  const view = Activity.view;
-  $('actSessions').hidden = view !== 'sessions';
-  $('actLog').hidden = view !== 'log';
-  document.querySelectorAll('#segActivity button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === view)));
-
   renderSessions();
+  $('actClearRow').hidden = !(Activity.state === 'ready' && Activity.sessions.length);
+  $('actLocalNote').hidden = Activity.state !== 'ready' || !Activity.sessions.length;
+  $('actPrimer').hidden = Activity.state !== 'ready' || Activity.sessions.length > 0;   // mode d'emploi tant qu'aucune session n'existe
+}
 
-  const feed = $('logFeed');
-  feed.innerHTML = Activity.log.length
+// Écran « Journal et cache » : événements de la session en cours (en mémoire, 200 max)
+// Informations de diagnostic : uniquement des valeurs réellement lues dans l'application (rien n'est inventé)
+function diagRows(){
+  const online = navigator.onLine !== false;
+  const srv = { idle: 'diag.srv.idle', loading: 'diag.srv.loading', error: 'diag.srv.error' }[Servers.state];
+  return [
+    ['diag.version', $('appVersion').textContent || '—'],
+    ['diag.env', t(isNativeApp() ? 'diag.envApp' : 'diag.envBrowser')],
+    ['diag.lang', I18N.lang === 'fr' ? 'Français' : 'English'],
+    ['diag.theme', t(Theme.resolved() === 'dark' ? 'set.themeDark' : 'set.themeLight')],
+    ['diag.account', t(authToken ? 'diag.signedIn' : 'diag.signedOut')],
+    ['diag.vpn', t('pill.' + VPN.state)],
+    ['diag.servers', srv ? t(srv) : tn('srv.summary', Servers.list.filter((x) => x.available).length, { total: Servers.list.length })],
+    ['diag.network', t(online ? 'diag.online' : 'diag.offline')],
+  ].map(([k, v]) => [t(k), v]);
+}
+function renderDiag(){
+  $('diagCard').innerHTML = diagRows().map(([k, v]) => `<div class="info-row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('');
+}
+
+// « Copier le rapport » : diagnostic + journal, en texte, pour le support. Aucun identifiant, jeton ni configuration n'y figure.
+Actions.copyReport = async () => {
+  const lines = ['Labo Surf — ' + t('diag.title'), ...diagRows().map(([k, v]) => k + ' : ' + v), '', t('act.logTitle')];
+  Activity.log.slice().reverse().forEach((l) => lines.push(new Date(l.ts).toLocaleTimeString(I18N.locale(), { hour12: false }) + '  ' + t('log.tag.' + l.tag) + '  ' + t(l.key, l.params)));
+  if(!Activity.log.length) lines.push(t('act.logEmpty'));
+  const text = lines.join('\n');
+  let ok = false;
+  try{ if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); ok = true; } }catch(e){}
+  if(!ok){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); ta.remove();
+    }catch(e){}
+  }
+  toast(t(ok ? 'diag.copied' : 'diag.copyFail'), ok ? 'success' : 'warning');
+};
+
+function renderLogs(){
+  renderDiag();
+  $('logFeed').innerHTML = Activity.log.length
     ? Activity.log.map((l) => `<div class="log-line"><span class="log-time">${esc(new Date(l.ts).toLocaleTimeString(I18N.locale(), { hour12: false }))}</span>
         <span class="log-tag ${esc(l.tag)}">${esc(t('log.tag.' + l.tag))}</span><span class="log-msg">${esc(t(l.key, l.params))}</span></div>`).join('')
     : `<div class="empty">${esc(t('act.logEmpty'))}</div>`;
-
-  const isSessions = view === 'sessions';
-  const canClear = Activity.state === 'ready' && (isSessions ? Activity.sessions.length : Activity.log.length);
-  $('actClearRow').hidden = !canClear;
-  $('actLocalNote').hidden = !isSessions || Activity.state !== 'ready' || !Activity.sessions.length;
-  const label = $('actClearRow').querySelector('span');
-  label.setAttribute('data-i18n', isSessions ? 'act.clearSessions' : 'act.clearLog');
-  label.textContent = t(isSessions ? 'act.clearSessions' : 'act.clearLog');
+  $('logClearRow').hidden = !Activity.log.length;
 }
 
-Actions.setActivityView = (el) => { Activity.view = el.dataset.value; renderActivity(); };
 Actions.retryActivity = () => {
   Activity.state = SessionStore.available() ? 'ready' : 'error';
   if(Activity.state === 'ready') Activity.sessions = SessionStore.load();
@@ -124,16 +153,34 @@ Actions.retryActivity = () => {
 };
 
 Actions.clearActivity = async () => {
-  const sessions = Activity.view === 'sessions';
-  const ok = await confirmDialog({
-    title: t(sessions ? 'act.clearSessionsTitle' : 'act.clearLogTitle'),
-    message: t(sessions ? 'act.clearSessionsText' : 'act.clearLogText'),
-    confirm: t('common.delete'), danger: true,
-  });
+  const ok = await confirmDialog({ title: t('act.clearSessionsTitle'), message: t('act.clearSessionsText'), confirm: t('common.delete'), danger: true });
   if(!ok) return;
-  if(sessions){ Activity.sessions = []; SessionStore.save([]); } else Activity.log = [];
+  Activity.sessions = []; SessionStore.save([]);
   renderActivity();
   toast(t('act.cleared'), 'success');
 };
 
-document.addEventListener('langchange', renderActivity);
+Actions.clearLog = async () => {
+  const ok = await confirmDialog({ title: t('act.clearLogTitle'), message: t('act.clearLogText'), confirm: t('common.delete'), danger: true });
+  if(!ok) return;
+  Activity.log = [];
+  renderLogs();
+  toast(t('act.cleared'), 'success');
+};
+
+// Vider le cache : fichiers d'interface mis en cache (Cache Storage / service worker) et cache web de l'application Android
+// (pont natif), puis rechargement. Le compte, les réglages et l'historique local ne sont PAS touchés.
+// Refusé pendant une connexion VPN : le rechargement remet l'affichage à zéro.
+Actions.clearCache = async () => {
+  if(VPN.state !== 'off' && VPN.state !== 'error'){ toast(t('cache.vpnActive'), 'warning'); return; }
+  const ok = await confirmDialog({ title: t('cache.confirmTitle'), message: t('cache.confirmText'), confirm: t('cache.confirm') });
+  if(!ok) return;
+  try{ if(window.caches){ const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); } }catch(e){}
+  try{ if(navigator.serviceWorker){ const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map((r) => r.unregister())); } }catch(e){}
+  try{ if(isNativeApp() && typeof window.LaboSurfNative.clearWebCache === 'function') window.LaboSurfNative.clearWebCache(); }catch(e){}
+  try{ sessionStorage.setItem('ls.cacheCleared', '1'); }catch(e){}
+  location.reload();
+};
+
+document.addEventListener('langchange', () => { renderActivity(); renderLogs(); });
+document.addEventListener('themechange', renderLogs);
