@@ -2,9 +2,32 @@
 // Met en cache l'interface pour qu'elle s'ouvre meme sans reseau.
 // Ne gere PAS le tunnel VPN (ca, ce sera du code natif Android plus tard).
 
-const CACHE_NAME = "labo-surf-v44";
+const CACHE_NAME = "labo-surf-v51";
 const ASSETS = [
   "./index.html",
+  "./css/tokens.css",
+  "./css/base.css",
+  "./css/components.css",
+  "./css/screens.css",
+  "./js/theme.js",
+  "./js/i18n.js",
+  "./js/lang/fr.js",
+  "./js/lang/en.js",
+  "./js/core.js",
+  "./js/brand.js",
+  "./js/api.js",
+  "./js/servers.js",
+  "./js/services.js",
+  "./js/vpn.js",
+  "./js/account.js",
+  "./js/reseller.js",
+  "./js/activity.js",
+  "./js/settings.js",
+  "./js/banner.js",
+  "./js/guide.js",
+  "./js/onboarding.js",
+  "./js/emoji.js",
+  "./js/app.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -38,3 +61,5 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+
+

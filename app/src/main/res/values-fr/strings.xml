@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">Labo Surf</string>
     <string name="notif_channel">Labo Surf VPN</string>
-    <string name="notif_active">Secure connection active</string>
+    <string name="notif_active">Connexion sécurisée active</string>
 </resources>

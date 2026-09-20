@@ -33,6 +33,13 @@ class LaboVpnService : VpnService() {
         const val ACTION_START = "com.philippo237.labosurf.START"
         const val ACTION_STOP = "com.philippo237.labosurf.STOP"
         const val EXTRA_CONFIG = "server_config_json"
+
+        /**
+         * Passe à true UNIQUEMENT quand le moteur (Xray) est réellement branché dans startTunnel().
+         * Tant que c'est false, l'application n'annonce jamais « connecté » : un tunnel qui capte
+         * toute la circulation sans la transporter couperait Internet et afficherait un faux état.
+         */
+        const val ENGINE_INTEGRATED = false
         private const val NOTIF_CHANNEL_ID = "labo_surf_vpn"
         private const val NOTIF_ID = 1
 
@@ -72,6 +79,13 @@ class LaboVpnService : VpnService() {
 
     private fun startTunnel(serverConfigJson: String?) {
         startForeground(NOTIF_ID, buildNotification())
+        if (!ENGINE_INTEGRATED) {
+            // Aucun moteur : on signale l'erreur (code traduit côté interface) sans créer de tunnel.
+            stateListener?.invoke("error", "engine_unavailable")
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
         try {
             // ─── 1. Etablissement de l'interface VPN Android (le "tube") ───
             val builder = Builder()
@@ -123,7 +137,7 @@ class LaboVpnService : VpnService() {
     private fun buildNotification(): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                NOTIF_CHANNEL_ID, "Labo Surf VPN", NotificationManager.IMPORTANCE_LOW
+                NOTIF_CHANNEL_ID, getString(R.string.notif_channel), NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -134,10 +148,11 @@ class LaboVpnService : VpnService() {
         )
         return NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
             .setContentTitle("Labo Surf")
-            .setContentText("Connexion sécurisée active")
+            .setContentText(getString(R.string.notif_active))
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setContentIntent(openAppIntent)
             .setOngoing(true)
             .build()
     }
 }
+

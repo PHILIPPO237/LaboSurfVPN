@@ -1,0 +1,44 @@
+/* ==========================================================================
+   Base : reset, structure de l'application (écran + barre d'onglets), animations
+   ========================================================================== */
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+[hidden]{ display:none !important; }
+html,body{ margin:0; height:100%; }
+body{
+  background:var(--bg); color:var(--text);
+  font-family:var(--font-body); font-size:var(--fs-md); line-height:1.45;
+  -webkit-font-smoothing:antialiased; overscroll-behavior:none;
+}
+body::before{ content:''; position:fixed; inset:0; background:var(--bg-glow); pointer-events:none; }
+h1,h2,h3,p{ margin:0; }
+button,input,select,textarea{ font:inherit; color:inherit; }
+a{ color:inherit; }
+
+/* Structure : [ rail de navigation latéral (fixe) ] + [ écrans (scroll) ] + [ bandeau d'expiration ] */
+.app{
+  --rail-btn:52px; --rail-left:14px; --rail-gap:11px; --rail-n:4;
+  position:relative; display:flex; flex-direction:column;
+  height:100vh; height:100dvh; max-width:var(--maxw); margin:0 auto;
+  padding-top:env(safe-area-inset-top);
+}
+.screens{ flex:1; min-height:0; position:relative; }
+.screen{
+  display:none; position:absolute; inset:0; overflow-x:hidden; overflow-y:auto;
+  padding:var(--sp-5) var(--sp-4) var(--sp-6) calc(var(--rail-left) + var(--rail-btn) + 22px); -webkit-overflow-scrolling:touch;
+}
+/* Rail adaptatif : tailles décroissantes selon l'écran, mêmes boutons partout (aucun n'est retiré).
+   Cible tactile minimale 44 px sur les petits écrans. */
+@media (max-height:760px){ .app{ --rail-btn:48px; --rail-gap:8px; } }
+@media (max-height:640px), (max-width:370px){ .app{ --rail-btn:44px; --rail-gap:6px; --rail-left:10px; } .screen{ padding-right:var(--sp-3); } }
+@media (max-width:340px){ .app{ --rail-left:8px; } }
+.screen.active{ display:block; animation:screenIn var(--dur) var(--ease); }
+
+@keyframes screenIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+@keyframes shimmer{ 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+
+/* Accessibilité : focus visible au clavier / lecteur d'écran, mouvement réduit */
+:focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}

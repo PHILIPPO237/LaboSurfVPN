@@ -10,6 +10,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 
 /**
  * MainActivity heberge l'interface Labo Surf (index.html, deja construite et
@@ -32,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         if (result.resultCode == RESULT_OK) {
             LaboVpnService.start(this, pendingServerConfig)
         } else {
-            notifyWeb("error", "Permission VPN refusée")
+            notifyWeb("error", "vpn_permission_denied") // code traduit cote interface (js/vpn.js)
         }
         pendingServerConfig = null
     }
@@ -85,8 +86,10 @@ class MainActivity : AppCompatActivity() {
     /** Renvoie l'etat du tunnel vers le JS (window.onNativeVpnState(...)) */
     private fun notifyWeb(state: String, detail: String?) {
         runOnUiThread {
-            val safeDetail = (detail ?: "").replace("'", "\\'")
-            webView.evaluateJavascript("window.onNativeVpnState('$state', '$safeDetail')", null)
+            // JSONObject.quote produit un litteral JS correctement echappe (guillemets, retours a la ligne...)
+            val jsState = org.json.JSONObject.quote(state)
+            val jsDetail = org.json.JSONObject.quote(detail ?: "")
+            webView.evaluateJavascript("window.onNativeVpnState($jsState, $jsDetail)", null)
         }
     }
 
@@ -97,7 +100,13 @@ class MainActivity : AppCompatActivity() {
     inner class NativeBridge {
         @JavascriptInterface
         fun startVpn(serverConfigJson: String) {
-            Log.d(TAG, "startVpn appele depuis le JS : $serverConfigJson")
+            // Ne jamais journaliser la configuration : elle contient les identifiants de connexion de l'utilisateur.
+            Log.d(TAG, "startVpn appele depuis le JS (${serverConfigJson.length} caracteres)")
+            if (!LaboVpnService.ENGINE_INTEGRATED) {
+                // Inutile de demander l'autorisation VPN au système si aucun moteur ne peut transporter le trafic.
+                notifyWeb("error", "engine_unavailable")
+                return
+            }
             val intent = VpnService.prepare(this@MainActivity)
             if (intent != null) {
                 // Premiere utilisation (ou permission revoquee) : Android doit
@@ -116,6 +125,39 @@ class MainActivity : AppCompatActivity() {
             LaboVpnService.stop(this@MainActivity)
         }
 
+        /** Ouvre les reglages VPN d'Android (VPN permanent, blocage des connexions hors VPN = kill switch). */
+        @JavascriptInterface
+        fun openVpnSettings() {
+            runOnUiThread {
+                try {
+                    startActivity(Intent(android.provider.Settings.ACTION_VPN_SETTINGS))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Impossible d'ouvrir les reglages VPN", e)
+                }
+            }
+        }
+
+        /** Version affichee dans Reglages > Application. */
+        @JavascriptInterface
+        fun getAppVersion(): String = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+
+        /** Aligne barre d'etat / de navigation Android sur le theme de l'interface (js/theme.js). */
+        @JavascriptInterface
+        fun setSystemBars(dark: Boolean) {
+            runOnUiThread {
+                val color = android.graphics.Color.parseColor(if (dark) "#000000" else "#F3F6F4")
+                window.statusBarColor = color
+                window.navigationBarColor = color
+                webView.setBackgroundColor(color)
+                val controller = WindowCompat.getInsetsController(window, webView)
+                controller.isAppearanceLightStatusBars = !dark
+                controller.isAppearanceLightNavigationBars = !dark
+            }
+        }
         @JavascriptInterface
         fun getDeviceId(): String {
             // Identifiant d'appareil stable (survit a la desinstallation/reinstallation
@@ -134,7 +176,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Retour Android : l'interface gere d'abord (fermer un dialogue, revenir a l'accueil),
+     * sinon comportement par defaut (voir window.LaboBack dans js/app.js).
+     */
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
+        webView.evaluateJavascript("(window.LaboBack ? window.LaboBack() : false)") { handled ->
+            if (handled != "true") defaultBack()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun defaultBack() {
         if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
     }
 }
+
