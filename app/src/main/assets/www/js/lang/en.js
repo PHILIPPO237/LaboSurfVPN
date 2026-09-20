@@ -305,6 +305,9 @@ I18N.register('en', {
   'acc.photoUploadFailed': "Account created, but the photo could not be uploaded. You can change it from your profile.",
   'acc.photoUpdating': "Uploading photo…",
   'acc.photoUpdated': "Photo updated.",
+
+  // Signature
+  'sig.by': "A project powered by",
 });
 
 

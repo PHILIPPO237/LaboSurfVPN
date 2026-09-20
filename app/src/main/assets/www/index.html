@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/splash.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/screens.css">
@@ -20,6 +21,22 @@
 <script src="js/theme.js"></script>
 </head>
 <body>
+
+<!-- Animation d'ouverture (css/splash.css, js/splash.js) : décorative, se retire seule, un tap la passe -->
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="sp-stage">
+    <i class="sp-glow"></i><i class="sp-ring"></i><i class="sp-ring sp-ring-2"></i>
+    <svg class="sp-logo" viewBox="0 0 200 200" focusable="false">
+      <polygon class="sp-hex" points="100,8 180,54 180,146 100,192 20,146 20,54"/>
+      <g class="sp-key"><g transform="rotate(-32 100 102)">
+        <polygon points="62,80 82,68 102,80 102,104 82,116 62,104"/><circle cx="82" cy="92" r="6"/>
+        <path d="M102,92 L155,92 M138,92 L138,108 M148,92 L148,104"/>
+      </g></g>
+    </svg>
+  </div>
+  <div class="sp-title"><span class="sp-labo">LABO</span><span class="sp-surf">SURF</span></div>
+  <div class="sp-sub"><span class="sp-sub-g">Laboratoire</span><span class="sp-sub-w">du Free-Surf</span></div></div>
+<script src="js/splash.js"></script>
 
 <!-- Sprite d'icônes (une seule définition, réutilisée partout via <use>) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -194,7 +211,7 @@
             </div>
             <div class="bn-dots" id="homeBannerDots" aria-hidden="true" hidden></div>
           </div>
-          <div class="credit">Powered by Philippo</div>
+          <div class="sig sig-home"><i class="sig-rule"></i><div class="sig-org"><span class="sig-g">Laboratoire</span> <span class="sig-w">du Free-Surf</span></div><div class="sig-credit"><span class="sig-by" data-i18n="sig.by"></span> <b class="sig-name">Philippo</b></div><i class="sig-rule"></i></div>
         </div>
       </div>
     </section>
@@ -589,7 +606,7 @@
         <button class="row" type="button" data-action="openLegal" data-value="privacy"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-lock"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.privacy"></div></div><span class="row-tail" data-legal-tail="privacy"></span></button>
       </div>
 
-      <div class="credit about-credit">Powered by Philippo</div>
+      <div class="sig sig-about"><i class="sig-rule"></i><div class="sig-org"><span class="sig-g">Laboratoire</span> <span class="sig-w">du Free-Surf</span></div><div class="sig-credit"><span class="sig-by" data-i18n="sig.by"></span> <b class="sig-name">Philippo</b></div><i class="sig-rule"></i></div>
     </section>
 
     <!-- ===================== RÉGLAGES ===================== -->
@@ -659,6 +676,7 @@
         <button class="row" type="button" data-action="openLegal" data-value="terms"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-file"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.terms"></div></div><span class="row-tail" data-legal-tail="terms"></span></button>
         <button class="row" type="button" data-action="openLegal" data-value="privacy"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-lock"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.privacy"></div></div><span class="row-tail" data-legal-tail="privacy"></span></button>
       </div>
+      <div class="sig sig-settings"><i class="sig-rule"></i><div class="sig-org"><span class="sig-g">Laboratoire</span> <span class="sig-w">du Free-Surf</span></div><div class="sig-credit"><span class="sig-by" data-i18n="sig.by"></span> <b class="sig-name">Philippo</b></div><i class="sig-rule"></i></div>
     </section>
 
   </main>

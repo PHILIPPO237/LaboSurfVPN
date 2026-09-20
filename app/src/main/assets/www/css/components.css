@@ -504,3 +504,25 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
   .avatar-picker-actions{ width:100%; }
   .avatar-picker .btn-row{ justify-content:center; }
 }
+
+/* ---------- Signature du projet (modèle « Générique de film ») : structure + « propulsé par Philippo » ----------
+   LABORATOIRE en vert, DU FREE-SURF en blanc (encre du thème), double filet et nom en doré. Même composant partout
+   (accueil, réglages, à propos, animation d'ouverture). */
+.sig{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+.sig-rule{ display:block; width:110px; height:4px; border-top:1px solid var(--gold); border-bottom:1px solid var(--gold); }
+.sig-org{ font:700 clamp(10px, 3.3vw, 12.5px)/1.2 var(--font-display); letter-spacing:.16em; text-transform:uppercase; }
+.sig-g{ color:var(--brand); }
+.sig-w{ color:var(--text); }
+.sig-credit{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+.sig-by{ font:500 9.5px/1.2 var(--font-mono); letter-spacing:.24em; text-transform:uppercase; color:var(--text-muted, var(--text-faint)); }
+.sig-name{ font:700 17px/1.1 var(--font-display); letter-spacing:.32em; padding-left:.32em; text-transform:uppercase; color:var(--gold); }
+.sig-about, .sig-settings{ margin:var(--sp-5) 0 var(--sp-2); }
+.sig-home{ margin-top:2px; }
+.sig-home .sig-rule{ width:90px; }
+/* Écrans courts : version en ligne, sans filets, pour laisser la place à la bannière */
+@media (max-height:700px){
+  .sig-home{ gap:3px; }
+  .sig-home .sig-rule{ display:none; }
+  .sig-home .sig-credit{ flex-direction:row; gap:.6em; align-items:baseline; }
+  .sig-home .sig-name{ font-size:13px; }
+}

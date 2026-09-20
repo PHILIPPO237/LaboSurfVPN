@@ -10,13 +10,13 @@
 .home-help{ position:absolute; top:var(--sp-3); right:var(--sp-3); z-index:var(--z-help); }
 .hero-brand{ text-align:center; }
 .hexagon{ width:var(--hex); height:var(--hex); margin:0 auto; }
-.hexagon svg{ width:100%; height:100%; filter:drop-shadow(0 0 20px var(--brand-glow)); transition:filter .6s ease; }
-.hexagon polygon:first-child{ fill:var(--bg); }
-.hex-key *{ stroke:var(--brand); }
-.hex-key circle{ fill:var(--brand); stroke:none; }
-.hexagon polygon:first-child{ stroke:var(--brand); }
+.hexagon svg{ width:100%; height:100%; filter:drop-shadow(0 0 20px var(--logo-glow)); transition:filter .6s ease; }
+.hexagon polygon:first-child{ fill:var(--logo-fill); }
+.hex-key *{ stroke:var(--logo-line); }
+.hex-key circle{ fill:var(--logo-line); stroke:none; }
+.hexagon polygon:first-child{ stroke:var(--logo-line); }
 .hero-brand.on .hexagon svg{ animation:logoGlow 2.6s ease-in-out infinite; }
-@keyframes logoGlow{ 0%,100%{ filter:drop-shadow(0 0 18px var(--brand-glow)); } 50%{ filter:drop-shadow(0 0 34px var(--brand-glow)); } }
+@keyframes logoGlow{ 0%,100%{ filter:drop-shadow(0 0 18px var(--logo-glow)); } 50%{ filter:drop-shadow(0 0 34px var(--logo-glow)); } }
 .app-title{ font:800 32px/1.1 var(--font-display); letter-spacing:.03em; margin-top:8px; text-shadow:0 0 18px var(--brand-glow); }
 .app-title .g{ color:var(--brand); }
 .app-title .badge-pro{ vertical-align:middle; font-size:10px; }
@@ -114,7 +114,6 @@
   margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 22px) + var(--sp-4)); }
 .home-foot.is-inset{ margin-left:0; }   /* écran trop court : le rail descendrait jusqu'à la bannière, on la garde à côté */
 .home-foot .banner-card{ flex:1 1 auto; min-height:0; margin-bottom:var(--sp-2); }
-.credit{ font:700 13px/1.4 var(--font-display); color:var(--gold); text-shadow:0 0 12px var(--gold-soft); margin-top:4px; }
 
 /* ---------- Bannière premium (annonces du panel + contenu par défaut) ----------
    .banner-card = cadre (bordure, relief) · .bn-fx = décor animé · .bn-body = contenu défilable · .bn-dots = indicateur (futur) */
@@ -365,4 +364,3 @@
 .about-p{ margin:0; font-size:var(--fs-sm); line-height:1.65; color:var(--text-muted); }
 .chain-arrow{ display:flex; justify-content:center; padding:1px 0; color:var(--brand); border-bottom:1px solid var(--border); }
 .chain-arrow .ic{ width:16px; height:16px; }
-.about-credit{ text-align:center; margin:var(--sp-4) 0 var(--sp-2); }

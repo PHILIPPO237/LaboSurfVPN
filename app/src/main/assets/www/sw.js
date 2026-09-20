@@ -6,10 +6,12 @@ const CACHE_NAME = "labo-surf-v51";
 const ASSETS = [
   "./index.html",
   "./css/tokens.css",
+  "./css/splash.css",
   "./css/base.css",
   "./css/components.css",
   "./css/screens.css",
   "./js/theme.js",
+  "./js/splash.js",
   "./js/i18n.js",
   "./js/lang/fr.js",
   "./js/lang/en.js",

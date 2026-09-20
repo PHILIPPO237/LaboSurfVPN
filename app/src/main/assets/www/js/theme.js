@@ -1,4 +1,4 @@
-// Thème : "system" (suit Android), "light" ou "dark". Chargé dans <head> pour éviter
+// Thème : "dark" par défaut (identité de l'app), ou "system" (suit Android) / "light" au choix de la personne. Chargé dans <head> pour éviter
 // tout flash au démarrage. L'apparence elle-même vit dans css/tokens.css.
 (function(){
   var KEY = 'ls.theme';
@@ -6,7 +6,7 @@
 
   function read(){
     try{ var v = JSON.parse(localStorage.getItem(KEY)); if(v === 'light' || v === 'dark' || v === 'system') return v; }catch(e){}
-    return 'system';
+    return 'dark';                                        // aucun choix enregistré -> thème sombre
   }
   var pref = read();
 

@@ -305,6 +305,9 @@ I18N.register('fr', {
   'acc.photoUploadFailed': "Compte créé, mais la photo n'a pas pu être envoyée. Tu pourras la changer depuis ton profil.",
   'acc.photoUpdating': "Envoi de la photo…",
   'acc.photoUpdated': "Photo mise à jour.",
+
+  // Signature
+  'sig.by': "Un projet propulsé par",
 });
 
 

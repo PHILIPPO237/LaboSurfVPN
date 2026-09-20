@@ -1,0 +1,52 @@
+/* ==========================================================================
+   Animation d'ouverture : le contour de l'hexagone se dessine, la clé apparaît avec un éclat,
+   puis « LABO SURF » et « LABORATOIRE DU FREE-SURF » se révèlent. ~5,2 s au total (le logo complet reste affiché environ 3 s), un tap la passe.
+   Chargé en tête de page (rendu avant les scripts) ; se retire toute seule par CSS (spOut) même si le JS échoue.
+   Uniquement transform / opacity, sauf le tracé du contour (stroke-dashoffset, une seule forme).
+   Couleurs = jetons du thème (sombre / clair) ; « prefers-reduced-motion » la réduit à un simple fondu (base.css).
+   ========================================================================== */
+.splash{
+  position:fixed; inset:0; z-index:var(--z-splash, 1000);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  background:var(--bg); background-image:var(--bg-glow); cursor:pointer;
+  animation:spOut .45s ease 4.75s forwards;
+}
+.splash.is-skipped{ animation:spOut .22s ease forwards; }
+@keyframes spOut{ to{ opacity:0; visibility:hidden; transform:scale(1.04); } }
+
+.sp-stage{ position:relative; width:min(44vw, 168px); aspect-ratio:1; display:grid; place-items:center; margin-bottom:6px; }
+.sp-logo{ position:relative; width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 14px var(--logo-glow)); }
+
+/* Halo derrière le logo + deux ondes qui s'étendent quand la clé apparaît */
+.sp-glow{ position:absolute; inset:-34%; border-radius:50%; background:radial-gradient(circle, var(--logo-glow), transparent 62%);
+  opacity:0; transform:scale(.5); animation:spGlow 1.7s ease-out .25s forwards, spBreath 2.4s ease-in-out 1.95s infinite alternate; }
+@keyframes spBreath{ from{ opacity:.4; transform:scale(1.15); } to{ opacity:.75; transform:scale(1.24); } }   /* le halo respire pendant que le logo reste affiché */
+@keyframes spGlow{ 45%{ opacity:.95; transform:scale(1); } 100%{ opacity:.4; transform:scale(1.15); } }
+.sp-ring{ position:absolute; inset:2%; border-radius:50%; border:1.5px solid var(--logo-line); opacity:0; animation:spRing 1.8s ease-out .95s infinite; }
+.sp-ring-2{ animation-delay:1.85s; }
+@keyframes spRing{ 0%{ transform:scale(.7); opacity:.6; } 100%{ transform:scale(1.9); opacity:0; } }
+
+/* Contour : tracé progressif, puis remplissage */
+.sp-hex{ fill:var(--logo-fill); fill-opacity:0; stroke:var(--logo-line); stroke-width:3; stroke-linejoin:round; stroke-dasharray:560; stroke-dashoffset:560;
+  animation:spDraw .8s cubic-bezier(.6,.05,.2,1) .1s forwards, spFill .35s ease .75s forwards; }
+@keyframes spDraw{ to{ stroke-dashoffset:0; } }
+@keyframes spFill{ to{ fill-opacity:1; } }
+
+/* Clé : arrive en tournant, avec un léger rebond */
+.sp-key{ transform-box:fill-box; transform-origin:center; opacity:0; transform:scale(.4) rotate(-40deg); animation:spKey .6s cubic-bezier(.2,1.4,.4,1) .75s forwards; }
+.sp-key polygon, .sp-key path{ fill:none; stroke:var(--logo-line); stroke-width:8.5; stroke-linecap:round; stroke-linejoin:round; }
+.sp-key circle{ fill:var(--logo-line); stroke:none; }
+@keyframes spKey{ to{ opacity:1; transform:none; } }
+
+/* Textes : LABO (blanc) puis SURF (vert), puis la ligne « Laboratoire du Free-Surf » */
+.sp-title{ display:flex; gap:.32em; font:800 34px/1 var(--font-display); letter-spacing:.04em; }
+.sp-title span{ opacity:0; transform:translateY(16px); animation:spUp .55s var(--ease) forwards; }
+.sp-labo{ color:var(--text); animation-delay:.95s !important; }
+.sp-surf{ color:var(--brand); text-shadow:0 0 18px var(--brand-glow); animation-delay:1.08s !important; }
+@keyframes spUp{ to{ opacity:1; transform:none; } }
+.sp-sub{ display:flex; gap:.4em; font:600 12px/1.3 var(--font-body); letter-spacing:.1em; text-transform:uppercase; opacity:0; animation:spFade .6s ease 1.3s forwards; }
+.sp-sub-g{ color:var(--brand); font-weight:700; }
+.sp-sub-w{ color:var(--text); }
+@keyframes spFade{ to{ opacity:1; } }
+
+@media (max-height:520px){ .splash{ gap:8px; } .sp-stage{ width:96px; } .sp-title{ font-size:26px; } }

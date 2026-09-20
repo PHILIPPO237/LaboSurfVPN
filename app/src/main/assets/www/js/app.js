@@ -56,6 +56,7 @@ function renderRailMinis(){
 // Bouton retour Android (appelé par MainActivity.onBackPressed) : renvoie true si l'app l'a géré.
 // Ordre : présentation, dialogue, guide, sous-écran du compte, sous-écran d'un parent, puis retour à l'accueil.
 window.LaboBack = function(){
+  if(!Splash.isDone()){ Splash.skip(); return true; }   // animation d'ouverture : le retour la passe
   if(Onboarding.isOpen()){ Onboarding.finish(); return true; }
   if(!$('dialogBackdrop').hidden){ closeDialog(false); return true; }
   if(Guide.isOpen()){ Guide.close(); return true; }
@@ -76,7 +77,7 @@ if(PREVIEW && !isNativeApp()) $('previewRibbon').hidden = false;
 loadHomeBanner();
 setInterval(loadHomeBanner, 5 * 60 * 1000);   // rafraîchi toutes les 5 min
 setTimeout(fitHomeScreen, 300);               // filet de sécurité : polices / images finissent de charger
-Onboarding.maybeStart();                      // première ouverture seulement (passable)
+Splash.whenDone(() => Onboarding.maybeStart());                      // première ouverture seulement (passable)
 
 // Service worker (installation PWA / hors-ligne) : sans effet dans la WebView native
 if('serviceWorker' in navigator){

@@ -102,6 +102,9 @@
 /* ---------- Jetons complémentaires (identiques dans les deux thèmes : ils référencent les jetons ci-dessus) ----------
    États de connexion : une seule source de couleur pour l'accueil, l'historique, les pastilles et le guide. */
 :root{
+  /* Logo : toujours la version sombre (hexagone noir, contour vert néon), quel que soit le thème */
+  --logo-fill:#000000; --logo-line:#39ff6a; --logo-glow:rgba(57,255,106,.38);
+
   --state-idle:var(--text);          /* prêt / déconnecté : neutre, jamais rouge (ce n'est pas une erreur) */
   --state-busy:var(--gold);          /* connexion / déconnexion en cours */
   --state-on:var(--brand);           /* connecté */
@@ -113,5 +116,5 @@
   --ring:0 0 0 3px var(--brand-soft);
 
   /* Couches (z-index) : ne jamais inventer de valeur ailleurs */
-  --z-nav:20; --z-help:25; --z-toast:300; --z-sheet:350; --z-dialog:400;
+  --z-nav:20; --z-help:25; --z-toast:300; --z-sheet:350; --z-dialog:400; --z-splash:1000;
 }
