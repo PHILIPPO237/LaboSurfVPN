@@ -11,7 +11,7 @@
     // Menus (lignes cliquables)
     'nav.servers': '🖥️', 'nav.community': '🌍',
     'acc.menu.access': '🎫', 'acc.menu.messages': '💬', 'acc.menu.history': '🕘', 'acc.menu.security': '🔐',
-    'acc.menu.prefs': '⚙️', 'acc.menu.help': '💡', 'acc.menu.reseller': '🤝',
+    'acc.menu.prefs': '⚙️', 'acc.menu.panel': '🌐', 'acc.menu.help': '💡', 'acc.menu.reseller': '🤝',
     'set.help': '💡', 'assistant.title': '🤖', 'set.replayIntro': '🎬',
     'set.language': '🌐', 'set.theme': '🎨', 'set.notifExpiry': '⏰', 'set.vpnSystem': '🛡️',
     'set.group': '👥', 'set.channel': '📢', 'set.developer': '💻',

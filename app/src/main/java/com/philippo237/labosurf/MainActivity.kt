@@ -137,6 +137,29 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /**
+         * Capacites REELLES du moteur natif, lues par js/vpn.js AVANT tout appel au backend :
+         * { "integrated": bool, "protocols": ["tuic", ...] }. Tant que le moteur n'est pas branche
+         * (LaboVpnService.ENGINE_INTEGRATED = false), l'interface ne demande aucune configuration au panel
+         * (un tel appel cree un Access et peut consommer l'essai de l'appareil) et n'annonce jamais « connecte ».
+         */
+        @JavascriptInterface
+        fun getEngineInfo(): String {
+            val protocols = org.json.JSONArray()
+            LaboVpnService.SUPPORTED_PROTOCOLS.forEach { protocols.put(it) }
+            return org.json.JSONObject()
+                .put("integrated", LaboVpnService.ENGINE_INTEGRATED)
+                .put("protocols", protocols)
+                .toString()
+        }
+
+        /**
+         * Adresse de l'API du Laboratoire du Free-Surf, fixee A LA COMPILATION (BuildConfig.PANEL_BASE_URL,
+         * voir app/build.gradle.kts). Le contenu web ne peut pas la remplacer. HTTPS obligatoire (js/contract.js).
+         */
+        @JavascriptInterface
+        fun getApiBase(): String = BuildConfig.PANEL_BASE_URL
+
         /** Version affichee dans Reglages > Application. */
         @JavascriptInterface
         fun getAppVersion(): String = try {

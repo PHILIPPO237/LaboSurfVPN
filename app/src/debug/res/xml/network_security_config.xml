@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VERSION DEBUG SEULEMENT (remplace le fichier de src/main) : autorise le HTTP en clair vers la boucle locale
+  (panel de developpement sur le telephone ou l'emulateur). Toute autre adresse reste en HTTPS obligatoire.
+  Ce fichier n'est jamais inclus dans une version release.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

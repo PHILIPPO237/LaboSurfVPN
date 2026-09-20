@@ -51,16 +51,22 @@ function renderAccountCard(acc){
   $('proBadgeAcc').hidden = !pro;
   $('proBadgeHome').hidden = !pro;
   $('accResellerRow').hidden = !(acc.plan === 'revendeur' || acc.plan === 'admin');
+  $('accPanelRow').hidden = !API.state.ok;   // point d'accès aux fonctions avancées (paiement, offres…) : le Laboratoire du Free-Surf
 
   // Jours restants
   const hasDays = acc.daysLeft !== null;
   $('daysGaugeBlock').hidden = !hasDays;
   if(hasDays){
-    const pct = Math.max(0, Math.min(100, Math.round((acc.daysLeft / (acc.graceDays + 25)) * 100)));
-    $('accGaugeFill').style.width = pct + '%';
-    $('accGaugeFill').className = 'gauge-fill ' + gaugeClass(pct);
+    // Pourcentage RÉEL seulement : jours restants / durée de l'abonnement (started_at -> expires_at, fournis par le panel).
+    // Sans date de début, on n'invente pas de durée de référence : seuls les jours restants s'affichent, sans jauge.
+    const pct = acc.totalDays ? Math.max(0, Math.min(100, Math.round((acc.daysLeft / acc.totalDays) * 100))) : null;
+    $('accGaugeFill').parentNode.hidden = pct === null;
+    if(pct !== null){
+      $('accGaugeFill').style.width = pct + '%';
+      $('accGaugeFill').className = 'gauge-fill ' + gaugeClass(pct);
+    }
     $('accGaugeLabel').textContent = tn('acc.daysLeft', acc.daysLeft);
-    $('accGaugePct').textContent = pct + '%';
+    $('accGaugePct').textContent = pct === null ? '' : pct + '%';
   }
 
   // Quota : jauge seulement si l'API fournit la consommation réelle (jamais de chiffre inventé)
@@ -106,6 +112,9 @@ Actions.dismissExpiry = () => {
   $('expiryBanner').hidden = true;
   try{ localStorage.setItem('expiryBannerDismissedOn', new Date().toDateString()); }catch(e){}
 };
+// « Continuer sur le Laboratoire du Free-Surf » : ouvre le site du panel (navigateur du téléphone) pour tout ce qui n'a pas sa place
+// dans l'application VPN — paiement, offres, gestion avancée. Même adresse que l'API (voir ApiBase) ; jamais d'identifiant dans l'adresse.
+Actions.openPanel = () => { if(API.state.ok) openExternal(API.state.base + '/'); };
 // Ouvre directement la carte de renouvellement du Compte (sans masquer le bandeau d'expiration)
 Actions.openRenewal = () => {
   showScreen('account');
@@ -117,6 +126,14 @@ Actions.renewFromBanner = () => {
   setTimeout(() => { const c = $('renewalCard'); if(c) c.scrollIntoView({ behavior: 'smooth' }); }, 150);
 };
 
+// Durée totale de l'abonnement en jours (début et fin fournis par le panel), sinon null
+function subscriptionTotalDays(startedAt, expIso){
+  if(!startedAt || !expIso) return null;
+  const start = new Date(String(startedAt).slice(0, 10) + 'T00:00:00'), end = new Date(String(expIso).slice(0, 10) + 'T23:59:59');
+  if(isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return null;
+  return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000));
+}
+
 // ─── Chargement du compte réel ───
 function accountFromApi(me, sub, fallbackName){
   const plan = planKeyFromType(me.type);
@@ -127,6 +144,7 @@ function accountFromApi(me, sub, fallbackName){
     avatar: me.avatar || '',
     plan,
     daysLeft: plan === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
+    totalDays: plan === 'gratuit' ? null : subscriptionTotalDays(sub && sub.started_at, expiresAt),   // null = inconnue (jamais inventée)
     graceDays: 3,
     quotaGB: (me.quota_gb !== undefined && me.quota_gb !== null) ? Number(me.quota_gb) : null,
     quotaUsedGB: used,
@@ -157,6 +175,14 @@ async function afterAuth(username){
   Account.pollTimer = setInterval(pollAccountSignals, 20000);
 }
 
+// Durée de la session : « expires_in » (secondes) renvoyé par le panel à la connexion. Absent = inconnue (jamais inventée).
+function sessionExpiryFrom(data){
+  const n = data && typeof data.expires_in === 'number' && isFinite(data.expires_in) && data.expires_in > 0 ? data.expires_in : null;
+  return n === null ? null : Date.now() + n * 1000;
+}
+// Le jeton est encore valable d'après le panel ? (le panel reste juge : un 401 déconnecte de toute façon)
+const sessionStillValid = () => !!authToken && (authExpiresAt === null || Date.now() < authExpiresAt);
+
 // ─── Connexion / inscription ───
 Actions.togglePw = (btn) => {
   const input = $(btn.dataset.target);
@@ -178,6 +204,7 @@ Actions.login = async () => {
       return;
     }
     authToken = login.data.token;
+    authExpiresAt = sessionExpiryFrom(login.data);
     await afterAuth(u);
     $('accPassword').value = '';
   }catch(e){
@@ -204,6 +231,7 @@ Actions.register = async () => {
       return;
     }
     authToken = reg.data.token;
+    authExpiresAt = sessionExpiryFrom(reg.data);
     toast(t('acc.created'), 'success');
     // Photo facultative : envoyée avec l'API existante (POST /api/user/profile/avatar-upload), jeton du compte tout juste créé.
     // Un échec ne remet pas en cause le compte : il est déjà créé, la photo pourra être ajoutée depuis le profil.
@@ -388,6 +416,7 @@ Actions.accBack = () => setAccView('menu');
 // ─── Déconnexion du compte / session expirée ───
 function resetToLoggedOut(){
   authToken = null;
+  authExpiresAt = null;
   Account.last = null;
   clearInterval(Account.pollTimer);
   Account.unreadMessages = 0; Account.unreadAnnouncements = 0;

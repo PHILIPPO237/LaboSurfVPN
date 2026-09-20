@@ -40,6 +40,22 @@ class LaboVpnService : VpnService() {
          * toute la circulation sans la transporter couperait Internet et afficherait un faux état.
          */
         const val ENGINE_INTEGRATED = false
+
+        /**
+         * Protocoles (champ « protocol » de la configuration emise par PRO : « tuic », « xray »...) que le moteur
+         * branche sait REELLEMENT transporter. Vide tant qu'aucun moteur n'est integre. Alimente
+         * MainActivity.getEngineInfo() ; une configuration dont le protocole n'y figure pas est refusee, jamais
+         * « adaptee » ni reconstruite cote Android.
+         */
+        val SUPPORTED_PROTOCOLS: List<String> = emptyList()
+
+        // Etats rapportes a l'interface (window.onNativeVpnState) : « connected » n'est emis QUE quand le tunnel
+        // transporte reellement le trafic (jamais par le squelette actuel).
+        const val STATE_CONNECTING = "connecting"
+        const val STATE_CONNECTED = "connected"
+        const val STATE_STOPPING = "stopping"
+        const val STATE_DISCONNECTED = "disconnected"
+        const val STATE_ERROR = "error"
         private const val NOTIF_CHANNEL_ID = "labo_surf_vpn"
         private const val NOTIF_ID = 1
 
@@ -81,11 +97,29 @@ class LaboVpnService : VpnService() {
         startForeground(NOTIF_ID, buildNotification())
         if (!ENGINE_INTEGRATED) {
             // Aucun moteur : on signale l'erreur (code traduit côté interface) sans créer de tunnel.
-            stateListener?.invoke("error", "engine_unavailable")
+            stateListener?.invoke(STATE_ERROR, "engine_unavailable")
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return
         }
+        // Configuration recue de l'interface : { name, proto, uri, format } — ne JAMAIS la journaliser (secrets).
+        val proto: String = try {
+            val cfg = org.json.JSONObject(serverConfigJson ?: "")
+            require(cfg.optString("uri").isNotBlank())
+            cfg.optString("proto").lowercase()
+        } catch (e: Exception) {
+            stateListener?.invoke(STATE_ERROR, "invalid_config")
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
+        if (proto !in SUPPORTED_PROTOCOLS) {
+            stateListener?.invoke(STATE_ERROR, "unsupported_protocol")
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
+        stateListener?.invoke(STATE_CONNECTING, null)
         try {
             // ─── 1. Etablissement de l'interface VPN Android (le "tube") ───
             val builder = Builder()
@@ -110,20 +144,21 @@ class LaboVpnService : VpnService() {
             // ne fait rien passer : c'est pour ca qu'on doit faire cette etape
             // avant de considerer le VPN "fonctionnel".
 
-            stateListener?.invoke("connected", null)
+            stateListener?.invoke(STATE_CONNECTED, null)
         } catch (e: Exception) {
-            stateListener?.invoke("error", e.message ?: "Erreur inconnue")
+            stateListener?.invoke(STATE_ERROR, e.message ?: "Erreur inconnue")
             stopSelf()
         }
     }
 
     private fun stopTunnel() {
+        stateListener?.invoke(STATE_STOPPING, null)
         try {
             tunInterface?.close()
         } catch (_: Exception) {
         }
         tunInterface = null
-        stateListener?.invoke("disconnected", null)
+        stateListener?.invoke(STATE_DISCONNECTED, null)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

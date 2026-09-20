@@ -1,13 +1,21 @@
 // Écran d'accueil + machine d'états de la connexion VPN.
-// États : off | connecting | on | disconnecting | error
-// La logique de connexion (appel /api/user/connect, pont natif LaboSurfNative) est celle d'avant ;
-// on y ajoute des états intermédiaires propres, des délais maximum et des messages clairs.
+// États : off | connecting | on | disconnecting | error   (DISCONNECTED | CONNECTING | CONNECTED | STOPPING | ERROR)
+//
+// Flux de connexion (jamais de raccourci) :
+//   1. le moteur natif doit pouvoir transporter le trafic (LaboSurfNative.getEngineInfo) — sinon on s'arrête AVANT
+//      de toucher au backend (une connexion au panel crée un Access et consomme un essai) ;
+//   2. POST /api/user/connect (Laboratoire du Free-Surf -> labosurf-agent -> PRO) : la configuration est celle
+//      émise par PRO, lue strictement par ConnectContract (js/contract.js), jamais fabriquée ni « réparée » ici ;
+//   3. le natif démarre le tunnel ; « connecté » (et donc le chronomètre) n'existe QUE sur la réponse du natif.
 
 const VPN = {
   state: 'off',
   errorSpec: null,      // { key, data } ou { text } : le message est re-traduit à chaque rendu (changement de langue)
   target: '',           // nom du serveur visé par la tentative de connexion en cours
   session: null,        // { server, startedAt } pendant qu'un tunnel est actif
+  serverId: null,       // server_id renvoyé par le panel pour la connexion en cours
+  health: '',           // service_health renvoyé par le panel : available | unknown (jamais présenté comme « sain » si unknown)
+  accessExpiresAt: null,// expiration technique RÉELLE de l'Access (ms), d'après le panel ; null = aucune
   clock: null,
   watchdog: null,       // filet de sécurité si le moteur natif ne répond jamais
   trialLimitMinutes: null,
@@ -29,7 +37,9 @@ const normalizeErr = (spec) => (typeof spec === 'string' ? { text: spec } : (spe
 function errorText(spec){
   spec = normalizeErr(spec);
   if(spec.text) return spec.text;
-  return localizedField(spec.data, 'message') || t(spec.key || 'err.connect');
+  let text = localizedField(spec.data, 'message') || spec.panelMessage || t(spec.key || 'err.connect', spec.params);
+  if(spec.retryAfter) text += ' ' + t('conn.retryIn', { s: spec.retryAfter });   // délai communiqué par le panel (retry_after_s)
+  return text;
 }
 function setVpnState(state, spec){
   VPN.state = state;
@@ -198,12 +208,16 @@ function startClock(){
     $('timer').textContent = fmtClock(elapsed);
     $('infoDuration').textContent = fmtClock(elapsed);
 
-    // Limite d'essai éventuelle, transmise par le panel pour ce plan
-    if(VPN.trialLimitMinutes !== null){
-      const remaining = VPN.trialLimitMinutes * 60 - elapsed;
-      if(remaining === 300) toast(t('trial.fiveMin'), 'warning');
+    // Fin de l'accès : l'expiration RÉELLE de l'Access (access.expires_at du panel) fait foi ; à défaut, la limite d'essai
+    // annoncée par le panel (trial_limit_minutes), comptée depuis le début de cette connexion
+    let remaining = null;
+    if(VPN.accessExpiresAt !== null) remaining = Math.ceil((VPN.accessExpiresAt - Date.now()) / 1000);
+    else if(VPN.trialLimitMinutes !== null) remaining = VPN.trialLimitMinutes * 60 - elapsed;
+    if(remaining !== null){
+      const real = VPN.accessExpiresAt !== null;
+      if(remaining === 300) toast(t(real ? 'access.fiveMin' : 'trial.fiveMin'), 'warning');
       if(remaining <= 0){
-        toast(t('trial.over'), 'warning', 4200);
+        toast(t(real ? 'access.ended' : 'trial.over'), 'warning', 4200);
         disconnectVpn();
       }
     }
@@ -233,7 +247,7 @@ function markDisconnected(){
   }
   VPN.session = null;
   resetStats();
-  VPN.trialLimitMinutes = null;
+  VPN.trialLimitMinutes = null; VPN.accessExpiresAt = null; VPN.serverId = null; VPN.health = '';
   setVpnState('off');
   if(wasOn) toast(t('toast.connectionLost'), 'warning'); // tunnel coupé sans action de l'utilisateur
 }
@@ -248,12 +262,25 @@ function failConnect(serverName, spec){
   else Activity.addSession({ server: serverName, seconds: 0, ok: false });
   VPN.session = null;
   resetStats();
+  VPN.trialLimitMinutes = null; VPN.accessExpiresAt = null; VPN.serverId = null; VPN.health = '';
   setVpnState('error', spec);
   toast(message, 'error');
 }
 
+// Moteur natif : { integrated, protocols }. Un shell sans getEngineInfo est traité comme « pas de moteur ».
+function nativeEngineInfo(){
+  try{
+    if(typeof window.LaboSurfNative.getEngineInfo === 'function'){
+      const i = JSON.parse(window.LaboSurfNative.getEngineInfo());
+      return { integrated: i && i.integrated === true, protocols: Array.isArray(i && i.protocols) ? i.protocols.map((p) => String(p).toLowerCase()) : [] };
+    }
+  }catch(e){}
+  return { integrated: false, protocols: [] };
+}
+
 async function connectVpn(){
   if(!authToken){ toast(t('err.loginFirst'), 'warning'); showScreen('account'); return; }
+  if(!sessionStillValid()){ handleSessionExpired(); return; }   // jeton dépassé d'après « expires_in » : reconnexion, sans appel réseau
   if(Servers.state === 'loading'){ toast(t('err.serversLoading'), 'info'); return; }
   const target = getSelectedServer();
   if(!target){ toast(t('srv.emptyTitle'), 'warning'); showScreen('servers'); return; }
@@ -263,45 +290,60 @@ async function connectVpn(){
 
   const name = serverDisplayName(target);
   VPN.target = name;
+  if(!API.state.ok){ setVpnState('error', { key: API.state.reason === 'insecure' ? 'err.apiInsecure' : 'err.apiConfig' }); return; }
   if(!isNativeApp() && !PREVIEW){
     // Hors de l'application Android il n'existe aucun moteur : on le dit au lieu de simuler une connexion.
     setVpnState('error', { key: 'err.browserOnly' });
     return;
   }
+  // 1. Le moteur doit exister AVANT de toucher au backend (l'appel crée un Access et peut consommer l'essai de l'appareil)
+  const engine = isNativeApp() ? nativeEngineInfo() : null;
+  if(engine && !engine.integrated){
+    logEvent('warn', 'log.engineUnavailable');
+    setVpnState('error', { key: 'err.engineUnavailable' });
+    return;
+  }
   setVpnState('connecting');
   logEvent('info', 'log.connecting', { server: name });
 
-  // La vraie configuration (uri) est récupérée ici, en direct, juste avant la connexion — jamais
-  // affichée, jamais stockée au-delà de cette variable locale (voir /api/user/connect côté panel).
-  let cfg = null, errSpec = null;
+  // 2. Configuration réelle émise par PRO, demandée en direct juste avant la connexion — jamais affichée, jamais
+  //    journalisée, jamais stockée au-delà de cette variable locale (voir POST /api/user/connect côté panel).
+  let parsed;
   try{
-    const params = new URLSearchParams();
-    if(target.id !== undefined && target.id !== null) params.set('server_id', target.id);
+    const body = { server_id: target.id === undefined ? null : target.id };
     const deviceId = getDeviceId();
-    if(deviceId) params.set('device_id', deviceId);
-    const res = await apiFetch('/api/user/connect' + (params.toString() ? '?' + params.toString() : ''), { timeout: 20000 });
-    if(res.ok && res.data && res.data.status === 'success' && Array.isArray(res.data.configs) && res.data.configs.length){
-      cfg = res.data.configs[0];
-      // Limite d'essai (minutes) pour ce plan, sinon null = illimité
-      VPN.trialLimitMinutes = (typeof res.data.trial_limit_minutes === 'number' && res.data.trial_limit_minutes > 0)
-        ? res.data.trial_limit_minutes : null;
-    } else {
-      // ex : essai gratuit déjà utilisé sur cet appareil (message du panel, dans la langue courante s'il la fournit)
-      errSpec = res.expired ? { key: 'err.sessionExpired' } : { key: 'err.connect', data: res.data };
-    }
+    if(deviceId) body.device_id = deviceId;
+    if(body.server_id === null) delete body.server_id;
+    const res = await apiFetch('/api/user/connect', { method: 'POST', body: JSON.stringify(body), timeout: 20000 });
+    parsed = ConnectContract.parse(res);
   }catch(e){
-    errSpec = { key: 'err.panel' };
+    parsed = ConnectContract.networkFailure(e, navigator.onLine);
   }
   if(VPN.state !== 'connecting') return; // annulé entre-temps (déconnexion du compte, par exemple)
-  if(!cfg){ failConnect(name, errSpec || { key: 'err.connect' }); return; }
+  if(!parsed.ok){
+    if(parsed.authLost && authToken){ handleSessionExpired(); return; }
+    failConnect(name, { key: parsed.key, retryAfter: parsed.retryAfter, panelMessage: parsed.panelMessage });
+    if(parsed.code) logEvent('warn', 'log.detail', { detail: parsed.code });
+    return;
+  }
+  VPN.trialLimitMinutes = parsed.trialLimitMinutes;
+  VPN.accessExpiresAt = parsed.access.expiresAt;
+  VPN.serverId = parsed.serverId;
+  VPN.health = parsed.health;
+  if(parsed.health === 'unknown') logEvent('info', 'log.healthUnknown');   // la santé du service n'a pas pu être vérifiée : dit tel quel
 
   if(isNativeApp()){
+    // 3. Le moteur natif doit savoir transporter ce protocole : sinon on le dit, on ne le bricole pas
+    if(engine.protocols.indexOf(parsed.config.protocol) < 0){
+      failConnect(name, { key: 'err.protocolUnsupported', params: { proto: parsed.config.protocol } });
+      return;
+    }
     // Le natif rapportera l'état réel via window.onNativeVpnState('connected' | 'error' | ...)
     VPN.watchdog = setTimeout(() => {
       if(VPN.state === 'connecting') failConnect(name, { key: 'err.timeout' });
     }, CONNECT_WATCHDOG_MS);
     try{
-      window.LaboSurfNative.startVpn(JSON.stringify({ name: target.name, proto: cfg.protocol, uri: cfg.uri }));
+      window.LaboSurfNative.startVpn(JSON.stringify({ name: target.name, proto: parsed.config.protocol, uri: parsed.config.uri, format: parsed.config.format }));
     }catch(e){
       failConnect(name, { key: 'err.connect' });
     }
@@ -332,23 +374,26 @@ Actions.togglePower = () => {
 
 // ─── Pont natif (Kotlin -> JS) ───
 // Certains détails renvoyés par le natif sont des codes (traduits ici), d'autres du texte brut.
+const NATIVE_ERRORS = { vpn_permission_denied: 'err.vpnPermission', engine_unavailable: 'err.engineUnavailable',
+  unsupported_protocol: 'err.protocolUnsupported', invalid_config: 'err.invalidConfig' };
 function nativeDetailText(detail){
-  if(detail === 'vpn_permission_denied') return t('err.vpnPermission');
-  if(detail === 'engine_unavailable') return t('err.engineUnavailable');
-  return detail || '';
+  return NATIVE_ERRORS[detail] ? t(NATIVE_ERRORS[detail]) : (detail || '');
 }
 window.onNativeVpnState = function(nativeState, detail){
   if(nativeState === 'connected'){
     if(VPN.state !== 'connecting') VPN.target = VPN.target || t('home.server.none'); // tunnel déjà actif (activité recréée)
     markConnected();
+  } else if(nativeState === 'connecting'){
+    // Le natif prépare le tunnel : l'accueil est déjà en « connexion » (posé par connectVpn) ; jamais « connecté » ici
+  } else if(nativeState === 'stopping'){
+    if(VPN.state === 'on') setVpnState('disconnecting');
   } else if(nativeState === 'disconnected'){
     markDisconnected();
   } else if(nativeState === 'error'){
     const name = VPN.session ? VPN.session.server : (VPN.target || '');
     const raw = nativeDetailText(detail);
-    const known = { vpn_permission_denied: 'err.vpnPermission', engine_unavailable: 'err.engineUnavailable' };
-    failConnect(name, { key: known[detail] || 'err.connect' });
-    if(raw && !known[detail]) logEvent('warn', 'log.detail', { detail: raw });
+    failConnect(name, { key: NATIVE_ERRORS[detail] || 'err.connect', params: { proto: '' } });
+    if(raw && !NATIVE_ERRORS[detail]) logEvent('warn', 'log.detail', { detail: raw });
   }
 };
 // Statistiques de trafic (optionnel) : window.onNativeVpnStats(rxBytes, txBytes, rxBytesPerSec, txBytesPerSec)

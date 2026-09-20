@@ -1,0 +1,80 @@
+{
+  "success": {
+    "http_status": 200,
+    "body": {
+      "status": "success",
+      "server_id": 1,
+      "service_health": "available",
+      "access": {
+        "state": "active",
+        "expires_at": "2026-10-21T00:00:00Z"
+      },
+      "configs": [
+        {
+          "protocol": "tuic",
+          "remark": "VIP - tuic",
+          "uri": "tuic://11111111-2222-4333-8444-555555555555:mot-de-passe-de-test@vpn.example.tld:40443?alpn=h3",
+          "format": "uri"
+        }
+      ]
+    }
+  },
+  "service_unhealthy": {
+    "http_status": 503,
+    "body": {
+      "status": "error",
+      "code": "service_unhealthy",
+      "message": "Ce serveur est momentanement indisponible. Choisis-en un autre ou reessaie.",
+      "retry_after_s": 30
+    }
+  },
+  "service_not_found": {
+    "http_status": 404,
+    "body": {
+      "status": "error",
+      "code": "service_not_found",
+      "message": "Ce serveur n'existe pas ou n'est pas inclus dans ton offre."
+    }
+  },
+  "subscription_expired": {
+    "http_status": 403,
+    "body": {
+      "status": "error",
+      "code": "subscription_expired",
+      "message": "Ton abonnement a expire. Renouvelle-le pour te connecter."
+    }
+  },
+  "account_disabled": {
+    "http_status": 403,
+    "body": {
+      "status": "error",
+      "code": "account_disabled",
+      "message": "Ton compte est desactive. Contacte le support."
+    }
+  },
+  "user_not_authenticated": {
+    "http_status": 401,
+    "body": {
+      "status": "error",
+      "code": "user_not_authenticated",
+      "message": "Connecte-toi pour continuer."
+    }
+  },
+  "configuration_unavailable": {
+    "http_status": 503,
+    "body": {
+      "status": "error",
+      "code": "configuration_unavailable",
+      "message": "Ta connexion est en cours de preparation. Reessaie dans quelques instants.",
+      "retry_after_s": 15
+    }
+  },
+  "pro_authentication_failed": {
+    "http_status": 502,
+    "body": {
+      "status": "error",
+      "code": "pro_authentication_failed",
+      "message": "Le service de connexion est mal configure. Contacte le support."
+    }
+  }
+}
