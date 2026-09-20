@@ -1,10 +1,10 @@
 name: Build APK Labo Surf
 
-# Se declenche a chaque push sur main, ou manuellement depuis l'onglet Actions
-# du site GitHub (utilisable depuis le telephone, comme ton pipeline VPS).
+# Se declenche a chaque push sur main ou sur la branche de la phase en cours, ou manuellement depuis l'onglet
+# Actions du site GitHub (utilisable depuis le telephone). Produit une APK DEBUG (jamais une release signee).
 on:
   push:
-    branches: [ main ]
+    branches: [ main, phase5-vpn-client-integration ]
   workflow_dispatch:
 
 jobs:
@@ -13,6 +13,14 @@ jobs:
     steps:
       - name: Recuperer le code
         uses: actions/checkout@v4
+
+      - name: Installer Node (tests JavaScript de l'interface)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Tests JavaScript (contrat, flux de connexion, traductions)
+        run: node --test tests/js/
 
       - name: Installer Java 17
         uses: actions/setup-java@v5
@@ -29,13 +37,108 @@ jobs:
           gradle-version: '8.7'
 
       - name: Compiler l'APK (debug)
-        run: gradle assembleDebug
+        run: |
+          set -o pipefail
+          gradle assembleDebug --stacktrace --console=plain 2>&1 | tee build.log
+
+      # Si la compilation echoue, les premieres vraies erreurs sont remontees en annotations (lisibles sans telecharger les logs).
+      - name: Remonter les erreurs de compilation
+        if: failure()
+        run: |
+          grep -m 25 -E "^e: |error:|What went wrong|Execution failed|FAILURE" -A2 build.log | while IFS= read -r l; do
+            l="${l//'%'/'%25'}"
+            echo "::error title=Erreur de compilation::${l}"
+          done || true
+
+      - name: Verifier l'APK (paquet, version, contenu, composants)
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -f "$APK" || { echo "::error::APK absente : $APK"; exit 1; }
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          AAPT2="$BT/aapt2"
+          "$AAPT2" dump badging "$APK" > badging.txt
+          PKG=$(grep -m1 "^package:" badging.txt)
+          echo "::notice title=APK::$(stat -c %s "$APK") octets ; sha256 $(sha256sum "$APK" | cut -d' ' -f1)"
+          echo "::notice title=Paquet::$PKG"
+          echo "::notice title=SDK::$(grep -E "^(minSdkVersion|targetSdkVersion|sdkVersion)" badging.txt | tr '\n' ' ')"
+          echo "::notice title=Permissions::$(grep "^uses-permission" badging.txt | sed "s/uses-permission: name=//" | tr '\n' ' ')"
+          echo "::notice title=Activite de lancement::$(grep -m1 launchable-activity badging.txt)"
+          grep -q "name='com.philippo237.labosurf'" badging.txt
+          grep -q "launchable-activity: name='com.philippo237.labosurf.MainActivity'" badging.txt
+          "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" > manifest.txt
+          grep -q "com.philippo237.labosurf.LaboVpnService" manifest.txt
+          grep -q "android.permission.BIND_VPN_SERVICE" manifest.txt
+          echo "::notice title=Manifeste::MainActivity et LaboVpnService (BIND_VPN_SERVICE) presents"
+          unzip -l "$APK" > contenu.txt
+          for f in assets/www/index.html assets/www/js/contract.js assets/www/js/vpn.js assets/www/js/api.js assets/www/js/lang/fr.js assets/www/js/lang/en.js classes.dex; do
+            grep -q " $f\$" contenu.txt || { echo "::error::absent de l'APK : $f"; exit 1; }
+          done
+          if grep -q "assets/www/preview_" contenu.txt; then echo "::error::anciennes maquettes (faux serveurs/pings) embarquees"; exit 1; fi
+          unzip -p "$APK" classes.dex | grep -a -q "LaboVpnService" || { echo "::error::LaboVpnService absent du bytecode"; exit 1; }
+          unzip -p "$APK" classes.dex | grep -a -q "MainActivity" || { echo "::error::MainActivity absente du bytecode"; exit 1; }
+          echo "::notice title=Contenu::assets WebView (dont contract.js) et classes.dex presents ; aucune ancienne maquette"
+          # Debug uniquement : signee avec la cle debug Android, jamais une release
+          "$BT/apksigner" verify --print-certs "$APK" | head -3
 
       - name: Rendre l'APK telechargeable
         uses: actions/upload-artifact@v4
         with:
           name: labo-surf-vpn-debug
           path: app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+  # Lancement reel sur un emulateur Android 14 : installation, demarrage, WebView, refus propre sans moteur.
+  emulator:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: labo-surf-vpn-debug
+          path: apk
+
+      - name: Activer KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Test sur emulateur (installation, lancement, moteur absent)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: bash tests/android/emulator_test.sh apk/app-debug.apk
+
+      - name: Rapport du test emulateur
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-report
+          path: |
+            emulator-report.txt
+            emulator-screen.png
+          if-no-files-found: ignore
+
+      - name: Remonter le resultat du test emulateur
+        if: always()
+        run: |
+          test -f emulator-report.txt || exit 0
+          while IFS= read -r l; do
+            l="${l//'%'/'%25'}"
+            case "$l" in
+              ECHEC*|FATAL*) echo "::error title=Emulateur::${l}" ;;
+              *) echo "::notice title=Emulateur::${l}" ;;
+            esac
+          done < emulator-report.txt
 
 # ─── Comment recuperer l'APK depuis ton telephone ───
 # 1. Va dans l'onglet "Actions" de ton depot GitHub.

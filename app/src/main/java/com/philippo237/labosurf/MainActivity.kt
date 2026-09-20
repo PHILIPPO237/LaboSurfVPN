@@ -44,6 +44,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Inspection de la WebView (chrome://inspect, test automatise sur emulateur) : versions DEBUG uniquement.
+        if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
+
         webView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
