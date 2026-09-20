@@ -4,7 +4,7 @@ name: Build APK Labo Surf
 # Actions du site GitHub (utilisable depuis le telephone). Produit une APK DEBUG (jamais une release signee).
 on:
   push:
-    branches: [ main, phase5-vpn-client-integration ]
+    branches: [ main, phase5-vpn-client-integration, phase6-ui-palette ]
   workflow_dispatch:
 
 jobs:

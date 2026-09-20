@@ -93,10 +93,9 @@ document.addEventListener('langchange', () => requestAnimationFrame(fitHomeScree
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitHomeScreen());
 
 // Accroche de la bannière : effet machine à écrire en boucle (frappe, pause, effacement) ; la couleur change à chaque fin de boucle :
-// blanc, violet, or, rouge, cyan, rose. Chaque caractère est déjà dans la page (masqué), on ne fait que les révéler : aucune
+// blanc, émeraude, or (palette de la marque). Chaque caractère est déjà dans la page (masqué), on ne fait que les révéler : aucune
 // variation de hauteur. Suspendu hors de l'accueil ou quand l'app est en arrière-plan ; texte fixe si « réduire les animations ».
-const TW_COLORS = [['#f5f8f6', 'rgba(255,255,255,.30)'], ['#b794ff', 'rgba(183,148,255,.55)'], ['#ffd147', 'rgba(255,209,71,.55)'],
-  ['#ff5c7a', 'rgba(255,92,122,.55)'], ['#22e5ff', 'rgba(34,229,255,.55)'], ['#ff7ac8', 'rgba(255,122,200,.55)']];
+const TW_COLORS = [['#f5f8f6', 'rgba(255,255,255,.22)'], ['#3fdc80', 'rgba(25,199,99,.35)'], ['#d8b45a', 'rgba(216,180,90,.35)']];   // palette de la marque : blanc, émeraude, or
 const TW = { chars: [], n: 0, dir: 1, loop: 0, timer: 0, started: false };
 const TW_TYPE = 62, TW_ERASE = 26, TW_HOLD = 2000, TW_GAP = 450;
 

@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun setSystemBars(dark: Boolean) {
             runOnUiThread {
-                val color = android.graphics.Color.parseColor(if (dark) "#000000" else "#F2EFE7")
+                val color = android.graphics.Color.parseColor(if (dark) "#050706" else "#F3F6F2")
                 window.statusBarColor = color
                 window.navigationBarColor = color
                 webView.setBackgroundColor(color)

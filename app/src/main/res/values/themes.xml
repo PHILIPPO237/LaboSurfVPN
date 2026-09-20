@@ -4,7 +4,7 @@
          Les barres systeme sont ensuite alignees sur le theme choisi dans l'app (pont setSystemBars). -->
     <style name="Theme.LaboSurf" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/window_bg</item>
-        <item name="colorPrimary">#39ff6a</item>
+        <item name="colorPrimary">#19C763</item>
         <item name="colorPrimaryDark">@color/window_bg</item>
         <item name="android:statusBarColor">@color/window_bg</item>
         <item name="android:navigationBarColor">@color/window_bg</item>

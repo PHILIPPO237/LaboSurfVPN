@@ -16,7 +16,7 @@
 .btn:active{ transform:scale(.97); }
 .btn-block{ width:100%; }
 .btn-sm{ min-height:36px; padding:0 var(--sp-3); font-size:var(--fs-sm); border-radius:var(--r-sm); }
-.btn-primary{ background:var(--brand); color:var(--on-brand); }
+.btn-primary{ background:var(--btn-fill); color:var(--on-btn); border-color:var(--btn-edge); box-shadow:var(--btn-hi), 0 4px 12px rgba(0,0,0,.22); }
 .btn-secondary{ background:var(--surface-2); color:var(--text); border-color:var(--border); }
 .btn-ghost{ background:transparent; color:var(--text-muted); }
 .btn-danger{ background:var(--danger-soft); color:var(--danger); border-color:var(--danger-line); }
@@ -40,15 +40,15 @@
 .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-4); margin-bottom:var(--sp-3); }
 .card-title{
   display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2);
-  font:600 10.5px/1.2 var(--font-mono); letter-spacing:.13em; text-transform:uppercase; color:var(--brand); margin-bottom:var(--sp-3);
+  font:600 10.5px/1.2 var(--font-mono); letter-spacing:.13em; text-transform:uppercase; color:var(--brand-title); margin-bottom:var(--sp-3);
 }
 .section-title{
-  font:600 11px/1.2 var(--font-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--brand); opacity:.9;
+  font:600 11px/1.2 var(--font-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--brand-title);
   margin:var(--sp-5) var(--sp-1) var(--sp-2);
 }
 .section-title:first-child{ margin-top:0; }
 .screen-head{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); margin-bottom:var(--sp-3); }
-.screen-head h1{ font:600 11px/1.2 var(--font-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--brand); opacity:.9; }
+.screen-head h1{ font:600 11px/1.2 var(--font-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--brand-title); }
 .hint{ font-size:var(--fs-sm); color:var(--text-muted); line-height:1.6; margin-bottom:var(--sp-3); }
 .muted{ color:var(--text-muted); }
 .mono{ font-family:var(--font-mono); }
@@ -92,7 +92,7 @@
   flex:1; min-height:38px; padding:0 var(--sp-2); border:0; border-radius:calc(var(--r-md) - 4px); background:transparent; color:var(--text-muted);
   font:600 var(--fs-sm)/1.1 var(--font-display); cursor:pointer; transition:background var(--dur-fast), color var(--dur-fast); white-space:nowrap;
 }
-.segmented button[aria-pressed="true"]{ background:var(--brand); color:var(--on-brand); }
+.segmented button[aria-pressed="true"]{ background:var(--btn-fill); color:var(--on-btn); box-shadow:var(--btn-hi); }
 
 /* ---------- Badges, avatars ---------- */
 .badge{
@@ -105,7 +105,7 @@
 .badge-ok{ background:var(--brand-soft); color:var(--brand); }
 .badge-warn{ background:var(--warning-soft); color:var(--warning); }
 .badge-err{ background:var(--danger-soft); color:var(--danger); }
-.badge-pro{ background:linear-gradient(135deg, var(--gold), var(--orange)); color:#1a1200; font-family:var(--font-mono); }
+.badge-pro{ background:linear-gradient(135deg, #e6cb84, var(--gold)); color:#1c1503; font-family:var(--font-mono); }
 .avatar{
   width:44px; height:44px; border-radius:14px; flex-shrink:0; overflow:hidden; display:grid; place-items:center;
   background:var(--brand-soft); border:1px solid var(--brand-line); color:var(--brand); font:700 17px/1 var(--font-display);
@@ -137,8 +137,8 @@
 
 /* ---------- Jauge ---------- */
 .gauge-track{ height:8px; border-radius:var(--r-pill); background:var(--surface-2); overflow:hidden; margin:var(--sp-2) 0 6px; }
-.gauge-fill{ height:100%; border-radius:var(--r-pill); background:var(--brand); transition:width .5s var(--ease), background .5s; }
-.gauge-fill.mid{ background:var(--gold); }
+.gauge-fill{ height:100%; border-radius:var(--r-pill); background:linear-gradient(90deg, var(--brand-strong), var(--brand)); transition:width .5s var(--ease), background .5s; }
+.gauge-fill.mid{ background:var(--warning); }
 .gauge-fill.low{ background:var(--danger); }
 .gauge-label{ display:flex; justify-content:space-between; gap:var(--sp-2); font-size:var(--fs-sm); color:var(--text-muted); }
 
@@ -175,7 +175,7 @@ button.row:active, a.row:active{ background:var(--surface-2); }
 .rail-btn{
   position:relative; flex-shrink:0; width:var(--rail-btn); height:var(--rail-btn); border-radius:17px;
   display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;
-  background:var(--rail-bg); border:1px solid var(--rail-line); color:var(--brand);
+  background:var(--rail-bg); border:1px solid var(--rail-line); color:var(--rail-icon);
   box-shadow:0 6px 14px rgba(0,0,0,.4);
   transition:transform .4s var(--spring), background var(--dur), color var(--dur), border-color var(--dur), box-shadow .35s var(--ease);
 }
@@ -183,11 +183,11 @@ button.row:active, a.row:active{ background:var(--surface-2); }
 /* Appui : le bouton s'enfonce, puis revient avec un léger rebond */
 .rail-btn:active{ transform:scale(.88); transition-duration:.08s, var(--dur), var(--dur), var(--dur), .35s; }
 /* Option ouverte : le remplissage vert « pousse » depuis le centre (ressort) pendant que l'ancien se résorbe ; halo doux */
-.rail-btn::after{ content:''; position:absolute; inset:-1px; border-radius:inherit; background:var(--brand); opacity:0; transform:scale(.35);
+.rail-btn::after{ content:''; position:absolute; inset:-1px; border-radius:inherit; background:var(--rail-active-bg); opacity:0; transform:scale(.35);
   transition:transform .55s var(--spring), opacity .25s ease; }
 .rail-btn.active::after{ opacity:1; transform:none; }
-.rail-btn.active{ background:var(--rail-bg); color:var(--on-brand); border-color:var(--brand);
-  box-shadow:0 6px 14px rgba(0,0,0,.4), 0 0 0 3px var(--brand-soft), 0 0 20px var(--brand-glow); }
+.rail-btn.active{ background:var(--rail-bg); color:var(--on-btn); border-color:var(--brand-line);
+  box-shadow:0 6px 14px rgba(0,0,0,.4), 0 0 0 2px var(--brand-soft), 0 0 12px var(--brand-glow); }
 /* Onde qui s'étend depuis le centre + icône qui « saute » au clic ou à l'ouverture (classe .is-pop posée par js/app.js) */
 .rail-btn::before, .rail-caret::before, .rail-mini::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0;
   background:radial-gradient(circle, currentColor 0, transparent 68%); }
@@ -203,13 +203,13 @@ button.row:active, a.row:active{ background:var(--surface-2); }
 /* Chevron : vrai <button> frère du bouton Réglages (jamais imbriqué), zone tactile élargie par ::after */
 .rail-caret{
   position:absolute; top:calc(var(--rail-btn) - 15px); right:-7px; z-index:2; width:22px; height:22px; border-radius:50%; padding:0;
-  display:grid; place-items:center; cursor:pointer; background:var(--rail-bg); border:1px solid var(--brand-line); color:var(--brand);
+  display:grid; place-items:center; cursor:pointer; background:var(--rail-bg); border:1px solid var(--rail-line); color:var(--rail-icon);
   transition:background var(--dur), color var(--dur), border-color var(--dur), transform .3s var(--spring);
 }
 .rail-caret::after{ content:''; position:absolute; inset:-11px; }
 .rail-caret .ic{ width:10px; height:10px; stroke-width:3; transition:transform .45s var(--spring); }
 .rail-caret:active{ transform:scale(.85); }
-.rail-caret[aria-expanded="true"]{ background:var(--brand); color:var(--on-brand); border-color:var(--brand); }
+.rail-caret[aria-expanded="true"]{ background:var(--rail-active-bg); color:var(--on-btn); border-color:var(--brand-line); }
 .rail-caret[aria-expanded="true"] .ic{ transform:rotate(180deg); }
 /* Raccourcis repliés : invisibles ET hors de l'ordre de tabulation (visibility) */
 .rail-expand{
@@ -219,7 +219,7 @@ button.row:active, a.row:active{ background:var(--surface-2); }
 .rail-group.open .rail-expand{ max-height:140px; opacity:1; margin-top:12px; visibility:visible; transition-delay:0s; }
 .rail-mini{
   position:relative; --mini-from:translateY(-14px); width:40px; height:40px; border-radius:13px; display:grid; place-items:center; padding:0; cursor:pointer;
-  background:var(--rail-bg); border:1px solid var(--rail-line); color:var(--brand); font:800 11px/1 var(--font-mono);
+  background:var(--rail-bg); border:1px solid var(--rail-line); color:var(--rail-icon); font:800 11px/1 var(--font-mono);
   transition:transform .35s var(--spring), background var(--dur);
 }
 .rail-mini .ic{ width:16px; height:16px; }
@@ -375,7 +375,7 @@ button.row:active, a.row:active{ background:var(--surface-2); }
 .state-list li{ display:flex; gap:var(--sp-3); align-items:flex-start; }
 .state-dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:6px; background:var(--state-idle); }
 .state-dot.busy{ background:var(--state-busy); }
-.state-dot.on{ background:var(--state-on); box-shadow:0 0 6px var(--brand-glow); }
+.state-dot.on{ background:var(--state-on); box-shadow:0 0 4px var(--brand-glow); }
 .state-dot.warn{ background:var(--state-warn); }
 .state-dot.err{ background:var(--state-err); }
 
@@ -385,7 +385,7 @@ button.row:active, a.row:active{ background:var(--surface-2); }
   border:1px dashed var(--brand-line); background:linear-gradient(160deg, var(--brand-soft), transparent 70%);
 }
 .assistant-head{ display:flex; align-items:center; gap:var(--sp-3); }
-.assistant-head .row-ico{ background:var(--brand); color:var(--on-brand); }
+.assistant-head .row-ico{ background:var(--btn-fill); color:var(--on-btn); }
 .assistant-title{ font:700 var(--fs-md)/1.3 var(--font-display); display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap; }
 .assistant-text{ font-size:var(--fs-sm); color:var(--text-muted); line-height:1.55; margin-top:var(--sp-2); }
 .assistant-input{ display:flex; gap:var(--sp-2); margin:var(--sp-3) 0 var(--sp-2); }
@@ -425,7 +425,7 @@ button.row:active, a.row:active{ background:var(--surface-2); }
 
 /* Ligne mise en avant (Aide et guide) */
 .row-primary{ background:var(--brand-soft); }
-.row-primary .row-ico{ background:var(--brand); color:var(--on-brand); }
+.row-primary .row-ico{ background:var(--btn-fill); color:var(--on-btn); }
 .row-primary .row-title{ color:var(--brand); }
 
 /* Feuille : onglets Guide / Assistant et parcours en 4 étapes */
@@ -534,12 +534,12 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
    (accueil, réglages, à propos, animation d'ouverture). */
 .sig{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
 .sig-rule{ display:block; width:110px; height:4px; border-top:1px solid var(--gold); border-bottom:1px solid var(--gold); }
-.sig-org{ font:700 clamp(10px, 3.3vw, 12.5px)/1.2 var(--font-display); letter-spacing:.16em; text-transform:uppercase; }
+.sig-org{ font:700 clamp(9px, 2.9vw, 11px)/1.2 var(--font-display); letter-spacing:.15em; text-transform:uppercase; }
 .sig-g{ color:var(--brand); }
 .sig-w{ color:var(--text); }
 .sig-credit{ display:flex; flex-direction:column; align-items:center; gap:3px; }
-.sig-by{ font:500 9.5px/1.2 var(--font-mono); letter-spacing:.24em; text-transform:uppercase; color:var(--text-muted, var(--text-faint)); }
-.sig-name{ font:700 17px/1.1 var(--font-display); letter-spacing:.32em; padding-left:.32em; text-transform:uppercase; color:var(--gold); }
+.sig-by{ font:500 8.5px/1.2 var(--font-mono); letter-spacing:.22em; text-transform:uppercase; color:var(--text-muted, var(--text-faint)); }
+.sig-name{ font:700 14px/1.1 var(--font-display); letter-spacing:.28em; padding-left:.28em; text-transform:uppercase; color:var(--gold); }
 .sig-about, .sig-settings{ margin:var(--sp-5) 0 var(--sp-2); }
 .sig-home{ margin-top:2px; }
 .sig-home .sig-rule{ width:90px; }
@@ -548,8 +548,8 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
   .sig-home{ gap:3px; }
   .sig-home .sig-rule{ display:none; }
   .sig-home .sig-credit{ flex-direction:row; gap:.5em; align-items:baseline; white-space:nowrap; }
-  .sig-home .sig-by{ font-size:8.5px; letter-spacing:.1em; }
-  .sig-home .sig-name{ font-size:12px; letter-spacing:.16em; padding-left:.16em; }
+  .sig-home .sig-by{ font-size:7.5px; letter-spacing:.1em; }
+  .sig-home .sig-name{ font-size:10.5px; letter-spacing:.15em; padding-left:.15em; }
 }
 
 /* Encarts d'aide fixes sous les états vides (Services, Serveurs, Historique) */
@@ -571,7 +571,7 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
 
 /* Documents légaux */
 .legal{ padding-bottom:var(--sp-5); }
-.legal-meta{ font:500 var(--fs-xs)/1.4 var(--font-mono); color:var(--gold); margin:0 0 var(--sp-3); }
+.legal-meta{ font:500 var(--fs-xs)/1.4 var(--font-mono); color:var(--text-faint); margin:0 0 var(--sp-3); }
 .legal-intro{ font-size:var(--fs-md); line-height:1.6; color:var(--text); margin:0 0 var(--sp-4); }
 .legal-sec{ padding:var(--sp-4) 0; border-top:1px solid var(--border); }
 .legal-sec h2{ display:flex; align-items:center; gap:var(--sp-3); font:700 var(--fs-md)/1.3 var(--font-display); margin:0 0 var(--sp-2); }

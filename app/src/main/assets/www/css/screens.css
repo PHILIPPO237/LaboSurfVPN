@@ -3,7 +3,7 @@
    ========================================================================== */
 
 /* ---------- Accueil (identité d'origine : hexagone lumineux, gros bouton START/STOP) ---------- */
-.home{ --hex:clamp(98px, 17.5vh, 150px); --power-size:clamp(150px, 26vh, 184px); display:flex; flex-direction:column; align-items:center; gap:var(--sp-3); height:100%; }
+.home{ --hex:clamp(98px, 17.5vh, 150px); --power-size:clamp(162px, 28vh, 198px); display:flex; flex-direction:column; align-items:center; gap:var(--sp-3); height:100%; }
 /* Commandes (logo, START, état, accès, serveur) : seule cette partie est réduite si l'écran est court ; la bannière garde sa taille */
 .home-main{ width:100%; display:flex; flex-direction:column; align-items:center; gap:var(--sp-2); transform-origin:top center; }
 #screen-home{ overflow:hidden; }
@@ -68,13 +68,13 @@
   -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); }
 .home[data-state="on"] .power-btn{
   color:var(--on-brand); text-shadow:0 1px 0 rgba(255,255,255,.25);
-  background:radial-gradient(circle at 50% 24%, var(--brand-hi), var(--brand) 58%, var(--brand-strong));
-  box-shadow:0 14px 30px var(--power-drop), 0 0 46px var(--brand-glow), inset 0 2px 1px rgba(255,255,255,.4), inset 0 -12px 24px rgba(0,0,0,.16);
+  background:radial-gradient(circle at 50% 22%, var(--brand-hi) 0%, var(--brand) 34%, var(--brand-strong) 78%, #0a5f31 100%);
+  box-shadow:0 14px 30px var(--power-drop), 0 0 34px var(--brand-glow), inset 0 2px 1px rgba(255,255,255,.28), inset 0 -12px 24px rgba(0,0,0,.2);
 }
 .home[data-state="connecting"] .power-btn, .home[data-state="disconnecting"] .power-btn{
   color:var(--on-brand); cursor:progress;
-  background:radial-gradient(circle at 50% 24%, var(--brand-hi), var(--brand-strong) 85%);
-  box-shadow:0 12px 26px var(--power-drop), 0 0 30px var(--brand-glow), inset 0 2px 1px rgba(255,255,255,.3), inset 0 -10px 20px rgba(0,0,0,.2);
+  background:radial-gradient(circle at 50% 22%, var(--brand) 0%, var(--brand-strong) 70%, #0a5f31 100%);
+  box-shadow:0 12px 26px var(--power-drop), 0 0 24px var(--brand-glow), inset 0 2px 1px rgba(255,255,255,.22), inset 0 -10px 20px rgba(0,0,0,.24);
 }
 .home[data-state="connecting"] .power-spinner, .home[data-state="disconnecting"] .power-spinner{ opacity:1; animation:spin 1.1s linear infinite; }
 .home[data-state="error"] .power-btn{ background:var(--danger-soft); color:var(--danger); box-shadow:inset 0 0 0 2px var(--danger-line); }
@@ -87,7 +87,7 @@
 .status-title::before{ content:''; flex-shrink:0; width:8px; height:8px; border-radius:50%; background:var(--text-faint); transition:background .3s, box-shadow .3s; }
 .status-sub{ font-size:var(--fs-sm); color:var(--text-muted); margin-top:3px; max-width:26ch; margin-inline:auto; text-wrap:balance; }
 .home[data-state="on"] .status-title{ color:var(--state-on); }
-.home[data-state="on"] .status-title::before{ background:var(--brand); box-shadow:0 0 10px var(--brand); }
+.home[data-state="on"] .status-title::before{ background:var(--brand-hi); box-shadow:0 0 8px var(--brand-glow); }
 .home[data-state="on"] .status-sub{ display:none; }   /* remplacé par la durée et le serveur réels */
 .home[data-state="connecting"] .status-title, .home[data-state="disconnecting"] .status-title{ color:var(--state-busy); }
 .home[data-state="connecting"] .status-title::before, .home[data-state="disconnecting"] .status-title::before{ background:var(--state-busy); animation:dotPulse 1.8s ease-in-out infinite; }
@@ -131,7 +131,7 @@
 .banner-card .bc-img{ width:100%; max-height:240px; object-fit:cover; border-radius:var(--r-md); margin-bottom:var(--sp-3); }
 .banner-card .bc-text{ font:700 var(--fs-lg)/1.3 var(--font-display); color:#fff; text-wrap:balance; overflow-wrap:anywhere; white-space:pre-line; }
 .bn-title{ font:800 var(--fs-xl)/1.2 var(--font-display); color:#fff; margin-bottom:var(--sp-2); overflow-wrap:anywhere; }
-.bn-badge{ display:inline-block; margin-bottom:var(--sp-2); background:rgba(57,255,106,.14); color:#39ff6a; }
+.bn-badge{ display:inline-block; margin-bottom:var(--sp-2); background:rgba(25,199,99,.14); color:#35e879; }
 /* Message long : la bannière s'allonge vers le bas, texte aligné à gauche pour rester lisible */
 .banner-card.is-long{ text-align:left; }
 .banner-card.is-long .bc-text{ font-size:var(--fs-md); font-weight:600; line-height:1.65; text-wrap:pretty; }
@@ -141,7 +141,7 @@
    particules qui montent, réseau dont les flux circulent. Couleur = --bn-accent du style. Uniquement transform / opacity
    (GPU), derrière le contenu (z-index -1), coupé dans le cadre (overflow hidden), désactivé si « réduire les animations ». */
 .bn-fx{ display:block; position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden; border-radius:inherit; }
-.banner-card{ --bn-accent:#39ff6a; --bn-accent2:#ffd147; }
+.banner-card{ --bn-accent:#35e879; --bn-accent2:#d8b45a; }
 .banner-style-gold{ --bn-accent:#ffd700; --bn-accent2:#ffd700; }
 .banner-style-gradient{ --bn-accent:#4facfe; --bn-accent2:#00f2fe; }
 .banner-style-alert{ --bn-accent:#ef4444; --bn-accent2:#ef4444; }
@@ -185,9 +185,9 @@
    teinte fumée pour que le texte clair reste lisible dans les deux thèmes (--glass-tint). */
 .home-foot{ position:relative; isolation:isolate; }
 .home-foot::before, .home-foot::after{ content:''; position:absolute; z-index:-1; border-radius:50%; pointer-events:none; will-change:transform; }
-.home-foot::before{ width:62%; aspect-ratio:1; left:-8%; top:4%; background:radial-gradient(circle at 40% 40%, #39ff6a, rgba(57,255,106,0) 68%); opacity:.65;
+.home-foot::before{ width:62%; aspect-ratio:1; left:-8%; top:4%; background:radial-gradient(circle at 40% 40%, #12904a, rgba(18,144,74,0) 68%); opacity:.42;
   animation:glassOrbA 17s ease-in-out infinite alternate; }
-.home-foot::after{ width:52%; aspect-ratio:1; right:-6%; bottom:18%; background:radial-gradient(circle at 50% 50%, #ffd147, rgba(255,209,71,0) 68%); opacity:.5;
+.home-foot::after{ width:52%; aspect-ratio:1; right:-6%; bottom:18%; background:radial-gradient(circle at 50% 50%, #d8b45a, rgba(216,180,90,0) 68%); opacity:.2;
   animation:glassOrbB 21s ease-in-out infinite alternate; }
 @keyframes glassOrbA{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(38%,22%,0) scale(1.15); } }
 @keyframes glassOrbB{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(-42%,-26%,0) scale(1.12); } }
@@ -205,7 +205,7 @@
 .banner-style-default::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
   background:radial-gradient(120% 70% at 0% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%); }
 .banner-style-default::after{ content:''; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
-  background:linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 34%, rgba(255,255,255,0) 60%, rgba(57,255,106,.35));
+  background:linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 34%, rgba(255,255,255,0) 60%, rgba(25,199,99,.28));
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask-composite:exclude; }
 .banner-style-default .bn-halo{ opacity:.18; }   /* le décor interne s'efface : le verre laisse voir les halos du fond */
@@ -221,18 +221,18 @@
 .bd .badge{ font-size:max(10px, .68em); padding:.34em .9em; letter-spacing:.09em; text-transform:uppercase; }
 .bd-head{ display:flex; flex-direction:column; align-items:center; gap:.3em; }
 .bd-mark{ font:700 3.1em/1 var(--font-display); letter-spacing:.24em; padding-left:.24em;
-  background:linear-gradient(90deg, #c4ffd3, #39ff6a 55%, #16c751); -webkit-background-clip:text; background-clip:text; color:transparent;
-  filter:drop-shadow(0 0 .32em rgba(57,255,106,.42)); }
+  background:linear-gradient(90deg, #c9efd8, #3fdc80 55%, #14a656); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 .3em rgba(25,199,99,.26)); }
 .bd-rule{ display:flex; align-items:center; gap:.55em; width:9em; }
-.bd-rule i{ flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(57,255,106,.7)); }
-.bd-rule i:last-child{ background:linear-gradient(270deg, transparent, rgba(57,255,106,.7)); }
-.bd-rule b{ width:.42em; height:.42em; background:#ffd147; transform:rotate(45deg); box-shadow:0 0 .6em rgba(255,209,71,.7); }
+.bd-rule i{ flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(25,199,99,.6)); }
+.bd-rule i:last-child{ background:linear-gradient(270deg, transparent, rgba(25,199,99,.6)); }
+.bd-rule b{ width:.42em; height:.42em; background:#d8b45a; transform:rotate(45deg); box-shadow:0 0 .5em rgba(216,180,90,.4); }
 .bd-tagline{ font:700 1.16em/1.25 var(--font-display); letter-spacing:.01em; text-wrap:balance; }
 .bd-sub{ margin:0; max-width:24em; font:500 max(11px, .84em)/1.45 var(--font-body); color:#d6e1db; text-wrap:balance; }
 .bd-perks{ list-style:none; margin:0; padding:0; display:flex; justify-content:center; flex-wrap:wrap; gap:.4em; }
 .bd-perks li{ display:inline-flex; align-items:center; gap:.32em; padding:.4em .66em; border-radius:999px; white-space:nowrap;
   background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.24); box-shadow:inset 0 1px 0 rgba(255,255,255,.25); font:600 max(10px, .76em)/1 var(--font-body); color:#f4f8f5; }
-.bd-perks .ic{ width:1.15em; height:1.15em; color:#39ff6a; }
+.bd-perks .ic{ width:1.15em; height:1.15em; color:#35e879; }
 .bd-actions{ display:flex; justify-content:center; gap:.55em; flex-wrap:wrap; }
 .bd-actions .btn{ min-height:max(38px, 2.7em); padding:0 1.1em; font-size:max(12.5px, .86em); gap:.45em; }
 .bd-actions .ic{ width:1.15em; height:1.15em; }
@@ -240,11 +240,11 @@
 .home-foot.is-inset .bn-body:has(> .bd:not([hidden])){ padding:var(--sp-3) var(--sp-2); }
 .home-foot.is-inset .bd-perks{ flex-wrap:nowrap; }
 .home-foot.is-inset .bd-perks .ic{ display:none; }
-.banner-style-default .badge-ok{ background:rgba(57,255,106,.2); color:#8dffab; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
-.bd-badge-premium{ background:rgba(255,209,71,.2); color:#ffe08a; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
+.banner-style-default .badge-ok{ background:rgba(25,199,99,.18); color:#86e0aa; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
+.bd-badge-premium{ background:rgba(216,180,90,.18); color:#ecd28f; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
 /* La bannière est sombre dans les deux thèmes : ses boutons gardent le vert vif (le vert du thème clair y serait peu lisible) */
-.banner-card .bc-link, .banner-style-default .btn-primary{ background:#39ff6a; border-color:#39ff6a; color:#04140a; }
-.banner-style-default .btn-primary{ box-shadow:0 6px 18px rgba(57,255,106,.26); }
+.banner-card .bc-link, .banner-style-default .btn-primary{ background:linear-gradient(160deg, #0b6a37, #0e8341); border-color:rgba(53,232,121,.34); color:#f4fbf6; box-shadow:inset 0 1px 0 rgba(255,255,255,.16); }
+.banner-style-default .btn-primary{ box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px rgba(0,0,0,.28); }
 .banner-style-default .btn-secondary{ background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.34); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); color:#f7faf8; }
 /* Styles reprenant ceux du panel admin (Publicités) */
 .banner-style-neon{ border:1px solid #39ff6a; box-shadow:0 0 22px rgba(57,255,106,.25); background:rgba(57,255,106,.06); }
@@ -281,7 +281,7 @@
 .ping.bad{ background:var(--danger-soft); color:var(--danger); }
 .load-bar{ width:52px; height:4px; border-radius:2px; background:var(--surface-2); overflow:hidden; }
 .load-bar i{ display:block; height:100%; background:var(--brand); }
-.load-bar i.mid{ background:var(--gold); } .load-bar i.high{ background:var(--danger); }
+.load-bar i.mid{ background:var(--warning); } .load-bar i.high{ background:var(--danger); }
 .radio{ width:22px; height:22px; border-radius:50%; flex-shrink:0; border:2px solid var(--border-strong); display:grid; place-items:center; color:transparent; transition:all var(--dur-fast); }
 .radio .ic{ width:13px; height:13px; stroke-width:3.5; }
 .server-row.is-active .radio{ background:var(--brand); border-color:var(--brand); color:var(--on-brand); }
@@ -343,7 +343,7 @@
 }
 /* ----- Accueil compact : petits téléphones (≤ 640 px de haut) — on réduit l'intrinsèque plutôt que de tout mettre à l'échelle ----- */
 @media (max-height:640px){
-  .home{ --hex:68px; --power-size:136px; }
+  .home{ --hex:68px; --power-size:148px; }
   .home-main{ gap:5px; }
   .app-title{ font-size:24px; margin-top:3px; }
   .app-subtitle{ font-size:10.5px; }
@@ -363,8 +363,8 @@
 .status-pill{ display:flex; align-items:center; gap:7px; justify-content:center; width:fit-content; margin:0 auto var(--sp-4); padding:7px 15px; border-radius:20px; background:var(--surface); border:1px solid var(--border); font:600 var(--fs-sm)/1 var(--font-body); color:var(--danger); }
 .status-pill .dot{ width:7px; height:7px; border-radius:50%; background:var(--danger); }
 .status-pill.on{ border-color:var(--brand); background:var(--brand-soft); color:var(--brand); }
-.status-pill.on .dot{ background:var(--brand); box-shadow:0 0 8px var(--brand); }
-.status-pill.busy{ color:var(--gold); } .status-pill.busy .dot{ background:var(--gold); }
+.status-pill.on .dot{ background:var(--brand-hi); box-shadow:0 0 6px var(--brand-glow); }
+.status-pill.busy{ color:var(--warning); } .status-pill.busy .dot{ background:var(--warning); }
 
 /* Les styles de bannières du panel sont conçus pour un fond sombre : socle sombre conservé en thème clair */
 :root[data-theme="light"] .banner-card:not(.banner-style-default){ background-color:#0b0c0b; }
