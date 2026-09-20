@@ -77,8 +77,9 @@ jobs:
             grep -q " $f\$" contenu.txt || { echo "::error::absent de l'APK : $f"; exit 1; }
           done
           if grep -q "assets/www/preview_" contenu.txt; then echo "::error::anciennes maquettes (faux serveurs/pings) embarquees"; exit 1; fi
-          unzip -p "$APK" classes.dex | grep -a -q "LaboVpnService" || { echo "::error::LaboVpnService absent du bytecode"; exit 1; }
-          unzip -p "$APK" classes.dex | grep -a -q "MainActivity" || { echo "::error::MainActivity absente du bytecode"; exit 1; }
+          rm -rf dex && mkdir dex && unzip -q -o "$APK" 'classes*.dex' -d dex
+          grep -a -q "labosurf/LaboVpnService;" dex/*.dex || { echo "::error::LaboVpnService absent du bytecode"; exit 1; }
+          grep -a -q "labosurf/MainActivity;" dex/*.dex || { echo "::error::MainActivity absente du bytecode"; exit 1; }
           echo "::notice title=Contenu::assets WebView (dont contract.js) et classes.dex presents ; aucune ancienne maquette"
           # Debug uniquement : signee avec la cle debug Android, jamais une release
           "$BT/apksigner" verify --print-certs "$APK" | head -3
