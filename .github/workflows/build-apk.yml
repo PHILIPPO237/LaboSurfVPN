@@ -137,7 +137,7 @@ jobs:
         run: |
           test -f emulator-report.txt || exit 0
           # une seule annotation (GitHub en limite 10 par etape) : sauts de ligne encodes en %0A
-          MSG="$(sed -e 's/%/%25/g' emulator-report.txt | tr -d '' | awk '{printf "%s%%0A", $0}')"
+          MSG="$(sed -e 's/%/%25/g' emulator-report.txt | awk '{printf "%s%%0A", $0}')"
           if grep -q "^ECHEC" emulator-report.txt; then echo "::error title=Emulateur::${MSG}"; else echo "::notice title=Emulateur::${MSG}"; fi
 
 # ─── Comment recuperer l'APK depuis ton telephone ───
