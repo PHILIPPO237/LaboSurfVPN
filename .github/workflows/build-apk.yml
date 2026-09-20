@@ -29,7 +29,10 @@ jobs:
           java-version: '17'
 
       - name: Installer le SDK Android
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          # v3 echoue depuis que Google a retire un paquet du SDK (corrige dans la v4) ; versions fixees = build reproductible
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
 
       - name: Preparer Gradle
         uses: gradle/actions/setup-gradle@v4
