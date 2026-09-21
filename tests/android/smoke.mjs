@@ -1,11 +1,18 @@
-// Test de fumee sur emulateur / telephone (APK DEBUG) : pilote la WebView de l'application reelle via le protocole
-// DevTools (adb forward). Verifie le comportement quand LaboVpnService.ENGINE_INTEGRATED = false :
-// aucune connexion annoncee, aucun appel au backend, aucun tunnel. Necessite Node >= 22 (WebSocket integre).
+// Test sur emulateur / telephone (APK DEBUG) : pilote la WebView de l'application reelle via le protocole DevTools (adb forward).
+// Necessite Node >= 22 (WebSocket integre).
 //
-// Usage : node tests/android/smoke.mjs <port-devtools-local>
-const port = process.argv[2] || '9222';
+// Usage : node tests/android/smoke.mjs <port-devtools-local> <phase> [args]
+//   base        moteur reel (UDP integre), refus des protocoles non supportes, serveur muet -> erreur, jamais « connecte »
+//   connect     <hote> <port> <mot de passe> : reponse « panel » simulee -> moteur UDP natif -> attend l'etat REEL « on »
+//   badauth     <hote> <port> : mot de passe refuse par le serveur -> erreur auth_failed, jamais « on »
+//   disconnect  coupe le tunnel et attend l'etat « off »
+//
+// Le « panel » est simule UNIQUEMENT ici (reponse de POST /api/user/connect au format reel du contrat) ; le moteur natif, le
+// VpnService, l'interface TUN, le handshake et la verification du chemin de donnees sont ceux de l'APK.
+const [port = '9222', phase = 'base', ...args] = process.argv.slice(2);
 const results = [];
 const check = (name, ok, detail) => { results.push({ name, ok: !!ok }); console.log((ok ? 'OK   ' : 'ECHEC') + ' ' + name + (detail !== undefined ? ' -> ' + JSON.stringify(detail) : '')); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
 const page = targets.find((t) => t.type === 'page' && /android_asset\/www\/index\.html/.test(t.url));
@@ -19,50 +26,100 @@ const ev = (expression) => new Promise((res) => {
   const i = ++id; pending.set(i, res);
   ws.send(JSON.stringify({ id: i, method: 'Runtime.evaluate', params: { expression, awaitPromise: true, returnByValue: true } }));
 }).then((d) => { if (d.result.exceptionDetails) throw new Error(JSON.stringify(d.result.exceptionDetails.exception || d.result.exceptionDetails)); return d.result.result.value; });
+const waitFor = async (expr, ms, step = 250) => { const end = Date.now() + ms; while (Date.now() < end) { if (await ev(expr)) return true; await sleep(step); } return false; };
 
-// 1. L'interface est chargee (assets empaquetes) et le pont natif existe
-check('pont natif LaboSurfNative present', await ev('typeof window.LaboSurfNative === "object"'));
-check('interface chargee (contract.js, vpn.js, api.js)', await ev('typeof ConnectContract === "object" && typeof connectVpn === "function" && typeof apiFetch === "function"'));
-check('traductions chargees', await ev('typeof t === "function" && t("err.engineUnavailable") !== "err.engineUnavailable"'));
+// Prepare l'interface : compte « connecte », serveur choisi, et un « panel » simule qui repond au format REEL du contrat.
+async function prepare(uri) {
+  await ev(`(() => {
+    window.__events = window.__events || []; window.__fetches = 0; window.__connectBodies = [];
+    if (!window.__hooked) {
+      const prev = window.onNativeVpnState;
+      window.onNativeVpnState = function(s, d){ window.__events.push([s, d]); return prev.apply(this, arguments); };
+      window.__hooked = true;
+    }
+    window.__uri = ${JSON.stringify(uri)};
+    window.__proto = ${JSON.stringify(uri.split(':')[0])};
+    apiFetch = async function(path, opts){
+      window.__fetches++;
+      if (path === '/api/user/connect') {
+        return { ok: true, status: 200, expired: false, data: { status: 'success', server_id: 1, service_health: 'available',
+          access: { state: 'active', expires_at: '2100-01-01T00:00:00Z' },
+          configs: [{ protocol: window.__proto, remark: 'test', uri: window.__uri, format: 'uri' }] } };
+      }
+      return { ok: false, status: 404, data: {} };
+    };
+    authToken = 'jeton-de-test-local'; authExpiresAt = null;
+    Servers.state = 'ready';
+    getSelectedServer = () => ({ id: 1, name: 'Serveur de test', available: true });
+    homeReadiness = () => 'ready';
+    window.__events.length = 0;
+    setVpnState('off');
+    return true;
+  })()`);
+}
 
-// 2. Capacites reelles du moteur : non integre
-const info = JSON.parse(await ev('LaboSurfNative.getEngineInfo()'));
-check('moteur : integrated=false, aucun protocole', info.integrated === false && Array.isArray(info.protocols) && info.protocols.length === 0, info);
-const base = await ev('LaboSurfNative.getApiBase()');
-check('adresse API compilee en HTTPS', /^https:\/\//.test(base), base);
-check('version de l\'application lue du natif', (await ev('LaboSurfNative.getAppVersion()')) === '1.0.0');
-check('identifiant d\'appareil fourni', (await ev('LaboSurfNative.getDeviceId().length')) > 0);
+if (phase === 'base') {
+  check('pont natif LaboSurfNative present', await ev('typeof window.LaboSurfNative === "object"'));
+  check('interface chargee (contract.js, vpn.js, api.js)', await ev('typeof ConnectContract === "object" && typeof connectVpn === "function" && typeof apiFetch === "function"'));
+  check('traductions chargees', await ev('typeof t === "function" && t("err.native.auth_failed") !== "err.native.auth_failed"'));
+  const info = JSON.parse(await ev('LaboSurfNative.getEngineInfo()'));
+  check('moteur : UDP integre, seul protocole supporte', info.integrated === true && JSON.stringify(info.protocols) === '["udp"]', info);
+  const base = await ev('LaboSurfNative.getApiBase()');
+  check('adresse API compilee en HTTPS', /^https:\/\//.test(base), base);
+  check('version de l\'application lue du natif', (await ev('LaboSurfNative.getAppVersion()')) === '1.0.0');
+  check('identifiant d\'appareil fourni', (await ev('LaboSurfNative.getDeviceId().length')) > 0);
+  check('origine locale (assets)', /^file:\/\/\/android_asset\//.test(await ev('location.href')));
 
-// 3. START avec un compte connecte et un serveur disponible : refus propre, AUCUN appel au backend
-await ev(`(() => {
-  window.__events = []; window.__fetches = 0;
-  const prev = window.onNativeVpnState;
-  window.onNativeVpnState = function(s, d){ window.__events.push([s, d]); return prev.apply(this, arguments); };
-  const realFetch = apiFetch; apiFetch = async function(){ window.__fetches++; return realFetch.apply(this, arguments); };
-  authToken = 'jeton-de-test-local'; authExpiresAt = null;
-  Servers.state = 'ready';
-  getSelectedServer = () => ({ id: 1, name: 'Serveur de test', available: true });
-  homeReadiness = () => 'ready';
-  return true;
-})()`);
-await ev('connectVpn()');
-const st = await ev('({ state: VPN.state, session: VPN.session, fetches: window.__fetches, events: window.__events })');
-check('START refuse : état « error », jamais « on »', st.state === 'error', st.state);
-check('aucune session ni chronomètre', st.session === null || st.session === undefined, st.session);
-check('aucun appel au backend (connect non demandé)', st.fetches === 0, st.fetches);
-check('écran d accueil en état « error » (data-state), pas « on »', (await ev("document.getElementById('home').dataset.state")) === 'error');
+  // Protocole non supporte (tuic) : refuse, jamais « connecte », aucun tunnel
+  await prepare('tuic://u:p@192.0.2.1:443?allow_insecure=1');
+  await ev('connectVpn()');
+  await waitFor('VPN.state === "error"', 8000);
+  check('protocole tuic refuse (non integre) : etat « error »', (await ev('VPN.state')) === 'error');
+  check('  ... jamais « on », aucune session', (await ev('VPN.session === null || VPN.session === undefined')) === true);
 
-// 4. Appel direct du pont natif : le natif refuse aussi (pas de demande de permission VPN, pas de « connected »)
-await ev('window.__events.length = 0; VPN.state = "off"; LaboSurfNative.startVpn("{}"); true');
-await new Promise((r) => setTimeout(r, 1500));
-const native = await ev('({ events: window.__events, state: VPN.state })');
-check('natif : erreur engine_unavailable rapportée', native.events.some((e) => e[0] === 'error' && e[1] === 'engine_unavailable'), native.events);
-check('natif : jamais « connected »', !native.events.some((e) => e[0] === 'connected') && native.state !== 'on', native.state);
+  // Configuration invalide pour le moteur UDP : refus natif
+  await prepare('udp://sans-mot-de-passe@10.0.2.2:5667');
+  await ev('connectVpn()');
+  await waitFor('VPN.state === "error"', 10000);
+  const ev1 = await ev('window.__events');
+  check('lien udp invalide : erreur native invalid_config', ev1.some((e) => e[0] === 'error' && e[1] === 'invalid_config'), ev1);
+  check('  ... jamais « connected »', !ev1.some((e) => e[0] === 'connected'));
+}
 
-// 5. La WebView ne redirige pas vers une autre origine
-check('origine locale (assets)', /^file:\/\/\/android_asset\//.test(await ev('location.href')));
+if (phase === 'connect') {
+  const [host, prt, pass] = args;
+  await prepare(`udp://t-android@${host}:${prt}?pass=${pass}`);
+  await ev('connectVpn()');
+  const on = await waitFor('VPN.state === "on"', 45000, 500);
+  const events = await ev('window.__events');
+  check('CONNECTE (etat reel « on ») apres handshake + verification du chemin + TUN', on, events);
+  check('  ... « connected » emis par le natif, apres « connecting »', events.findIndex((e) => e[0] === 'connected') > events.findIndex((e) => e[0] === 'connecting') && events.some((e) => e[0] === 'connected'), events);
+  check('  ... une session (chronometre) existe', (await ev('!!VPN.session')) === true);
+  check('  ... ecran d accueil en etat « on »', (await ev("document.getElementById('home').dataset.state")) === 'on');
+  check('  ... le panel simule a ete appele une fois (POST /api/user/connect)', (await ev('window.__fetches')) === 1);
+}
+
+if (phase === 'badauth') {
+  const [host, prt] = args;
+  await prepare(`udp://t-android@${host}:${prt}?pass=mot-de-passe-refuse-par-le-serveur`);
+  await ev('connectVpn()');
+  await waitFor('VPN.state === "error"', 20000, 500);
+  const events = await ev('window.__events');
+  check('mot de passe refuse : erreur native auth_failed', events.some((e) => e[0] === 'error' && e[1] === 'auth_failed'), events);
+  check('  ... jamais « connected », etat final « error »', !events.some((e) => e[0] === 'connected') && (await ev('VPN.state')) === 'error');
+  check('  ... le message affiche est celui de l\'application (pas du serveur)', /refus/i.test(await ev('document.getElementById("home").innerText')));
+}
+
+if (phase === 'disconnect') {
+  await ev('window.__events.length = 0; disconnectVpn(); true');
+  const off = await waitFor('VPN.state === "off"', 15000, 500);
+  const events = await ev('window.__events');
+  check('deconnexion : etat « off »', off, events);
+  check('  ... « stopping » puis « disconnected » emis par le natif', events.some((e) => e[0] === 'disconnected'), events);
+  check('  ... plus de session', (await ev('VPN.session === null || VPN.session === undefined')) === true);
+}
 
 ws.close();
 const failed = results.filter((r) => !r.ok);
-console.log(`\n${results.length - failed.length}/${results.length} vérifications réussies`);
+console.log(`\n${results.length - failed.length}/${results.length} verifications reussies (phase ${phase})`);
 process.exit(failed.length ? 1 : 0);

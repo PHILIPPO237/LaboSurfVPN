@@ -4,7 +4,7 @@ name: Build APK Labo Surf
 # Actions du site GitHub (utilisable depuis le telephone). Produit une APK DEBUG (jamais une release signee).
 on:
   push:
-    branches: [ main, phase5-vpn-client-integration, phase6-ui-palette ]
+    branches: [ main, phase5-vpn-client-integration, phase6-ui-palette, phase7-udp-real ]
   workflow_dispatch:
 
 jobs:
@@ -39,15 +39,22 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Tests unitaires Android (moteur UDP, protocole, lien, client contre un faux serveur)
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --stacktrace --console=plain 2>&1 | tee build.log
+          python3 tests/ci/junit_summary.py --fail-if-empty
+
       - name: Compiler l'APK (debug)
         run: |
           set -o pipefail
-          gradle assembleDebug --stacktrace --console=plain 2>&1 | tee build.log
+          gradle assembleDebug --stacktrace --console=plain 2>&1 | tee -a build.log
 
       # Si la compilation echoue, les premieres vraies erreurs sont remontees en annotations (lisibles sans telecharger les logs).
-      - name: Remonter les erreurs de compilation
+      - name: Remonter les erreurs de compilation et de tests
         if: failure()
         run: |
+          python3 tests/ci/junit_summary.py || true
           grep -m 25 -E "^e: |error:|What went wrong|Execution failed|FAILURE" -A2 build.log | while IFS= read -r l; do
             l="${l//'%'/'%25'}"
             echo "::error title=Erreur de compilation::${l}"

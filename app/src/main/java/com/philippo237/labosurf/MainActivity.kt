@@ -58,6 +58,12 @@ class MainActivity : AppCompatActivity() {
         LaboVpnService.stateListener = { nativeState, detail ->
             notifyWeb(nativeState, detail)
         }
+        // Trafic RÉELLEMENT mesuré par le moteur (octets qui ont traversé le tunnel) — jamais une estimation
+        LaboVpnService.statsListener = { rx, tx, rxSpeed, txSpeed ->
+            runOnUiThread {
+                webView.evaluateJavascript("window.onNativeVpnStats($rx, $tx, $rxSpeed, $txSpeed)", null)
+            }
+        }
     }
 
     /**
@@ -83,6 +89,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         LaboVpnService.stateListener = null
+        LaboVpnService.statsListener = null
         super.onDestroy()
     }
 

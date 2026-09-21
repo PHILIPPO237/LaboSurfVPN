@@ -10,22 +10,20 @@ import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
+import com.philippo237.labosurf.udp.UdpLink
+import com.philippo237.labosurf.udp.UdpTunnelClient
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 /**
- * LaboVpnService : le "moteur" du VPN.
+ * LaboVpnService : le moteur VPN Android.
  *
- * CE FICHIER EST UN SQUELETTE FONCTIONNEL (il cree bien un tunnel VPN Android
- * reconnu par le systeme, avec la petite icone de cle dans la barre de statut),
- * mais il ne fait PAS ENCORE transiter le trafic via Xray/VLESS. C'est l'etape
- * suivante, expliquee en bas de ce fichier et dans le README.
+ * Moteur réellement intégré : UDP (protocole LABOSURF PRO, voir udp/UdpTunnelClient.kt et PROTOCOL.md de LABOSURF_PRO).
+ * Les autres protocoles (xray, hysteria, tuic, wireguard, ssh, slowdns, dnstt...) NE SONT PAS intégrés : ils sont refusés
+ * (`unsupported_protocol`), jamais simulés. Voir docs/LABOSURFVPN_REAL_FUNCTIONALITY.md.
  *
- * Pourquoi separer les deux etapes :
- * 1) Cette base (VpnService Android) est indispensable et ne depend d'aucune
- *    librairie externe -> je peux l'ecrire et la verifier entierement ici.
- * 2) Le moteur Xray (le code qui chiffre/route reellement les paquets vers ton
- *    serveur VLESS) vient d'une librairie externe compilee (.aar) qu'il faut
- *    ajouter depuis Android Studio avec un acces Internet normal — impossible
- *    a faire depuis ce sandbox (reseau restreint). Voir le README du projet.
+ * « connected » n'est émis QU'APRÈS : handshake réussi + vraie requête DNS aller-retour à travers le tunnel + interface TUN établie.
+ * ⚠ Le protocole UDP LABOSURF ne chiffre pas le trafic IP (limitation documentée du protocole).
  */
 class LaboVpnService : VpnService() {
 
@@ -34,23 +32,12 @@ class LaboVpnService : VpnService() {
         const val ACTION_STOP = "com.philippo237.labosurf.STOP"
         const val EXTRA_CONFIG = "server_config_json"
 
-        /**
-         * Passe à true UNIQUEMENT quand le moteur (Xray) est réellement branché dans startTunnel().
-         * Tant que c'est false, l'application n'annonce jamais « connecté » : un tunnel qui capte
-         * toute la circulation sans la transporter couperait Internet et afficherait un faux état.
-         */
-        const val ENGINE_INTEGRATED = false
+        /** true : un moteur réel est intégré (UDP). Voir SUPPORTED_PROTOCOLS pour ce qu'il sait transporter. */
+        const val ENGINE_INTEGRATED = true
 
-        /**
-         * Protocoles (champ « protocol » de la configuration emise par PRO : « tuic », « xray »...) que le moteur
-         * branche sait REELLEMENT transporter. Vide tant qu'aucun moteur n'est integre. Alimente
-         * MainActivity.getEngineInfo() ; une configuration dont le protocole n'y figure pas est refusee, jamais
-         * « adaptee » ni reconstruite cote Android.
-         */
-        val SUPPORTED_PROTOCOLS: List<String> = emptyList()
+        /** Protocoles (champ « protocol » de la configuration émise par PRO) que le moteur intégré sait REELLEMENT transporter. */
+        val SUPPORTED_PROTOCOLS: List<String> = listOf("udp")
 
-        // Etats rapportes a l'interface (window.onNativeVpnState) : « connected » n'est emis QUE quand le tunnel
-        // transporte reellement le trafic (jamais par le squelette actuel).
         const val STATE_CONNECTING = "connecting"
         const val STATE_CONNECTED = "connected"
         const val STATE_STOPPING = "stopping"
@@ -59,10 +46,11 @@ class LaboVpnService : VpnService() {
         private const val NOTIF_CHANNEL_ID = "labo_surf_vpn"
         private const val NOTIF_ID = 1
 
-        // Permet a MainActivity d'etre notifiee des changements d'etat sans
-        // passer par un vrai systeme de broadcast Android (plus simple pour ce
-        // squelette ; a robustifier plus tard avec un BroadcastReceiver si besoin).
+        /** MainActivity est notifiée des changements d'état (jamais de secret dans `detail` : un code stable ou vide). */
         var stateListener: ((state: String, detail: String?) -> Unit)? = null
+
+        /** Trafic RÉELLEMENT mesuré à travers le tunnel : (octets reçus, octets envoyés, débit reçu, débit envoyé en octets/s). */
+        var statsListener: ((rx: Long, tx: Long, rxSpeed: Long, txSpeed: Long) -> Unit)? = null
 
         fun start(context: Context, serverConfigJson: String?) {
             val intent = Intent(context, LaboVpnService::class.java).apply {
@@ -81,92 +69,128 @@ class LaboVpnService : VpnService() {
     }
 
     private var tunInterface: ParcelFileDescriptor? = null
+    private var client: UdpTunnelClient? = null
+    private var worker: Thread? = null
+    private var statsThread: Thread? = null
+
+    @Volatile private var generation = 0   // invalide les callbacks d'une connexion abandonnée
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_START -> {
-                val configJson = intent.getStringExtra(EXTRA_CONFIG)
-                startTunnel(configJson)
-            }
+            ACTION_START -> startTunnel(intent.getStringExtra(EXTRA_CONFIG))
             ACTION_STOP -> stopTunnel()
         }
-        return START_STICKY
+        return START_NOT_STICKY
+    }
+
+    private fun fail(code: String) {
+        stateListener?.invoke(STATE_ERROR, code)
+        teardown()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     private fun startTunnel(serverConfigJson: String?) {
         startForeground(NOTIF_ID, buildNotification())
-        if (!ENGINE_INTEGRATED) {
-            // Aucun moteur : on signale l'erreur (code traduit côté interface) sans créer de tunnel.
-            stateListener?.invoke(STATE_ERROR, "engine_unavailable")
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return
-        }
-        // Configuration recue de l'interface : { name, proto, uri, format } — ne JAMAIS la journaliser (secrets).
-        val proto: String = try {
-            val cfg = org.json.JSONObject(serverConfigJson ?: "")
-            require(cfg.optString("uri").isNotBlank())
-            cfg.optString("proto").lowercase()
-        } catch (e: Exception) {
-            stateListener?.invoke(STATE_ERROR, "invalid_config")
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return
-        }
-        if (proto !in SUPPORTED_PROTOCOLS) {
-            stateListener?.invoke(STATE_ERROR, "unsupported_protocol")
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return
-        }
-        stateListener?.invoke(STATE_CONNECTING, null)
+        teardown()   // une seule connexion à la fois
+
+        // Configuration reçue de l'interface : { name, proto, uri, format } — ne JAMAIS la journaliser (secrets).
+        val proto: String
+        val uri: String
         try {
-            // ─── 1. Etablissement de l'interface VPN Android (le "tube") ───
-            val builder = Builder()
-                .setSession("Labo Surf")
-                .addAddress("10.10.0.2", 32)   // adresse locale virtuelle du tunnel
-                .addDnsServer("1.1.1.1")
-                .addDnsServer("1.0.0.1")
-                .addRoute("0.0.0.0", 0)        // route tout le trafic dans le tunnel
-
-            tunInterface = builder.establish()
-
-            // ─── 2. Brancher Xray ici (PROCHAINE ETAPE, pas encore fait) ───
-            // C'est ici qu'on demarre le coeur Xray avec la config VLESS/XHTTP
-            // recue depuis le panel (serverConfigJson), et qu'on lui passe le
-            // file descriptor tunInterface pour qu'il lise/ecrive les paquets.
-            // Exemple d'approche (a adapter selon la librairie choisie) :
-            //
-            //   val fd = tunInterface?.fd ?: throw IllegalStateException()
-            //   XrayCore.start(fd, buildXrayConfigFrom(serverConfigJson))
-            //
-            // Tant que cette partie n'est pas branchee, le tunnel existe mais
-            // ne fait rien passer : c'est pour ca qu'on doit faire cette etape
-            // avant de considerer le VPN "fonctionnel".
-
-            stateListener?.invoke(STATE_CONNECTED, null)
+            val cfg = org.json.JSONObject(serverConfigJson ?: "")
+            proto = cfg.optString("proto").lowercase()
+            uri = cfg.optString("uri")
+            require(uri.isNotBlank())
         } catch (e: Exception) {
-            stateListener?.invoke(STATE_ERROR, e.message ?: "Erreur inconnue")
-            stopSelf()
+            fail("invalid_config"); return
         }
+        if (proto !in SUPPORTED_PROTOCOLS) { fail("unsupported_protocol"); return }
+        val link = try { UdpLink.parse(uri) } catch (e: UdpLink.Invalid) { fail("invalid_config"); return }
+
+        val myGeneration = ++generation
+        stateListener?.invoke(STATE_CONNECTING, null)
+        val udp = UdpTunnelClient(link, protect = { protect(it) })
+        client = udp
+        worker = Thread({
+            try {
+                val session = udp.connect()
+                udp.verifyPath()                       // une vraie requête DNS traverse le tunnel : sinon PAS de « connecté »
+                if (myGeneration != generation) { udp.stop(); return@Thread }
+                val builder = Builder()
+                    .setSession("Labo Surf")
+                    .addAddress(session.tunnelIp, 32)
+                    .addRoute("0.0.0.0", 0)            // tout l'IPv4 dans le tunnel
+                    .addRoute("::", 0)                 // l'IPv6 est capté puis abandonné (le serveur est IPv4) : aucune fuite
+                    .addDnsServer("1.1.1.1")
+                    .addDnsServer("8.8.8.8")
+                    .setMtu(1380)
+                    .setBlocking(true)
+                val pfd = builder.establish()
+                if (pfd == null) { udp.stop(); fail("vpn_permission_denied"); return@Thread }
+                tunInterface = pfd
+                udp.start(FileInputStream(pfd.fileDescriptor), FileOutputStream(pfd.fileDescriptor)) { code ->
+                    if (myGeneration == generation) { stateListener?.invoke(STATE_ERROR, code ?: "tunnel_closed"); teardown(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf() }
+                }
+                startStats(udp, myGeneration)
+                stateListener?.invoke(STATE_CONNECTED, null)
+            } catch (f: UdpTunnelClient.Failure) {
+                if (myGeneration == generation) fail(f.code)
+            } catch (e: Exception) {
+                if (myGeneration == generation) fail("connect_failed")
+            }
+        }, "labosurf-connect")
+        worker?.isDaemon = true
+        worker?.start()
+    }
+
+    private fun startStats(udp: UdpTunnelClient, myGeneration: Int) {
+        statsThread = Thread({
+            var lastRx = 0L
+            var lastTx = 0L
+            try {
+                while (myGeneration == generation) {
+                    Thread.sleep(1000)
+                    val rx = udp.rxBytes.get()
+                    val tx = udp.txBytes.get()
+                    statsListener?.invoke(rx, tx, rx - lastRx, tx - lastTx)
+                    lastRx = rx; lastTx = tx
+                }
+            } catch (e: InterruptedException) {
+            }
+        }, "labosurf-stats")
+        statsThread?.isDaemon = true
+        statsThread?.start()
+    }
+
+    /** Arrête proprement tout ce qui tourne (sans notifier l'interface). */
+    private fun teardown() {
+        generation++
+        try { client?.stop() } catch (_: Exception) { }
+        client = null
+        try { tunInterface?.close() } catch (_: Exception) { }
+        tunInterface = null
+        worker?.interrupt(); worker = null
+        statsThread?.interrupt(); statsThread = null
     }
 
     private fun stopTunnel() {
         stateListener?.invoke(STATE_STOPPING, null)
-        try {
-            tunInterface?.close()
-        } catch (_: Exception) {
-        }
-        tunInterface = null
+        teardown()
         stateListener?.invoke(STATE_DISCONNECTED, null)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     override fun onRevoke() {
-        // Appele si l'utilisateur revoque la permission VPN depuis les reglages Android
+        // Appelé si l'utilisateur révoque la permission VPN depuis les réglages Android
         stopTunnel()
         super.onRevoke()
+    }
+
+    override fun onDestroy() {
+        teardown()
+        super.onDestroy()
     }
 
     private fun buildNotification(): Notification {
@@ -190,4 +214,3 @@ class LaboVpnService : VpnService() {
             .build()
     }
 }
-

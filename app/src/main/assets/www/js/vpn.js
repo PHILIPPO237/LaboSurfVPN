@@ -376,6 +376,10 @@ Actions.togglePower = () => {
 // Certains détails renvoyés par le natif sont des codes (traduits ici), d'autres du texte brut.
 const NATIVE_ERRORS = { vpn_permission_denied: 'err.vpnPermission', engine_unavailable: 'err.engineUnavailable',
   unsupported_protocol: 'err.protocolUnsupported', invalid_config: 'err.invalidConfig' };
+// Codes du moteur UDP natif (LaboVpnService / UdpTunnelClient) : chacun a son texte, jamais un message brut du serveur
+['auth_failed', 'account_expired', 'quota_exceeded', 'max_connections', 'max_ips', 'ip_unavailable', 'server_unreachable', 'server_not_vpn',
+  'protocol_error', 'tunnel_unverified', 'session_lost', 'network_lost', 'tunnel_closed', 'protect_failed', 'connect_failed']
+  .forEach((c) => { NATIVE_ERRORS[c] = 'err.native.' + c; });
 function nativeDetailText(detail){
   return NATIVE_ERRORS[detail] ? t(NATIVE_ERRORS[detail]) : (detail || '');
 }
