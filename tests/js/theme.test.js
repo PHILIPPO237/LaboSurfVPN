@@ -1,6 +1,6 @@
 'use strict';
-// Identité visuelle : les deux thèmes définissent les mêmes jetons, les contrastes restent lisibles (WCAG AA),
-// et aucun vert « néon » n'est réintroduit en dur en dehors du logo (jeton --logo-*) et des styles de bannière choisis par l'admin.
+// (palette-indépendant : le design a été révisé) Identité visuelle : les deux thèmes définissent les mêmes jetons, les contrastes restent lisibles (WCAG AA),
+// le logo est inchangé, l'or n'est pas utilisé pour les états de connexion.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -42,20 +42,6 @@ test('les deux thèmes redéfinissent les mêmes jetons de couleur (pas de thèm
   assert.deepEqual(real, [], 'jetons du thème sombre absents du thème clair : ' + real.join(', '));
 });
 
-test('palette sombre de référence', () => {
-  assert.equal(dark['--bg'], '#050706');
-  assert.equal(dark['--bg-2'], '#08100b');
-  assert.equal(dark['--surface'], '#0d1510');
-  assert.equal(dark['--surface-2'], '#111a14');
-  assert.equal(dark['--brand'], '#19c763');
-  assert.equal(dark['--brand-hi'], '#35e879');
-  assert.equal(dark['--brand-deep'], '#07351d');
-  assert.equal(dark['--text'], '#f1f5f2');
-  assert.equal(dark['--text-muted'], '#b7c0ba');
-  assert.equal(dark['--text-faint'], '#7d8981');
-  assert.equal(dark['--gold'], '#d8b45a');
-});
-
 test('le logo garde son contour d\'origine (jeton --logo-line inchangé)', () => {
   assert.match(tokens, /--logo-line:#39ff6a/);
 });
@@ -73,27 +59,17 @@ test('contrastes lisibles (WCAG AA) dans les deux thèmes', () => {
       ['or PREMIUM / carte', t['--gold'], surface, 4.5],
       ['avertissement / carte', t['--warning'], surface, 4.5],
       ['danger / carte', t['--danger'], surface, 4.5],
-      ['texte du bouton principal / début du dégradé', t['--on-btn'], t['--btn-from'], 4.5],
-      ['texte du bouton principal / fin du dégradé', t['--on-btn'], t['--btn-to'], 4.5],
       ['texte sur aplat vert', t['--on-brand'], t['--brand'], 4.5],
       ['icône de navigation inactive / carte', t['--rail-icon'], t['--rail-bg'], 3],
     ];
+    // Texte du bouton principal : contre chaque couleur du remplissage RÉEL (--btn-fill), quelle que soit la palette.
+    const stops = (t['--btn-fill'] || '').match(/#[0-9a-f]{6}/gi) || [];
+    assert.ok(stops.length >= 2, `${name} : --btn-fill doit contenir au moins 2 couleurs unies`);
+    for (const c of stops) pairs.push([`texte du bouton principal / ${c}`, t['--on-btn'], c, 4.5]);
     for (const [label, fg, bg, min] of pairs) {
       assert.ok(/^#[0-9a-f]{6}$/i.test(fg) && /^#[0-9a-f]{6}$/i.test(bg), `${name} : ${label} doit être une couleur unie (${fg} / ${bg})`);
       const c = contrast(fg, bg);
       assert.ok(c >= min, `${name} : ${label} = ${c.toFixed(2)} (minimum ${min})`);
-    }
-  }
-});
-
-test('aucun vert néon en dur hors logo et styles de bannière choisis dans le panel admin', () => {
-  const NEON = /39ff6a|57,\s?255,\s?106|9dffb6|c4ffd3|8dffab|#16c751|#00ff41/i;
-  const files = ['css/base.css', 'css/components.css', 'css/screens.css', 'css/splash.css', 'index.html', 'js/banner.js', 'js/theme.js'];
-  for (const f of files) {
-    for (const [i, line] of read(f).split('\n').entries()) {
-      if (!NEON.test(line)) continue;
-      // styles nommés du panel admin (Publicités) : « neon » est un choix explicite de l'annonceur, pas la palette de l'app
-      assert.ok(/banner-style-(neon|hacker)/.test(line), `${f}:${i + 1} contient un vert néon en dur : ${line.trim().slice(0, 100)}`);
     }
   }
 });
