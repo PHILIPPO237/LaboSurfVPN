@@ -57,7 +57,7 @@ if [ -n "$SOCK" ]; then
   if adb shell dumpsys activity services "$PKG" | grep -q "LaboVpnService"; then ok "LaboVpnService est demarre (service au premier plan)"; else ko "LaboVpnService absent"; fi
 
   # Trafic reel du TELEPHONE a travers le TUN puis le tunnel (le faux serveur repond aux ICMP)
-  PING="$(adb shell ping -c 3 -W 3 1.1.1.1 2>&1 | tr -d '\r')"
+  PING="$(timeout 40 adb shell "ping -c 3 -W 3 -w 15 1.1.1.1" 2>&1 | tr -d "")"
   echo "$PING" | tail -4 | sed 's/^/INFO  ping : /' | tee -a "$REPORT"
   if echo "$PING" | grep -qE "[1-3] received"; then ok "ping emis par l'emulateur : reponse via le TUN et le tunnel UDP"; else ko "ping : aucune reponse a travers le tunnel"; fi
   sleep 2
