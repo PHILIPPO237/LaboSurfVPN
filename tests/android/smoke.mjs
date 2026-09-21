@@ -20,10 +20,13 @@ if (!page) { console.log('ECHEC page de l\'application introuvable', targets.map
 
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error('websocket')); });
+ws.onclose = () => { console.log('ECHEC la page de l application s est fermee (application ou emulateur arrete)'); process.exit(1); };
 let id = 0; const pending = new Map();
 ws.onmessage = (m) => { const d = JSON.parse(m.data); if (d.id && pending.has(d.id)) { pending.get(d.id)(d); pending.delete(d.id); } };
-const ev = (expression) => new Promise((res) => {
+const ev = (expression) => new Promise((res, rej) => {
   const i = ++id; pending.set(i, res);
+  const timer = setTimeout(() => { pending.delete(i); rej(new Error('delai depasse : la page ne repond plus')); }, 20000);
+  pending.set(i, (d) => { clearTimeout(timer); res(d); });
   ws.send(JSON.stringify({ id: i, method: 'Runtime.evaluate', params: { expression, awaitPromise: true, returnByValue: true } }));
 }).then((d) => { if (d.result.exceptionDetails) throw new Error(JSON.stringify(d.result.exceptionDetails.exception || d.result.exceptionDetails)); return d.result.result.value; });
 const waitFor = async (expr, ms, step = 250) => { const end = Date.now() + ms; while (Date.now() < end) { if (await ev(expr)) return true; await sleep(step); } return false; };

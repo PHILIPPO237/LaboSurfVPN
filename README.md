@@ -1,81 +1,109 @@
-# Labo Surf VPN — projet Android
+# LaboSurfVPN
 
-## Où on en est
+Client Android du système **LABOSURF**. Application (WebView + Kotlin) qui permet à un utilisateur de créer un compte, se connecter,
+choisir un serveur et établir un tunnel VPN.
 
-Ce dossier est un vrai projet Android Studio (Kotlin + Gradle), pas juste une maquette.
+> **Statut réel (2026-09-21) — à lire avant tout.** Un seul moteur est intégré : **UDP** (protocole LABOSURF PRO). Le trafic de ce
+> protocole **n'est pas chiffré**. La chaîne serveur (client de référence → vrai serveur UDP du VPS → Internet, derrière un NAT)
+> est prouvée ; le client Android est testé en JVM et sur émulateur contre un **faux** serveur ; il n'a **jamais été testé sur un
+> téléphone réel**, et aucun panel public n'est joignable aujourd'hui. Détail exact, fonction par fonction :
+> [`docs/LABOSURFVPN_REAL_FUNCTIONALITY.md`](docs/LABOSURFVPN_REAL_FUNCTIONALITY.md) · résultats des tests :
+> [`docs/LABOSURFVPN_E2E_STATUS.md`](docs/LABOSURFVPN_E2E_STATUS.md).
 
-Ce qui est déjà fait et fonctionnel :
-- **L'interface complète** (`app/src/main/assets/www/`) : c'est exactement l'app qu'on a construite ensemble (Accueil, Mon compte, Serveurs, Paramètres, Communauté, Historique — bannière, couleurs, animations comprises). Rien n'a été refait, juste recopié tel quel.
-- **MainActivity.kt** : ouvre cette interface dans une WebView plein écran, comme une vraie app. Le bouton retour Android fonctionne.
-- **Le pont JS ↔ natif** : quand tu appuies sur START dans l'app, le JavaScript appelle `window.LaboSurfNative.startVpn(...)` — un vrai pont existe, pas une simulation.
-- **LaboVpnService.kt** : un vrai service VPN Android. Android reconnaît le tunnel (icône clé dans la barre de statut), demande la permission système la première fois, etc.
+## 1. Architecture réelle
 
-## Client de la chaîne Laboratoire → agent → PRO (phase 5)
+```
+LaboSurfVPN (Android)
+   │  HTTPS + jeton Bearer
+   ▼
+Laboratoire du Free-Surf  (panel : comptes, abonnements, règles commerciales)
+   │  HTTPS + signatures Ed25519 (empreinte TLS épinglée), via tunnel SSH aujourd'hui
+   ▼
+labosurf-agent            (API de management de PRO, portées, anti-rejeu)
+   ▼
+LABOSURF_PRO              (moteurs, Services, Access)
+   ▼
+Service  ─►  Access  ─►  moteur VPN (UDP, TUIC, …)  ─►  Internet
+```
 
-L'application est un **client** du Laboratoire du Free-Surf : elle ne parle jamais à l'agent ni à PRO, uniquement à `POST /api/user/connect`.
-Audit complet, matrice VPN/Panel/PRO, doublons et capacités backend manquantes : [`docs/AUDIT_LABOSURFVPN.md`](docs/AUDIT_LABOSURFVPN.md).
+LaboSurfVPN ne parle **qu'au panel**. Il ne contacte jamais l'agent, PRO ni un moteur autrement que par le tunnel lui-même.
 
-- **Adresse de l'API** : fixée à la compilation, HTTPS obligatoire. `gradle assembleDebug -PlabosurfPanelBaseUrl=https://mon-panel.example` ;
-  build debug sur émulateur : `-PlabosurfPanelBaseUrl=http://10.0.2.2:8000` (le clair n'est toléré que sur la boucle locale, en debug).
-  Dans un navigateur (développement) : `index.html?api=http://127.0.0.1:8000`.
-- **États de connexion** : `off` → `connecting` → `on` → `disconnecting` → `error`. `on` (et le chronomètre) n'existent que lorsque le moteur natif
-  répond `window.onNativeVpnState('connected')` ; jamais avant, jamais simulé. Trafic et quota : « indisponible » tant qu'ils ne sont pas mesurés.
-- **Moteur** : `LaboVpnService.ENGINE_INTEGRATED = false` → l'app refuse de se connecter (et n'appelle pas le backend) tant qu'aucun moteur n'est intégré.
-- **Tests** : `node --test tests/js/*.test.js` (Node ≥ 18, aucune dépendance). Faux panel pour piloter l'interface dans un navigateur :
-  `python tests/mock_panel.py 8000` puis `index.html?api=http://127.0.0.1:8000` (identifiant quelconque, mot de passe `ok`).
-- `design-previews/` : anciennes maquettes, **hors APK**, à supprimer quand tu veux.
+| Couche | Rôle |
+|---|---|
+| **LaboSurfVPN** | interface, session, choix du serveur, demande de configuration, moteur client (UDP), états et erreurs |
+| **Laboratoire du Free-Surf** | source de vérité des **utilisateurs**, comptes, abonnements, offres, paiements, renouvellements, règles commerciales, promotions, appareils / anti-abus ; décide *qui a droit à quoi* ; relie un serveur commercial à un Service PRO |
+| **labosurf-agent** | porte d'entrée signée de PRO : Services / Access, application, santé, émission de configuration |
+| **LABOSURF_PRO** | tout le technique : moteurs, Services, Access, ports, domaines, TLS, expiration **technique**, application des Access dans les moteurs, santé, consommation *lorsqu'un moteur la mesure* |
 
-## Ce qu'il manque — une seule chose, mais importante
+## 2. Ce que fait LaboSurfVPN
 
-Le tunnel VPN existe mais **ne fait pas encore transiter le trafic à travers Xray/VLESS**. C'est noté clairement dans `LaboVpnService.kt` (section "PROCHAINE ÉTAPE"). Il faut :
+Inscription · connexion · session (mémoire seulement) · profil · abonnement (lecture) · services et serveurs **fournis par le panel** ·
+demande de configuration (`POST /api/user/connect`) · connexion / déconnexion · états `off → connecting → on → disconnecting → error`
+issus **uniquement** du moteur natif · trafic **réellement mesuré** (octets passés dans le tunnel) · historique **local** · guide ·
+assistant (FAQ locale, **pas une IA**) · réglages · messages / annonces / bannière du panel · renouvellement et code d'activation (formulaires
+vers le panel) · Device ID (`ANDROID_ID`) transmis au panel.
 
-1. Ajouter une librairie Xray-Android compilée (ex. `AndroidLibXrayLite`) au fichier `app/build.gradle.kts` — je ne peux pas choisir/vérifier la bonne version depuis ce sandbox (accès Internet restreint ici), il faut le faire depuis Android Studio avec une connexion normale.
-2. Brancher cette librairie dans `startTunnel()` du service, à l'endroit indiqué par le commentaire.
+## 3. Ce que LaboSurfVPN ne fait pas
 
-## Comment compiler ça — point important
+Ce n'est **pas** un panneau d'administration, ni un gestionnaire de moteurs PRO, de VPS ou de licences PRO, ni un remplacement du
+Laboratoire. Le paiement et la gestion avancée restent au panel (bouton « Continuer sur le Laboratoire du Free-Surf »). Rien n'est
+inventé : pas de faux serveur, ping, débit, durée ni état connecté ; une donnée non mesurée s'affiche « indisponible ».
 
-**Ce projet ne peut pas se compiler dans Termux** (contrairement à tes projets Python/Node habituels) — une app Android/Kotlin a besoin du SDK Android complet, ce que Termux ne fournit pas de façon fiable. Attention : apktool (même "Apktool M") ne convient pas non plus ici, car il sert à modifier un APK **déjà compilé** (décompiler → éditer le smali → reconstruire), pas à compiler un projet Kotlin neuf avec des dépendances Gradle.
+## 4. Protocoles et moteurs
 
-**La solution adaptée à ta situation : GitHub Actions**, comme pour ton VPS. Un workflow est déjà prêt dans `.github/workflows/build-apk.yml` :
-1. Pousse ce dossier sur un dépôt GitHub (comme tu le fais déjà pour xhttp-reverse-proxy).
-2. Va dans l'onglet "Actions" du dépôt, sur le site GitHub — depuis ton téléphone, ça marche.
-3. GitHub compile l'APK pour toi sur ses propres serveurs.
-4. Tu télécharges l'APK compilé directement depuis la page du run terminé (section "Artifacts").
-5. Installe-le sur ton téléphone (autorise "sources inconnues" si demandé).
+| Moteur | Serveur (PRO) | Android | État |
+|---|---|---|---|
+| **UDP** (LABOSURF) | présent ; testé sur le VPS (test direct) | **client Kotlin natif** | **seul moteur intégré** ; non chiffré ; jamais testé sur téléphone |
+| TUIC | installé et validé sur le VPS (phase 4) | non | refusé côté Android (`protocole non pris en charge`) |
+| Xray, Hysteria, Hysteria2, WireGuard, SSH, SlowDNS, DNSTT, FreewayGate | présents dans PRO, non validés sur le VPS | non | idem |
+| Hybrides (DNSTT+SSH, SlowDNS+SSH, DNSTT+Xray, SlowDNS+Xray…) | composables dans PRO | non | non intégrés, non validés |
 
-Zéro PC, zéro Termux nécessaire pour cette étape — uniquement pour la compilation. Le reste (éditer les fichiers, ajouter la librairie Xray) peut se faire depuis MT Manager ou l'éditeur web de GitHub sur mobile, exactement comme tu fais déjà.
+Un moteur n'est **jamais** affiché « disponible » parce que PRO le connaît : il faut un client Android qui sait le transporter
+(`getEngineInfo()`), une configuration émise par le backend, puis un tunnel vérifié.
 
-## Comment mettre le projet en ligne (pour que GitHub Actions compile)
+### UDP — comment ça marche vraiment
+Lien émis par PRO : `udp://<utilisateur>@<hôte>:<port>?pass=<mot de passe>`. Poignée de main : `HELLO` → `CHALLENGE <nonce>` →
+`AUTH <HMAC-SHA256(mot de passe, nonce)>` → `AUTH_OK <ip tunnel>` puis `CLIENT_ID <hex>` ; ensuite des paquets IPv4 bruts précédés d'un
+en-tête de 12 octets. Le `ClientID` attendu par le serveur dépend de l'adresse source **qu'il observe** : derrière un NAT (4G/5G, box)
+un client ne peut pas le calculer, d'où l'annonce `CLIENT_ID` (correctif PRO, branche `phase6-udp-nat`). « Connecté » n'est émis
+qu'après une **vraie requête DNS aller-retour à travers le tunnel**. L'IPv6 est capté puis abandonné (aucune fuite, aucune connectivité
+IPv6). Spécification serveur : `LABOSURF_PRO/PROTOCOL.md`.
 
-1. Crée un dépôt GitHub (ou réutilise un existant), depuis ton téléphone.
-2. Transfère ce dossier dedans — même méthode que pour xhttp-reverse-proxy (phone → Catbox → wget, ou upload direct via l'interface web GitHub).
-3. GitHub Actions se déclenche automatiquement (fichier déjà présent : `.github/workflows/build-apk.yml`).
-4. Récupère l'APK compilé dans l'onglet Actions → dernier run → Artifacts.
+## 5. Compte utilisateur et super-admin
 
-## Structure de l'interface (assets/www)
+* **Utilisateur** : `POST /api/auth/register` (`username`, `contact`, `recovery_secret`, `password`, `confirm_password`) → jeton +
+  compte créé dans le **panel** (statut `configuring` puis `active`) → `GET /api/user/me`. Android ne conserve aucun compte.
+* **Super-admin** : compte `super_admin` du panel, créé au démarrage **sans mot de passe** ; le mot de passe se définit sur le serveur
+  avec `python -m app.tools.admin_account set-password` (saisie masquée, bcrypt, jamais en clair ni dans Git). Procédure complète :
+  [`docs/SUPER_ADMIN_BOOTSTRAP.md`](docs/SUPER_ADMIN_BOOTSTRAP.md) (code dans le dépôt du panel, branche `phase6-account-admin`).
 
-- `index.html` : uniquement le balisage (écrans, rail latéral, sprite d'icônes).
-- `css/tokens.css` : **couleurs, dimensions, typographie** (thèmes sombre/clair) — seul endroit à modifier pour changer le look.
-- `css/base.css`, `components.css`, `screens.css` : structure, composants réutilisables, écrans.
-- `js/i18n.js` + `js/lang/fr.js` / `en.js` : traductions (mêmes clés dans les deux fichiers). HTML : `data-i18n="clé"` ; JS : `t('clé')`.
-- `js/theme.js` (système / clair / sombre), `core.js` (toasts, dialogues, formats), `api.js` (accès au panel),
-  `servers.js`, `vpn.js` (états : off / connecting / on / disconnecting / error), `account.js`, `reseller.js`, `activity.js`, `settings.js`, `banner.js`, `app.js`.
-- Pages légales : aucune URL n'est codée en dur. Quand le backend les fournit : `setLegalUrls({ terms: 'https://…', privacy: { fr: '…', en: '…' } })` (`js/api.js`). Sans URL : « Bientôt disponible / Coming soon ».
-- Textes du backend : `localizedField(obj, 'message')` (`js/core.js`) choisit `message_fr` / `message_en` (ou `{fr,en}`) selon la langue, sans jamais inventer de traduction.
-- Test rapide dans un navigateur : `python -m http.server 5173 --directory app/src/main/assets/www`.
-  Dans un navigateur, la connexion VPN n'existe pas : l'app l'indique au lieu de la simuler. Pour mettre au point les écrans « connecté » / « connexion en cours », ajouter `?preview=1` à l'adresse : un bandeau « Aperçu — connexion non réelle » reste affiché en permanence.
+## 6. Configuration et installation
 
-### Design system et composants
-- `css/tokens.css` : couleurs de marque, **couleurs d'état de connexion** (`--state-idle / busy / on / warn / err`), ombres, couches (`--z-*`), mouvement. Aucune couleur en dur ailleurs.
-- `css/components.css` : boutons, cartes, champs, badges, alertes, états vides/squelettes, rail, toasts, dialogues, **feuille (`.sheet`), rubriques repliables (`.accordion`), étapes (`.steps`), légende d'états (`.state-list`), emplacement d'assistant (`.assistant-slot`)**.
-- Navigation : rail latéral à quatre boutons — Accueil, Compte, Services, Réglages (+ raccourcis thème/langue sous Réglages). Serveurs s'ouvre depuis Services ; Historique et Espace revendeur depuis Compte ; Communauté depuis Réglages (`PARENT_OF` dans `js/app.js`).
-- Accueil : une seule page, sans défilement (logo, START, état, action, bannière). `homeReadiness()` (`js/vpn.js`) déduit la situation réelle avant connexion à partir du jeton, de l'offre du panel et de la liste des serveurs : `login`, `loading`, `ready`, `expired`, `noServer`, `srvError`, `srvDown`. Chaque valeur pilote le titre, le message, le bouton d'action (`HOME_ACTIONS`) et la couleur. La bannière occupe tout l'espace restant ; un message plus long défile dans la bannière (`fitHomeScreen()` ne réduit que les commandes, jamais sous 62 %).
-- Accueil, bouton START : relief et halo (`css/screens.css`), libellés START / CONNEXION… / CONNECTÉ (+ STOP) / DÉCONNEXION…, calés sur `VPN.state`. « Connecté depuis » (durée) et « Serveur » ne s'affichent que si `VPN.session` existe (posée uniquement par `markConnected`, donc une vraie connexion) ; sans moteur, aucune durée n'apparaît.
-- Bannière premium : `#homeBannerCard` = cadre + décor animé `.bn-fx` (halos et réseau, `transform` seulement, désactivé par `prefers-reduced-motion`) + corps défilable `.bn-body`. Emplacements : image, badge, titre, texte, action, indicateur (`js/banner.js`) ; le contenu par défaut est neutre (canal et groupe officiels). Le rail est en haut à gauche (≈ 18 % de la hauteur) et la bannière passe dessous sur toute la largeur (`.is-inset` si l'écran est trop court).
-- Services : `js/services.js`, liste réelle de `/api/user/services` (états : non connecté, chargement, erreur, vide). Aucun service n'est inventé.
-- Compte : menu (Accès et abonnement, Messages, Historique, Sécurité, Préférences, Aide) + sous-vues (`setAccView` dans `js/account.js`). Historique : `js/activity.js` (états disponible / aucune session / chargement / erreur ; sessions enregistrées localement).
-- Guide : `js/guide.js` + `#guideBackdrop` dans `index.html`. Ouvrir avec `Guide.open('trouble')` ou `data-action="openGuide" data-topic="server"` (rubriques : start, service, server, connect, states, access, history, trouble). Contenu statique traduit (`guide.*` dans `fr.js` / `en.js`).
-- Assistant LABOSURF : onglet « Assistant » du guide, catégories qui renvoient vers la réponse du guide ; la conversation est marquée « Bientôt » (`Assistant.available=false`). Aucune réponse n'est simulée ; le backend reste à connecter.
-- Onboarding : `js/onboarding.js`, 4 écrans courts, passable, mémorisé (`ls.onboarded`) ; relançable depuis Réglages.
-- Moteur VPN : `LaboVpnService.ENGINE_INTEGRATED` vaut `false` tant que Xray n'est pas branché. Dans ce cas l'app affiche « Le moteur de connexion n'est pas encore installé » et n'annonce jamais « Connecté ».
+* **Adresse de l'API** : fixée à la compilation, HTTPS obligatoire — `gradle assembleDebug -PlabosurfPanelBaseUrl=https://mon-panel.example`.
+  Valeur par défaut `https://app.laboratoire.free-surf237-4all.xyz`, **actuellement injoignable** (voir docs). Émulateur + panel local :
+  `-PlabosurfPanelBaseUrl=http://10.0.2.2:8000` (clair toléré **uniquement** sur la boucle locale, en debug).
+* **Navigateur (développement)** : `python -m http.server 5173 --directory app/src/main/assets/www` puis `index.html?api=http://127.0.0.1:8000`.
+  Aucune connexion VPN n'existe dans un navigateur (l'app le dit). `?preview=1` ne sert qu'à mettre au point les écrans (bandeau permanent).
+* **Compilation** : ce dépôt se compile sur GitHub Actions (`.github/workflows/build-apk.yml`) ou Android Studio ; l'APK **debug** est
+  téléchargeable depuis les Releases / artefacts. Aucune signature de production n'est configurée.
+* **Serveur UDP de test** : voir `docs/LABOSURFVPN_E2E_STATUS.md` (binaire de la branche `phase6-udp-nat` de PRO, port 5667/UDP, TUN).
 
+## 7. Limitations connues
+
+Trafic UDP non chiffré · aucun panel public joignable · jeton perdu à la fermeture (pas de Keystore) · révocation d'un Access effective à
+la prochaine authentification (une session ouverte n'est pas coupée) · quota et consommation non mesurés pour TUIC · aucun autre moteur
+intégré · pas de test sur téléphone réel · espace revendeur à déplacer vers le panel.
+
+## 8. Tests
+
+| Commande | Ce que ça vérifie |
+|---|---|
+| `node --test tests/js/*.test.js` | contrat `connect`, flux de connexion, traductions, thème (53 tests) |
+| `gradle testDebugUnitTest` | moteur UDP : protocole (vecteurs du client de référence), lien, client contre faux serveur (26 tests) |
+| `python tests/udp/reference_client.py --host H --port P --password-file F` | **vrai** serveur UDP : handshake, DNS et ICMP à travers le tunnel |
+| `bash tests/android/emulator_test.sh app-debug.apk` | APK sur émulateur : lancement, refus propres, connexion contre `tests/udp/mock_server.py` (faux serveur, ne transporte rien) |
+
+## 9. Structure
+
+`app/src/main/assets/www` (interface : `index.html`, `css/`, `js/`, `js/lang/`) · `app/src/main/java/.../MainActivity.kt` (WebView, pont
+natif) · `.../LaboVpnService.kt` (VpnService) · `.../udp/` (protocole, lien, client) · `docs/` · `tests/`.
