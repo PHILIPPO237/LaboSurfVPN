@@ -16,21 +16,25 @@ MOCKLOG=mock-server.log
 MOCKPW="pw-$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 : > "$REPORT"; : > "$MOCKLOG"
 FAIL=0
+A() { timeout 90 adb "$@"; }
 say()  { echo "$*" | tee -a "$REPORT"; }
 ok()   { say "OK    $*"; }
 ko()   { say "ECHEC $*"; FAIL=1; }
-smoke() { timeout 150 node tests/android/smoke.mjs 9222 "$@" > smoke.out 2>&1; RC=$?; tee -a "$REPORT" < smoke.out; grep -q "^ECHEC" smoke.out && FAIL=1; [ "$RC" = "124" ] && ko "phase $1 : delai depasse (150 s)"; }
+alive() { [ "$(timeout 20 adb get-state 2>/dev/null)" = "device" ] || { ko "emulateur hors ligne avant la phase $1 (voir logcat.txt)"; return 1; }; }
+smoke() { alive "$1" || return; timeout 150 node tests/android/smoke.mjs 9222 "$@" > smoke.out 2>&1; RC=$?; tee -a "$REPORT" < smoke.out; grep -q "^ECHEC" smoke.out && FAIL=1; [ "$RC" = "124" ] && ko "phase $1 : delai depasse (150 s)"; }
 
-adb wait-for-device
-adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 1; done'
-say "Appareil : $(adb shell getprop ro.product.model | tr -d '\r') Android $(adb shell getprop ro.build.version.release | tr -d '\r') (API $(adb shell getprop ro.build.version.sdk | tr -d '\r'))"
+A wait-for-device
+A shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 1; done'
+say "Appareil : $(A shell getprop ro.product.model | tr -d '\r') Android $(A shell getprop ro.build.version.release | tr -d '\r') (API $(A shell getprop ro.build.version.sdk | tr -d '\r'))"
 
 adb logcat -c
-if adb install -r "$APK" 2>&1 | tee -a "$REPORT" | grep -q "Success"; then ok "installation de l'APK"; else ko "installation de l'APK"; fi
-adb shell dumpsys package "$PKG" | grep -E "versionCode|versionName" | head -2 | tr -d '\r' | sed 's/^ */INFO  /' | tee -a "$REPORT"
+adb logcat -v time > logcat.txt 2>&1 &
+LOGPID=$!
+if A install -r "$APK" 2>&1 | tee -a "$REPORT" | grep -q "Success"; then ok "installation de l'APK"; else ko "installation de l'APK"; fi
+A shell dumpsys package "$PKG" | grep -E "versionCode|versionName" | head -2 | tr -d '\r' | sed 's/^ */INFO  /' | tee -a "$REPORT"
 
 # Consentement VPN accorde par adb (sinon Android affiche la boite de dialogue systeme, que personne ne peut valider en CI)
-adb shell appops set "$PKG" ACTIVATE_VPN allow
+A shell appops set "$PKG" ACTIVATE_VPN allow
 
 # Faux serveur UDP LABOSURF sur la machine hote (l'emulateur l'atteint en 10.0.2.2)
 python3 tests/udp/mock_server.py --port 5667 --password "$MOCKPW" --log "$MOCKLOG" > /dev/null 2>&1 &
@@ -38,26 +42,27 @@ MOCKPID=$!
 sleep 1
 kill -0 "$MOCKPID" 2>/dev/null && ok "faux serveur UDP de test demarre" || ko "faux serveur UDP de test non demarre"
 
-adb shell am start -W -n "$PKG/.MainActivity" | tr -d '\r' | grep -E "Status|Activity|TotalTime" | sed 's/^/INFO  /' | tee -a "$REPORT"
+A shell am start -W -n "$PKG/.MainActivity" | tr -d '\r' | grep -E "Status|Activity|TotalTime" | sed 's/^/INFO  /' | tee -a "$REPORT"
 sleep 12   # animation d'ouverture + chargement de la WebView
 
-PID="$(adb shell pidof "$PKG" | tr -d '\r' | awk '{print $1}')"
+PID="$(A shell pidof "$PKG" | tr -d '\r' | awk '{print $1}')"
 if [ -n "$PID" ]; then ok "l'application tourne (pid $PID)"; else ko "l'application ne tourne pas"; fi
-if adb logcat -d -b crash | grep -q "FATAL EXCEPTION"; then ko "plantage detecte (FATAL EXCEPTION)"; adb logcat -d -b crash | head -30 | tee -a "$REPORT"; else ok "aucun plantage dans logcat"; fi
+if A logcat -d -b crash | grep -q "FATAL EXCEPTION"; then ko "plantage detecte (FATAL EXCEPTION)"; A logcat -d -b crash | head -30 | tee -a "$REPORT"; else ok "aucun plantage dans logcat"; fi
 
-SOCK="$(adb shell cat /proc/net/unix | tr -d '\r' | grep -o "webview_devtools_remote_${PID}" | head -1)"
+SOCK="$(A shell cat /proc/net/unix | tr -d '\r' | grep -o "webview_devtools_remote_${PID}" | head -1)"
 if [ -n "$SOCK" ]; then
-  adb forward tcp:9222 "localabstract:$SOCK" >/dev/null
+  A forward tcp:9222 "localabstract:$SOCK" >/dev/null
   smoke base
   smoke badauth 10.0.2.2 5667
   smoke connect 10.0.2.2 5667 "$MOCKPW"
 
   # Etat systeme : un reseau VPN existe reellement
-  if adb shell dumpsys connectivity | tr -d '\r' | grep -qiE "type: VPN|VPN\[|VpnTransportInfo|transports: \[ VPN \]"; then ok "Android connait un reseau VPN actif"; else ko "aucun reseau VPN actif cote systeme"; fi
-  if adb shell dumpsys activity services "$PKG" | grep -q "LaboVpnService"; then ok "LaboVpnService est demarre (service au premier plan)"; else ko "LaboVpnService absent"; fi
+  if A shell dumpsys connectivity | tr -d '\r' | grep -qiE "type: VPN|VPN\[|VpnTransportInfo|transports: \[ VPN \]"; then ok "Android connait un reseau VPN actif"; else ko "aucun reseau VPN actif cote systeme"; fi
+  if A shell dumpsys activity services "$PKG" | grep -q "LaboVpnService"; then ok "LaboVpnService est demarre (service au premier plan)"; else ko "LaboVpnService absent"; fi
 
   # Trafic reel du TELEPHONE a travers le TUN puis le tunnel (le faux serveur repond aux ICMP)
-  PING="$(timeout 40 adb shell "ping -c 3 -W 3 -w 15 1.1.1.1" 2>&1 | tr -d "")"
+  PING="$(timeout 40 A shell "ping -c 3 -W 3 -w 15 1.1.1.1" 2>&1 | tr -d "
+")"
   echo "$PING" | tail -4 | sed 's/^/INFO  ping : /' | tee -a "$REPORT"
   if echo "$PING" | grep -qE "[1-3] received"; then ok "ping emis par l'emulateur : reponse via le TUN et le tunnel UDP"; else ko "ping : aucune reponse a travers le tunnel"; fi
   sleep 2
@@ -68,15 +73,17 @@ if [ -n "$SOCK" ]; then
 
   smoke disconnect
   sleep 2
-  if adb shell dumpsys activity services "$PKG" | grep -q "LaboVpnService"; then ko "LaboVpnService toujours actif apres deconnexion"; else ok "LaboVpnService arrete apres deconnexion"; fi
+  if A shell dumpsys activity services "$PKG" | grep -q "LaboVpnService"; then ko "LaboVpnService toujours actif apres deconnexion"; else ok "LaboVpnService arrete apres deconnexion"; fi
 else
   ko "WebView non inspectable (socket devtools introuvable)"
 fi
 
-if adb shell dumpsys window | grep -q "com.android.vpndialogs"; then ko "une boite de dialogue d'autorisation VPN est restee affichee"; else ok "aucune boite de dialogue d'autorisation VPN en attente"; fi
+if A shell dumpsys window | grep -q "com.android.vpndialogs"; then ko "une boite de dialogue d'autorisation VPN est restee affichee"; else ok "aucune boite de dialogue d'autorisation VPN en attente"; fi
 kill "$MOCKPID" 2>/dev/null; wait "$MOCKPID" 2>/dev/null
-adb exec-out screencap -p > emulator-screen.png 2>/dev/null
-adb logcat -d -b crash | grep -q "FATAL EXCEPTION" && FAIL=1
+sleep 1; kill "$LOGPID" 2>/dev/null
+{ echo "--- logcat (lignes utiles)"; grep -E "AndroidRuntime|FATAL|labosurf|LaboSurf|VpnService|Vpn |ActivityManager.*labosurf" logcat.txt | tail -60; } | tee -a "$REPORT" >/dev/null
+A exec-out screencap -p > emulator-screen.png 2>/dev/null
+A logcat -d -b crash | grep -q "FATAL EXCEPTION" && FAIL=1
 { echo "--- journal du faux serveur (dernieres lignes)"; tail -12 "$MOCKLOG"; } | tee -a "$REPORT" >/dev/null
 [ "$FAIL" = "0" ] && say "RESULTAT : test emulateur reussi" || say "RESULTAT : ECHEC du test emulateur"
 exit "$FAIL"

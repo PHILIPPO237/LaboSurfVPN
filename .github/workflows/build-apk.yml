@@ -139,6 +139,8 @@ jobs:
           path: |
             emulator-report.txt
             emulator-screen.png
+            logcat.txt
+            mock-server.log
           if-no-files-found: ignore
 
       - name: Remonter le resultat du test emulateur
