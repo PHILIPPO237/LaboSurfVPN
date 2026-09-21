@@ -18,10 +18,10 @@
 .hero-brand.on .hexagon svg{ animation:logoGlow 2.6s ease-in-out infinite; }
 @keyframes logoGlow{ 0%,100%{ filter:drop-shadow(0 0 18px var(--logo-glow)); } 50%{ filter:drop-shadow(0 0 34px var(--logo-glow)); } }
 .app-title{ font:800 32px/1.1 var(--font-display); letter-spacing:.03em; margin-top:8px; text-shadow:0 0 18px var(--brand-glow); }
-.app-title .g{ color:var(--brand); }
+.app-title .g{ background:var(--grad-text); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:none; filter:drop-shadow(0 0 10px var(--brand-glow)); }
 .app-title .badge-pro{ vertical-align:middle; font-size:10px; }
 .app-subtitle{ font:600 12.5px/1.3 var(--font-body); color:var(--text-muted); letter-spacing:.04em; margin-top:3px; text-transform:uppercase; }
-.sub-green{ color:var(--brand); font-weight:700; }
+.sub-green{ background:var(--grad-text); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:700; }
 .sub-white{ color:var(--text); }
 
 .power-zone{ position:relative; flex-shrink:0; width:var(--power-size); height:var(--power-size); margin:var(--sp-2) 0; }
@@ -41,7 +41,7 @@
 .power-btn:focus-visible{ outline-offset:6px; }
 /* Halo derrière le bouton : discret au repos, plus présent en connexion, respire lentement une fois connecté */
 .power-zone::before{ content:''; position:absolute; inset:-16%; border-radius:50%; pointer-events:none; opacity:0;
-  background:radial-gradient(circle, var(--brand-glow) 0, transparent 66%); transition:opacity .6s var(--ease); }
+  background:var(--halo-mix); transition:opacity .6s var(--ease); }
 .home[data-state="off"][data-ready="ready"] .power-zone::before{ opacity:.16; animation:haloIdle 6s ease-in-out infinite; }
 .home[data-state="connecting"] .power-zone::before, .home[data-state="disconnecting"] .power-zone::before{ opacity:.55; animation:haloBreathe 2.4s ease-in-out infinite; }
 .home[data-state="on"] .power-zone::before{ opacity:.85; animation:haloBreathe 4.6s ease-in-out infinite; }
@@ -68,8 +68,8 @@
   -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); }
 .home[data-state="on"] .power-btn{
   color:var(--on-brand); text-shadow:0 1px 0 rgba(255,255,255,.25);
-  background:radial-gradient(circle at 50% 22%, var(--brand-hi) 0%, var(--brand) 34%, var(--brand-strong) 78%, #0a5f31 100%);
-  box-shadow:0 14px 30px var(--power-drop), 0 0 34px var(--brand-glow), inset 0 2px 1px rgba(255,255,255,.28), inset 0 -12px 24px rgba(0,0,0,.2);
+  background:radial-gradient(circle at 50% 20%, #d4ffdf 0%, #7dffa0 16%, #39ff6a 38%, #12b34a 76%, #0a7a32 100%);
+  box-shadow:0 14px 30px var(--power-drop), 0 0 34px var(--brand-glow), 0 0 60px rgba(47,240,168,.22), inset 0 2px 1px rgba(255,255,255,.28), inset 0 -12px 24px rgba(0,0,0,.2);
 }
 .home[data-state="connecting"] .power-btn, .home[data-state="disconnecting"] .power-btn{
   color:var(--on-brand); cursor:progress;
@@ -131,7 +131,7 @@
 .banner-card .bc-img{ width:100%; max-height:240px; object-fit:cover; border-radius:var(--r-md); margin-bottom:var(--sp-3); }
 .banner-card .bc-text{ font:700 var(--fs-lg)/1.3 var(--font-display); color:#fff; text-wrap:balance; overflow-wrap:anywhere; white-space:pre-line; }
 .bn-title{ font:800 var(--fs-xl)/1.2 var(--font-display); color:#fff; margin-bottom:var(--sp-2); overflow-wrap:anywhere; }
-.bn-badge{ display:inline-block; margin-bottom:var(--sp-2); background:rgba(25,199,99,.14); color:#35e879; }
+.bn-badge{ display:inline-block; margin-bottom:var(--sp-2); background:rgba(57,255,106,.14); color:#39ff6a; }
 /* Message long : la bannière s'allonge vers le bas, texte aligné à gauche pour rester lisible */
 .banner-card.is-long{ text-align:left; }
 .banner-card.is-long .bc-text{ font-size:var(--fs-md); font-weight:600; line-height:1.65; text-wrap:pretty; }
@@ -191,7 +191,7 @@
   animation:glassOrbB 21s ease-in-out infinite alternate; }
 @keyframes glassOrbA{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(38%,22%,0) scale(1.15); } }
 @keyframes glassOrbB{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(-42%,-26%,0) scale(1.12); } }
-:root{ --glass-tint:rgba(9,18,12,.42); }
+:root{ --glass-tint:rgba(3,22,12,.42); }
 :root[data-theme="light"]{ --glass-tint:rgba(9,18,12,.72); }   /* sur fond clair, plus de teinte pour garder un texte lisible (≥ 4,5:1) */
 .banner-style-default{
   color:#f1f5f2; border:1px solid rgba(255,255,255,.22);
@@ -205,7 +205,7 @@
 .banner-style-default::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
   background:radial-gradient(120% 70% at 0% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%); }
 .banner-style-default::after{ content:''; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
-  background:linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 34%, rgba(255,255,255,0) 60%, rgba(25,199,99,.28));
+  background:linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 34%, rgba(255,255,255,0) 60%, rgba(57,255,106,.4));
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask-composite:exclude; }
 .banner-style-default .bn-halo{ opacity:.18; }   /* le décor interne s'efface : le verre laisse voir les halos du fond */
@@ -221,11 +221,11 @@
 .bd .badge{ font-size:max(10px, .68em); padding:.34em .9em; letter-spacing:.09em; text-transform:uppercase; }
 .bd-head{ display:flex; flex-direction:column; align-items:center; gap:.3em; }
 .bd-mark{ font:700 3.1em/1 var(--font-display); letter-spacing:.24em; padding-left:.24em;
-  background:linear-gradient(90deg, #c9efd8, #3fdc80 55%, #14a656); -webkit-background-clip:text; background-clip:text; color:transparent;
-  filter:drop-shadow(0 0 .3em rgba(25,199,99,.26)); }
+  background:linear-gradient(90deg, #d8ffe3, #7dffa0 28%, #39ff6a 55%, #2ff0a8 78%, #12b34a); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 .32em rgba(57,255,106,.45)); }
 .bd-rule{ display:flex; align-items:center; gap:.55em; width:9em; }
-.bd-rule i{ flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(25,199,99,.6)); }
-.bd-rule i:last-child{ background:linear-gradient(270deg, transparent, rgba(25,199,99,.6)); }
+.bd-rule i{ flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(57,255,106,.7)); }
+.bd-rule i:last-child{ background:linear-gradient(270deg, transparent, rgba(57,255,106,.7)); }
 .bd-rule b{ width:.42em; height:.42em; background:#d8b45a; transform:rotate(45deg); box-shadow:0 0 .5em rgba(216,180,90,.4); }
 .bd-tagline{ font:700 1.16em/1.25 var(--font-display); letter-spacing:.01em; text-wrap:balance; }
 .bd-sub{ margin:0; max-width:24em; font:500 max(11px, .84em)/1.45 var(--font-body); color:#d6e1db; text-wrap:balance; }
@@ -240,11 +240,11 @@
 .home-foot.is-inset .bn-body:has(> .bd:not([hidden])){ padding:var(--sp-3) var(--sp-2); }
 .home-foot.is-inset .bd-perks{ flex-wrap:nowrap; }
 .home-foot.is-inset .bd-perks .ic{ display:none; }
-.banner-style-default .badge-ok{ background:rgba(25,199,99,.18); color:#86e0aa; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
+.banner-style-default .badge-ok{ background:rgba(57,255,106,.2); color:#8dffab; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
 .bd-badge-premium{ background:rgba(216,180,90,.18); color:#ecd28f; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
 /* La bannière est sombre dans les deux thèmes : ses boutons gardent le vert vif (le vert du thème clair y serait peu lisible) */
-.banner-card .bc-link, .banner-style-default .btn-primary{ background:linear-gradient(160deg, #0b6a37, #0e8341); border-color:rgba(53,232,121,.34); color:#f4fbf6; box-shadow:inset 0 1px 0 rgba(255,255,255,.16); }
-.banner-style-default .btn-primary{ box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px rgba(0,0,0,.28); }
+.banner-card .bc-link{ border:1px solid transparent; background:var(--btn-gloss) padding-box, var(--btn-fill) padding-box, var(--btn-rim) border-box; color:var(--on-btn); box-shadow:var(--btn-hi), var(--btn-glow); }
+.banner-style-default .btn-primary{ box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 8px 24px rgba(57,255,106,.42), 0 2px 6px rgba(0,0,0,.3); }
 .banner-style-default .btn-secondary{ background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.34); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); color:#f7faf8; }
 /* Styles reprenant ceux du panel admin (Publicités) */
 .banner-style-neon{ border:1px solid #39ff6a; box-shadow:0 0 22px rgba(57,255,106,.25); background:rgba(57,255,106,.06); }

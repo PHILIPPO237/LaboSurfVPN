@@ -18,9 +18,9 @@ I18N.register('fr', {
   'home.since': 'Connecté depuis', 'home.serverLbl': 'Serveur :', 'banner.sub': "Rejoins-nous sur Telegram.",
 
   'home.stats.loading': 'Statistiques en cours de chargement…', 'home.stats.unavailable': 'Statistiques indisponibles pour le moment', 'home.server': 'Serveur', 'home.received': 'Reçu', 'home.sent': 'Envoyé',
-  'home.state.off.title': 'Déconnecté', 'home.state.off.sub': 'Appuie sur le bouton pour sécuriser ta connexion',
-  'home.state.connecting.title': 'Connexion en cours…', 'home.state.connecting.sub': 'Établissement du tunnel sécurisé',
-  'home.state.on.title': 'Connecté', 'home.state.on.sub': 'Ta connexion est sécurisée',
+  'home.state.off.title': 'Déconnecté', 'home.state.off.sub': 'Appuie sur le bouton pour te connecter au serveur',
+  'home.state.connecting.title': 'Connexion en cours…', 'home.state.connecting.sub': 'Établissement du tunnel',
+  'home.state.on.title': 'Connecté', 'home.state.on.sub': 'Ton trafic passe par le serveur (tunnel non chiffré)',
   'home.state.disconnecting.title': 'Déconnexion…', 'home.state.disconnecting.sub': 'Fermeture du tunnel',
   'home.state.error.title': 'Échec de la connexion', 'home.state.error.sub': '',
   'home.power.connect': 'Se connecter', 'home.power.disconnect': 'Se déconnecter', 'home.power.wait': 'Veuillez patienter',
@@ -180,10 +180,10 @@ I18N.register('fr', {
   'faq.support.a': "Une fois connecté, écris depuis Mon profil → Messages : ton message part vers ton revendeur ou l'administrateur. Tu peux aussi rejoindre la communauté officielle (Réglages → Communauté).",
   'faq.support.k': "support, contact, contacter, revendeur, administrateur, aide humaine, message, telegram, parler",
   'faq.privacy.q': "Mes données sont-elles protégées ?",
-  'faq.privacy.a': "L'application n'enregistre pas les sites que tu visites, ne contient ni publicité tierce ni mesure d'audience, et ta session n'est pas conservée après la fermeture. Le détail est dans la Politique de confidentialité.",
+  'faq.privacy.a': "L'application n'enregistre pas les sites que tu visites, ne contient ni publicité tierce ni mesure d'audience, et ta session n'est pas conservée après la fermeture. Attention : le tunnel UDP actuel ne chiffre pas ton trafic. Le détail est dans la Politique de confidentialité.",
   'faq.privacy.k': "donnees, confidentialite, vie privee, prive, securite, securise, espionne, rgpd",
   'faq.about.q': "C'est quoi Labo Surf ?",
-  'faq.about.a': "L'application compagnon du Laboratoire du Free-Surf : un accès simple et sécurisé, lié à ton abonnement, sans configuration technique à gérer toi-même. Le détail est dans À propos.",
+  'faq.about.a': "L'application compagnon du Laboratoire du Free-Surf : un accès simple, lié à ton abonnement, sans configuration technique à gérer toi-même. Le détail est dans À propos.",
   'faq.about.k': "c'est quoi labo surf, presentation, laboratoire, projet, philippo, a propos",
   'act.title': 'Historique', 'act.sessions': 'Sessions', 'act.log': 'Journal', 'act.recent': 'Sessions récentes',
   'act.logTitle': 'Journal technique', 'act.status.ok': 'Terminée', 'act.status.failed': 'Échec',
@@ -261,7 +261,7 @@ I18N.register('fr', {
   'set.vpnSystemSub': 'VPN permanent et blocage des connexions hors VPN (kill switch)',
   'set.group': 'Groupe de discussion', 'set.groupSub': 'Échanges entre membres',
   'set.channel': 'Canal', 'set.channelSub': 'Annonces et mises à jour', 'set.developer': 'Le développeur', 'set.developerSub': 'Contacter Philippo',
-  'set.app': 'Application', 'set.aboutText': "Labo Surf est l'application compagnon du Laboratoire du Free-Surf : un accès rapide et sécurisé, lié à ton abonnement.",
+  'set.app': 'Application', 'set.aboutText': "Labo Surf est l'application compagnon du Laboratoire du Free-Surf : un accès rapide, lié à ton abonnement.",
   'set.version': 'Version', 'set.terms': "Conditions d'utilisation", 'set.privacy': 'Politique de confidentialité',
   
 
@@ -283,7 +283,7 @@ I18N.register('fr', {
   'nav.community': 'Communauté', 'nav.shortcuts': 'Raccourcis', 'nav.shortcutsShow': 'Afficher les raccourcis', 'nav.shortcutsHide': 'Masquer les raccourcis',
   'set.joinTitle': 'Rejoins la communauté', 'set.joinText': "Astuces, nouveaux serveurs et retours d'expérience entre membres.",
   'act.connState': 'État de la connexion', 'act.connInfo': 'Informations de connexion', 'act.duration': 'Durée',
-  'pill.off': 'Non protégé', 'pill.connecting': 'Connexion…', 'pill.on': 'Protection active', 'pill.disconnecting': 'Déconnexion…', 'pill.error': 'Non protégé',
+  'pill.off': 'Hors tunnel', 'pill.connecting': 'Connexion…', 'pill.on': 'Tunnel actif', 'pill.disconnecting': 'Déconnexion…', 'pill.error': 'Hors tunnel',
 
   // Accueil : « préparation » avant connexion (chaque état correspond à une situation réelle, jamais simulée)
   'home.ready.login.title': 'Connecte-toi pour commencer', 'home.ready.login.sub': 'Ton compte donne accès à tes serveurs.',
@@ -434,7 +434,7 @@ I18N.register('fr', {
   // À propos / About
   'nav.about': "À propos",
   'about.title': "À propos",
-  'about.tagline': "L'application compagnon du Laboratoire du Free-Surf : un accès simple et sécurisé, lié à ton abonnement, sans configuration technique à gérer toi-même.",
+  'about.tagline': "L'application compagnon du Laboratoire du Free-Surf : un accès simple, lié à ton abonnement, sans configuration technique à gérer toi-même.",
   'about.mission.title': "Le projet",
   'about.mission.text': "Labo Surf est l'application Android du Laboratoire du Free-Surf. Elle est pensée pour rendre l'accès simple : tu te connectes à ton compte, tu choisis un service et un serveur, puis tu appuies sur START. Tout ce que tu vois (compte, abonnement, services, serveurs) vient directement du Laboratoire du Free-Surf.",
   'about.how.title': "Comment ça fonctionne",
