@@ -19,7 +19,7 @@ FAIL=0
 say()  { echo "$*" | tee -a "$REPORT"; }
 ok()   { say "OK    $*"; }
 ko()   { say "ECHEC $*"; FAIL=1; }
-smoke() { node tests/android/smoke.mjs 9222 "$@" 2>&1 | tee -a "$REPORT" | grep -q "^ECHEC" && FAIL=1; }
+smoke() { timeout 150 node tests/android/smoke.mjs 9222 "$@" > smoke.out 2>&1; RC=$?; tee -a "$REPORT" < smoke.out; grep -q "^ECHEC" smoke.out && FAIL=1; [ "$RC" = "124" ] && ko "phase $1 : delai depasse (150 s)"; }
 
 adb wait-for-device
 adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 1; done'
@@ -74,7 +74,7 @@ else
 fi
 
 if adb shell dumpsys window | grep -q "com.android.vpndialogs"; then ko "une boite de dialogue d'autorisation VPN est restee affichee"; else ok "aucune boite de dialogue d'autorisation VPN en attente"; fi
-kill "$MOCKPID" 2>/dev/null
+kill "$MOCKPID" 2>/dev/null; wait "$MOCKPID" 2>/dev/null
 adb exec-out screencap -p > emulator-screen.png 2>/dev/null
 adb logcat -d -b crash | grep -q "FATAL EXCEPTION" && FAIL=1
 { echo "--- journal du faux serveur (dernieres lignes)"; tail -12 "$MOCKLOG"; } | tee -a "$REPORT" >/dev/null

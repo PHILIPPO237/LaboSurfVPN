@@ -18,3 +18,5 @@ captures/
 node_modules/
 .claude/
 design-previews/
+__pycache__/
+*.pyc
