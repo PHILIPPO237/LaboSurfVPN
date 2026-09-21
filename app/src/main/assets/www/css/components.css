@@ -70,7 +70,7 @@
 .btn-row > .btn{ flex:1; }
 
 /* ---------- Cartes & titres ---------- */
-.card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-4); margin-bottom:var(--sp-3); }
+.card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-4); margin-bottom:var(--sp-3); box-shadow:var(--card-halo); }
 .card-title{
   display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2);
   font:600 10.5px/1.2 var(--font-mono); letter-spacing:.13em; text-transform:uppercase; color:var(--brand-title); margin-bottom:var(--sp-3);

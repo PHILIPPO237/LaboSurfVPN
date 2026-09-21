@@ -48,27 +48,28 @@
   --warning:#f2ae45;--warning-soft:rgba(242,174,69,.14);--warning-line:rgba(242,174,69,.4);
 
   /* Surfaces & texte */
-  --bg:#03100a;
-  --bg-2:#051a10;
-  --bg-glow:radial-gradient(circle at 50% 0%, rgba(57,255,106,.11), transparent 58%), radial-gradient(circle at 98% 42%, rgba(47,240,168,.06), transparent 48%), radial-gradient(circle at 2% 82%, rgba(182,255,138,.05), transparent 48%);
-  --btn-off:#132a1c;
-  --btn-off-hi:#244430; --btn-off-lo:#08150d; --btn-off-edge:rgba(140,255,180,.12);   /* bouton START : relief */
-  --power-drop:rgba(0,8,3,.6);
-  --rail-bg:#071b0f;
-  --rail-line:rgba(57,255,106,.24);
+  --bg:#020604;
+  --bg-2:#040c07;
+  --bg-glow:radial-gradient(90% 42% at 50% -6%, rgba(57,255,106,.20), transparent 60%), radial-gradient(55% 34% at 100% 40%, rgba(47,240,168,.10), transparent 62%), radial-gradient(55% 34% at 0% 80%, rgba(182,255,138,.08), transparent 62%), radial-gradient(70% 30% at 50% 110%, rgba(57,255,106,.09), transparent 65%), linear-gradient(180deg, #030a05 0%, #020604 45%, #010402 100%);
+  --btn-off:#101d16;
+  --btn-off-hi:#1f3a2b; --btn-off-lo:#060d09; --btn-off-edge:rgba(140,255,180,.12);   /* bouton START : relief */
+  --power-drop:rgba(0,4,1,.65);
+  --rail-bg:#050d08;
+  --rail-line:rgba(57,255,106,.26);
   --rail-icon:#39ff6a;                   /* icône de navigation inactive */
   --rail-active-bg:linear-gradient(150deg, #12b34a 0%, #39ff6a 55%, #9dffb6 100%);
-  --surface:#09190f;
-  --surface-2:#0e2618;
+  --surface:#07110b;
+  --surface-2:#0b1a12;
   --border:rgba(120,255,170,.12);
   --border-strong:rgba(120,255,170,.24);
   --text:#f1f5f2;
-  --text-muted:#b3c4b8;
-  --text-faint:#7e9585;
-  --input-bg:#04140b;
-  --nav-bg:rgba(6,26,15,.97);
-  --overlay:rgba(0,10,4,.68);
+  --text-muted:#b6c6bb;
+  --text-faint:#7d9285;
+  --input-bg:#030a06;
+  --nav-bg:rgba(4,12,8,.97);
+  --overlay:rgba(0,6,2,.7);
   --shadow:0 10px 30px rgba(0,0,0,.5);
+  --card-halo:0 0 0 1px rgba(57,255,106,.05), 0 10px 28px rgba(0,0,0,.45), 0 0 22px rgba(57,255,106,.06);   /* halo vert des cartes */
 
   /* Typographie */
   --font-display:'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -146,6 +147,7 @@
   --nav-bg:rgba(251,252,250,.96);
   --overlay:rgba(8,20,14,.45);
   --shadow:0 8px 24px rgba(20,50,35,.12);
+  --card-halo:none;
 }
 
 /* ---------- Jetons complémentaires (identiques dans les deux thèmes : ils référencent les jetons ci-dessus) ----------
