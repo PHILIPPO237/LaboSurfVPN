@@ -10,7 +10,7 @@ Mise à jour : **2026-09-23** (mission synchronisation globale GitHub + releases
 | Visibilité | **PUBLIC** (seul dépôt public de l'écosystème — décision utilisateur) |
 | Clone | `C:\Users\atsan\OneDrive\Bureau\LaboSurfVPN` |
 | Branche stable | `main` = origin (`23e7023`) |
-| Branche de travail | `phase7-udp-real` (HEAD `8f97e85`, = origin) |
+| Branche de travail | `phase7-udp-real` (HEAD `5d5ee9f`, = origin) |
 | Branche de sauvegarde | `backup/pre-global-sync-20260923` (`c8229e8`) |
 | Worktree | propre |
 
