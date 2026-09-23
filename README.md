@@ -10,6 +10,8 @@ choisir un serveur et établir un tunnel VPN.
 > [`docs/LABOSURFVPN_REAL_FUNCTIONALITY.md`](docs/LABOSURFVPN_REAL_FUNCTIONALITY.md) · résultats des tests :
 > [`docs/LABOSURFVPN_E2E_STATUS.md`](docs/LABOSURFVPN_E2E_STATUS.md).
 
+> Historique des versions : [`CHANGELOG.md`](CHANGELOG.md) · état git/releases : [`PROJECT_RELEASE_STATUS.md`](PROJECT_RELEASE_STATUS.md).
+
 ## 1. Architecture réelle
 
 ```
