@@ -1,3 +1,6 @@
+# Fins de ligne : normalisation LF pour tous les fichiers texte.
+* text=auto
+# Fichiers texte historiques stockés en LF de manière explicite
 *.sh text eol=lf
 *.mjs text eol=lf
 *.yml text eol=lf
