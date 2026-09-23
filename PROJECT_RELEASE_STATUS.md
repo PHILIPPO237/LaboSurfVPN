@@ -28,6 +28,7 @@ Mise à jour : **2026-09-23** (mission synchronisation globale GitHub + releases
 - **8 fichiers marqués modifiés → 100% CRLF/LF, aucun changement de contenu** (même cause que le panel). Normalisation appliquée : `.gitattributes` étendu (`* text=auto`), commit `8f97e85` poussé sur `phase7-udp-real`.
 - Config locale corrigée : `remote.origin.fetch` ajouté ; refs distantes locales synchronisées.
 - Branch `phase7-udp-real` = origin.
+- `CHANGELOG.md` ajouté (factuel : `v1.0.0-test.1` + travaux non publiés, historique main).
 
 ## Travail NON publié / contraintes
 
