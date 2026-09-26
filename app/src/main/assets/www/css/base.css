@@ -15,6 +15,7 @@ body::before{ content:''; position:fixed; inset:0; background:var(--bg-glow); po
   width:min(95vmax, 760px); aspect-ratio:1; }
 :root[data-theme="dark"]::before{ left:-42%; top:-30%; background:radial-gradient(circle, rgba(57,255,106,.17), rgba(57,255,106,.05) 38%, transparent 62%); animation:ambA 24s ease-in-out infinite alternate; }
 :root[data-theme="dark"]::after{ right:-46%; bottom:-34%; background:radial-gradient(circle, rgba(47,240,168,.13), rgba(182,255,138,.04) 40%, transparent 62%); animation:ambB 30s ease-in-out infinite alternate; }
+:root[data-theme="dark"]:not([data-screen="home"])::before, :root[data-theme="dark"]:not([data-screen="home"])::after{ animation-play-state:paused; }   /* moins d'effets simultanés hors accueil */
 @keyframes ambA{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(22%,14%,0) scale(1.14); } }
 @keyframes ambB{ from{ transform:translate3d(0,0,0) scale(1); } to{ transform:translate3d(-20%,-16%,0) scale(1.12); } }
 @media (prefers-reduced-motion: reduce){ :root[data-theme="dark"]::before, :root[data-theme="dark"]::after{ animation:none; } }

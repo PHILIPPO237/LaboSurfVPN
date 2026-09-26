@@ -9,6 +9,7 @@ const SCREENS = ['home', 'services', 'servers', 'activity', 'account', 'clients'
 // Sous-écrans : le bouton du parent reste allumé sur le rail, et « retour » y ramène
 const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', community: 'settings', legal: 'settings' };
 let currentScreen = 'home';
+document.documentElement.dataset.screen = 'home';
 
 // Sens de la transition : sous-page = +1 (le contenu arrive du bas), retour = -1, sinon selon la position des boutons dans le rail
 const RAIL_ORDER = ['home', 'services', 'account', 'settings', 'logs', 'about'];   // même ordre que le rail (du plus au moins prioritaire)
@@ -25,6 +26,7 @@ function showScreen(name){
   const prevEl = wasActive ? null : $('screen-' + currentScreen);
   const dir = wasActive ? 1 : transitionDir(currentScreen, name);
   currentScreen = name;
+  document.documentElement.dataset.screen = name;   // permet à la CSS de calmer les effets hors accueil
   document.querySelectorAll('.screen').forEach((el) => { el.classList.toggle('active', el.id === 'screen-' + name); if(el.id === 'screen-' + name) el.classList.remove('is-leaving'); });
   if(!wasActive){
     $('screen-' + name).style.setProperty('--dir', dir);

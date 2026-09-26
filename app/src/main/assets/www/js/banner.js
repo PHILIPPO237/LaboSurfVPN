@@ -155,3 +155,21 @@ document.addEventListener('langchange', () => {   // le texte est reconstruit (m
   requestAnimationFrame(fitHomeScreen);
 });
 Splash.whenDone(twStart);   // la frappe commence quand l'animation d'ouverture est terminée
+
+// Logos des opérateurs (arrière-plan animé de la bannière). Dépose les fichiers dans app/src/main/assets/www/img/operators/ :
+// orange.svg|png|webp|jpg, mtn.…, camtel.… (voir le README de ce dossier). Ils sont détectés tout seuls, dans cet ordre de format ;
+// tant qu'aucun fichier n'existe, le macaron avec le nom de l'opérateur reste affiché.
+// À n'utiliser qu'avec le droit d'afficher ces logos et si le service fonctionne réellement sur ces réseaux.
+const OPERATOR_LOGO_DIR = 'img/operators/', OPERATOR_LOGO_EXT = ['svg', 'png', 'webp', 'jpg'];
+document.querySelectorAll('.bn-op').forEach((el) => {
+  const name = el.dataset.op, label = el.querySelector('b');
+  const tryExt = (i) => {
+    if(i >= OPERATOR_LOGO_EXT.length) return;   // aucun fichier : on garde le macaron
+    const img = new Image();
+    img.alt = ''; img.setAttribute('aria-hidden', 'true');
+    img.onload = () => { el.appendChild(img); if(label) label.hidden = true; };
+    img.onerror = () => tryExt(i + 1);
+    img.src = OPERATOR_LOGO_DIR + name + '.' + OPERATOR_LOGO_EXT[i];
+  };
+  tryExt(0);
+});
