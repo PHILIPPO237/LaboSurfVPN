@@ -69,7 +69,7 @@ if (phase === 'base') {
   check('moteur : UDP integre, seul protocole supporte', info.integrated === true && JSON.stringify(info.protocols) === '["udp"]', info);
   const base = await ev('LaboSurfNative.getApiBase()');
   check('adresse API compilee en HTTPS', /^https:\/\//.test(base), base);
-  check('version de l\'application lue du natif', (await ev('LaboSurfNative.getAppVersion()')) === '1.0.0');
+  check('version de l\'application lue du natif', (await ev('LaboSurfNative.getAppVersion()')) === '1.1.0');   // = versionName de app/build.gradle.kts
   check('identifiant d\'appareil fourni', (await ev('LaboSurfNative.getDeviceId().length')) > 0);
   check('origine locale (assets)', /^file:\/\/\/android_asset\//.test(await ev('location.href')));
 
