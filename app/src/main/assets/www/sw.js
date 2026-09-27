@@ -2,7 +2,7 @@
 // Met en cache l'interface pour qu'elle s'ouvre meme sans reseau.
 // Ne gere PAS le tunnel VPN (ca, ce sera du code natif Android plus tard).
 
-const CACHE_NAME = "labo-surf-v74";
+const CACHE_NAME = "labo-surf-v75";
 const ASSETS = [
   "./index.html",
   "./css/tokens.css",
@@ -55,6 +55,15 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // UNIQUEMENT les fichiers de l'interface (GET, meme origine, sous la portee du service worker). Les appels a l'API
+  // du panel (compte, sessions, appareils, configurations) ne sont JAMAIS mis en cache : une reponse authentifiee ne
+  // doit pas rester sur l'appareil ni etre resservie hors ligne apres une deconnexion ou une revocation de session.
+  const req = event.request;
+  const url = new URL(req.url);
+  if (req.method !== "GET" || url.origin !== self.location.origin || !url.pathname.startsWith(new URL(self.registration.scope).pathname)
+      || url.pathname.includes("/api/") || req.headers.has("Authorization")) {
+    return;   // le navigateur traite la requete normalement (reseau)
+  }
   // Reseau d'abord (pour recevoir les futures mises a jour), secours sur le cache si hors-ligne
   event.respondWith(
     fetch(event.request)

@@ -198,7 +198,7 @@ Actions.login = async () => {
   if(isBusy(btn)) return;
   setBusy(btn, true, 'acc.signingIn');
   try{
-    const login = await apiFetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) });
+    const login = await apiFetch('/api/auth/login', { method: 'POST', device: true, body: JSON.stringify({ username: u, password: p }) });
     if(!login.ok || !login.data || login.data.status !== 'ok'){
       showFormError('accError', apiMessage(login, 'acc.errBadCredentials'));
       return;
@@ -224,7 +224,7 @@ Actions.register = async () => {
   if(isBusy(btn)) return;
   setBusy(btn, true, 'acc.creating');
   try{
-    const reg = await apiFetch('/api/auth/register', { method: 'POST',
+    const reg = await apiFetch('/api/auth/register', { method: 'POST', device: true,
       body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, password: p, confirm_password: p2 }) });
     if(!reg.ok || !reg.data || reg.data.status !== 'ok'){
       showFormError('regError', apiMessage(reg, 'acc.errRegister'));
@@ -378,7 +378,7 @@ Actions.forgotReset = async () => {
   clearFormError('fpError');
   const np = $('fpNewPassword').value.trim(), cp = $('fpConfirmPassword').value.trim();
   if(!fpResetToken){ showFormError('fpError', t('acc.errResetExpired')); return; }
-  if(np.length < 6){ showFormError('fpError', t('acc.errPwShort')); return; }
+  if(np.length < 8){ showFormError('fpError', t('acc.errPwMin8')); return; }   // même règle que le panel (8 caractères)
   if(np !== cp){ showFormError('fpError', t('acc.errMismatch')); return; }
   const btn = $('fpResetBtn');
   if(isBusy(btn)) return;
@@ -409,7 +409,83 @@ function setAccView(name){
   $('screen-account').scrollTop = 0;
   // Ouvrir les messages les marque comme lus côté serveur (comportement historique) : seulement ici, jamais en arrière-plan
   if(Account.view === 'messages'){ loadAppMessages(); loadAnnouncements(true); }
+  if(Account.view === 'security') loadDevices();
 }
+
+// ─── Sécurité : mes appareils, déconnexion de tous les appareils, mot de passe (API du panel /api/account/*) ───
+async function loadDevices(){
+  if(!authToken) return;
+  const list = $('secDevicesList');
+  list.innerHTML = `<div class="empty">${esc(t('common.dots'))}</div>`;
+  try{
+    const res = await apiFetch('/api/account/devices');
+    if(!authToken) return;
+    if(!res.ok || !res.data || !Array.isArray(res.data.devices)){ list.innerHTML = `<div class="empty">${esc(apiMessage(res, 'acc.sec.devicesError'))}</div>`; return; }
+    Account.devices = res.data.devices;
+    renderDevices();
+  }catch(e){ list.innerHTML = `<div class="empty">${esc(t('err.panel'))}</div>`; }
+}
+function renderDevices(){
+  const list = $('secDevicesList'), items = Account.devices || [];
+  if(!items.length){ list.innerHTML = `<div class="empty">${esc(t('acc.sec.noDevices'))}</div>`; return; }
+  list.innerHTML = items.map((d, i) => {
+    const seen = d.last_seen_at ? new Date(d.last_seen_at * 1000).toLocaleString(I18N.lang === 'fr' ? 'fr-FR' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    const action = d.current ? `<span class="badge">${esc(t('acc.sec.thisDevice'))}</span>`
+      : `<button class="btn btn-ghost btn-sm" type="button" data-action="revokeDevice" data-index="${i}">${esc(t('acc.sec.disconnect'))}</button>`;
+    return `<div class="row"><span class="row-ico">${ic('shield')}</span><div class="row-main"><div class="row-title">${esc(d.device)}</div>
+      <div class="row-sub">${esc(t('acc.sec.lastSeen', { when: seen }))}</div></div>${action}</div>`;
+  }).join('');
+}
+Actions.revokeDevice = async (el) => {
+  const d = (Account.devices || [])[Number(el.dataset.index)];
+  if(!d || d.current) return;
+  // appareil identifié : toutes ses sessions ; sinon (ancienne session sans identifiant) : cette session seule
+  const path = d.device_id ? `/api/account/devices/${encodeURIComponent(d.device_id)}/revoke`
+    : (d.session_id ? `/api/account/sessions/${encodeURIComponent(d.session_id)}/revoke` : '');
+  if(!path) return;
+  try{
+    const res = await apiFetch(path, { method: 'POST' });
+    toast(res.ok ? t('acc.sec.deviceRevoked') : apiMessage(res, 'err.panel'), res.ok ? 'success' : 'error');
+  }catch(e){ toast(t('err.panel'), 'error'); }
+  loadDevices();
+};
+Actions.logoutAllDevices = async () => {
+  if(!authToken) return;
+  const ok = await confirmDialog({ title: t('acc.sec.logoutAll'), message: t('acc.sec.logoutAllConfirm'), confirm: t('acc.sec.logoutAll'), danger: true });
+  if(!ok || !authToken) return;
+  try{
+    const res = await apiFetch('/api/account/sessions/revoke-all', { method: 'POST', body: JSON.stringify({ keep_current: false }) });
+    if(!res.ok){ toast(apiMessage(res, 'err.panel'), 'error'); return; }
+  }catch(e){ toast(t('err.panel'), 'error'); return; }
+  // toutes les sessions sont invalidées côté serveur, y compris celle-ci
+  if(VPN.state === 'on') disconnectVpn();
+  resetToLoggedOut();
+  toast(t('acc.sec.loggedOutAll'), 'success');
+};
+Actions.changePassword = async () => {
+  clearFormError('secPwError');
+  const cur = $('secPwCurrent').value, np = $('secPwNew').value, cp = $('secPwConfirm').value, btn = $('secPwBtn');
+  if(!cur || !np || !cp){ showFormError('secPwError', t('acc.errFillAll')); return; }
+  if(np.length < 8){ showFormError('secPwError', t('acc.errPwMin8')); return; }
+  if(np !== cp){ showFormError('secPwError', t('acc.errMismatch')); return; }
+  if(isBusy(btn)) return;
+  setBusy(btn, true, 'acc.changing');
+  try{
+    const res = await apiFetch('/api/account/password', { method: 'POST',
+      body: JSON.stringify({ current_password: cur, new_password: np, confirm_password: cp }) });
+    if(res.ok && res.data && res.data.status === 'ok'){
+      ['secPwCurrent', 'secPwNew', 'secPwConfirm'].forEach((id) => { $(id).value = ''; });
+      toast(t('acc.sec.pwChangedOthers'), 'success', 4500);
+      loadDevices();
+    } else {
+      showFormError('secPwError', apiMessage(res, 'acc.errPwChange'));
+    }
+  }catch(e){
+    showFormError('secPwError', t('err.panel'));
+  }finally{
+    setBusy(btn, false, 'acc.sec.pwChangeBtn');
+  }
+};
 Actions.accOpen = (el) => setAccView(el.dataset.view);
 Actions.accBack = () => setAccView('menu');
 
@@ -436,8 +512,16 @@ function resetToLoggedOut(){
   loadHomeBanner(); // plus de jeton = plus de revendeur identifié -> bannière par défaut
 }
 
+// Déconnexion : la session est RÉVOQUÉE côté panel (POST /api/auth/logout, jeton Bearer), pas seulement oubliée ici.
+// Sans attendre la réponse : hors ligne, l'app se déconnecte quand même (la session expirera côté serveur).
+function endServerSession(){
+  if(!authToken) return;
+  try{ Promise.resolve(apiFetch('/api/auth/logout', { method: 'POST', timeout: 5000 })).catch(() => {}); }catch(e){}
+}
+
 Actions.logout = () => {
   if(VPN.state === 'on') disconnectVpn(); // ne jamais laisser un tunnel actif sans compte affiché
+  endServerSession();   // lit le jeton avant qu'il soit effacé
   resetToLoggedOut();
 };
 

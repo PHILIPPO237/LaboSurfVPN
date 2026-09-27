@@ -70,11 +70,15 @@ function loadApp(opts){
       getEngineInfo: n.engine === undefined ? undefined : () => JSON.stringify(n.engine),
       getApiBase: () => n.apiBase || '',
       getDeviceId: () => n.deviceId || 'device-test',
+      getInstallId: n.installId === undefined ? undefined : () => n.installId,
+      getDeviceLabel: n.deviceLabel === undefined ? undefined : () => n.deviceLabel,
       startVpn: (cfg) => { calls.native.startVpn.push(cfg); },
       stopVpn: () => { calls.native.stopVpn.push(true); },
       getAppVersion: () => '1.0.0-test', openVpnSettings(){}, setSystemBars(){}, clearWebCache(){},
     };
     if(n.engine === undefined) delete sandbox.LaboSurfNative.getEngineInfo;
+    if(n.installId === undefined) delete sandbox.LaboSurfNative.getInstallId;
+    if(n.deviceLabel === undefined) delete sandbox.LaboSurfNative.getDeviceLabel;
   }
   vm.createContext(sandbox);
 

@@ -500,9 +500,21 @@
             <p class="hint" style="margin-bottom:0" data-i18n="acc.sec.sessionText"></p>
           </div>
           <div class="card">
-            <div class="card-title" data-i18n="acc.sec.passwordTitle"></div>
-            <p class="hint" style="margin-bottom:0" data-i18n="acc.sec.passwordText"></p>
+            <div class="card-title" data-i18n="acc.sec.devicesTitle"></div>
+            <p class="hint" data-i18n="acc.sec.devicesText"></p>
+            <div class="list" id="secDevicesList"></div>
+            <button class="btn btn-secondary btn-block" type="button" data-action="logoutAllDevices" style="margin-top:var(--sp-3)"><svg class="ic " aria-hidden="true"><use href="#i-logout"/></svg><span data-i18n="acc.sec.logoutAll"></span></button>
           </div>
+          <form class="card" data-submit="changePassword" novalidate>
+            <div class="card-title" data-i18n="acc.sec.passwordTitle"></div>
+            <p class="hint" data-i18n="acc.sec.passwordText"></p>
+            <input type="text" autocomplete="username" hidden aria-hidden="true" tabindex="-1">
+            <label class="field"><span class="field-label" data-i18n="acc.sec.pwCurrent"></span><input class="input" type="password" id="secPwCurrent" autocomplete="current-password"></label>
+            <label class="field"><span class="field-label" data-i18n="acc.sec.pwNew"></span><input class="input" type="password" id="secPwNew" autocomplete="new-password"></label>
+            <label class="field"><span class="field-label" data-i18n="acc.sec.pwConfirm"></span><input class="input" type="password" id="secPwConfirm" autocomplete="new-password"></label>
+            <div class="form-error" id="secPwError" role="alert"></div>
+            <button class="btn btn-primary btn-block" type="submit" id="secPwBtn" data-i18n="acc.sec.pwChangeBtn"></button>
+          </form>
           <button class="btn btn-danger btn-block" type="button" data-action="logout"><svg class="ic " aria-hidden="true"><use href="#i-logout"/></svg><span data-i18n="acc.logout"></span></button>
         </div>
       </div>

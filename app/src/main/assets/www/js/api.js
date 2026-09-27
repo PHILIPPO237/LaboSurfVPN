@@ -36,6 +36,39 @@ function setLegalUrls(urls){
   if(typeof renderLegalRows === 'function') renderLegalRows();
 }
 
+// Identifiant d'INSTALLATION (sessions du compte, « Mes appareils » du panel). Distinct de getDeviceId() (vpn.js,
+// ANDROID_ID réservé à l'anti-abus de l'essai gratuit) : aléatoire, propre à cette installation, jamais dérivé du
+// matériel ni affiché. Natif : préférences privées de l'app (LaboSurfNative.getInstallId). Navigateur : localStorage.
+function getInstallId(){
+  if(isNativeApp() && typeof window.LaboSurfNative.getInstallId === 'function'){
+    try{ const id = window.LaboSurfNative.getInstallId(); if(id) return id; }catch(e){}
+  }
+  try{
+    let id = localStorage.getItem('labosurf_install_id');
+    if(!id){
+      const bytes = new Uint8Array(16);
+      if(window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
+      else for(let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+      id = 'ins-' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem('labosurf_install_id', id);
+    }
+    return id;
+  }catch(e){ return ''; }
+}
+function getDeviceLabel(){
+  if(isNativeApp() && typeof window.LaboSurfNative.getDeviceLabel === 'function'){
+    try{ const l = window.LaboSurfNative.getDeviceLabel(); if(l) return 'Labo Surf VPN - ' + l; }catch(e){}
+  }
+  return 'Labo Surf VPN';
+}
+// En-têtes d'appareil : envoyés SEULEMENT à l'ouverture d'une session (connexion, inscription — option device: true)
+function deviceHeaders(){
+  const h = {}, id = getInstallId();
+  if(id) h['X-Device-Id'] = id;
+  h['X-Device-Name'] = getDeviceLabel().replace(/[^\x20-\x7E]/g, '').slice(0, 80) || 'Labo Surf VPN';   // en-tête HTTP : ASCII seulement
+  return h;
+}
+
 const API_TIMEOUT_MS = 15000;
 let authToken = null;
 let authExpiresAt = null;   // instant d'expiration de la session (ms), d'après « expires_in » du panel ; null = inconnu
@@ -44,7 +77,7 @@ async function apiFetch(path, options){
   options = options || {};
   // Adresse absente ou non sécurisée : aucune requête n'est envoyée (jamais de repli vers une autre adresse ni vers HTTP)
   if(!API.state.ok) return { ok: false, status: 0, data: null, expired: false, configError: true };
-  const headers = Object.assign({}, options.headers || {});
+  const headers = Object.assign({}, options.device ? deviceHeaders() : {}, options.headers || {});
   if(authToken) headers['Authorization'] = 'Bearer ' + authToken;
   if(options.body && !(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';   // FormData : le navigateur fixe lui-même le type (multipart + boundary)
   headers['Accept-Language'] = I18N.lang; // permet au panel de répondre dans la langue de l'app s'il le supporte (ignoré sinon)

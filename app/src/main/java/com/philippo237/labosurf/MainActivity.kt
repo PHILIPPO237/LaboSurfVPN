@@ -23,6 +23,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private val TAG = "LaboSurf"
+    private val INSTALL_PREFS = "labosurf_install"   // preferences privees de l'app (non sauvegardees : allowBackup=false)
+    private val INSTALL_ID_KEY = "install_id"
 
     // Lance la boite de dialogue systeme Android ("Labo Surf souhaite configurer
     // une connexion VPN") — obligatoire, ce n'est pas quelque chose qu'on peut
@@ -196,6 +198,30 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun clearWebCache() {
             runOnUiThread { webView.clearCache(true) }
+        }
+
+        /**
+         * Identifiant d'INSTALLATION pour les sessions du compte (« Mes appareils » du panel) : aleatoire, genere une
+         * fois par l'application et garde dans ses preferences privees. Il n'est derive d'aucun identifiant materiel,
+         * disparait a la desinstallation (ou « Effacer les donnees ») et n'est jamais restaure sur un autre telephone
+         * (android:allowBackup="false"). Envoye au panel uniquement a la connexion / inscription (en-tete X-Device-Id).
+         */
+        @JavascriptInterface
+        fun getInstallId(): String {
+            val prefs = getSharedPreferences(INSTALL_PREFS, android.content.Context.MODE_PRIVATE)
+            prefs.getString(INSTALL_ID_KEY, null)?.let { if (it.isNotBlank()) return it }
+            val id = "ins-" + java.util.UUID.randomUUID().toString().replace("-", "")
+            prefs.edit().putString(INSTALL_ID_KEY, id).apply()
+            return id
+        }
+
+        /** Nom lisible de l'appareil pour la liste « Mes appareils » (ex. « Samsung SM-A155F ») : ni numero de serie ni IMEI. */
+        @JavascriptInterface
+        fun getDeviceLabel(): String {
+            val maker = android.os.Build.MANUFACTURER.orEmpty().replaceFirstChar { it.uppercase() }
+            val model = android.os.Build.MODEL.orEmpty()
+            val label = if (model.startsWith(maker, ignoreCase = true)) model else "$maker $model"
+            return label.trim().take(60)
         }
 
         @JavascriptInterface
