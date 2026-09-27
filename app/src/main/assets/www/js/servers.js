@@ -11,6 +11,14 @@ const Servers = {
 };
 const SEARCH_THRESHOLD = 5; // la recherche apparaît au-delà de ce nombre de serveurs
 
+// Profils au choix : GET /api/user/connect/options (le panel n'y met que ceux réellement disponibles).
+// Sans choix (« Automatique »), la connexion garde le comportement historique : le panel choisit sur le serveur retenu.
+const Profiles = {
+  list: [],
+  state: 'idle',       // idle | loading | ready | error | unsupported (panel sans cette route : section masquée)
+  selectedId: store.get('hostedProfile', null),
+};
+
 function toNumber(v){
   if(typeof v === 'number' && isFinite(v)) return v;
   if(typeof v === 'string' && v.trim() !== '' && isFinite(+v)) return +v;
@@ -60,6 +68,36 @@ function getSelectedServer(){
   return Servers.list.find((s) => sameId(s.id, Servers.selectedId) && s.id !== undefined)
     || Servers.list.find((s) => s.available)
     || Servers.list[0];
+}
+
+// Profil choisi : seulement s'il figure dans la dernière liste du panel (jamais un identifiant périmé envoyé à l'aveugle)
+function getSelectedProfile(){
+  if(Profiles.state !== 'ready' || Profiles.selectedId === null || Profiles.selectedId === undefined) return null;
+  return Profiles.list.find((p) => sameId(p.id, Profiles.selectedId)) || null;
+}
+const profileDisplayName = (p) => p.name || t('prof.defaultName', { n: p.id });
+const profileLocation = (p) => [p.serverName, [p.city, p.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+
+function profileRowHtml(p, selected){
+  const badge = p.health === 'unknown' ? `<span class="server-meta"><span class="badge badge-warn">${esc(t('prof.healthUnknown'))}</span></span>` : '';
+  return `<button type="button" class="server-row${selected ? ' is-active' : ''}"
+      role="radio" aria-checked="${selected}" data-action="selectProfile" data-pid="${esc(String(p.id))}">
+    <span class="avatar" aria-hidden="true">${ic('layers')}</span>
+    <span class="row-main"><span class="row-title" style="display:block">${esc(profileDisplayName(p))}</span><span class="row-sub" style="display:block">${esc(profileLocation(p) || t('srv.locationUnknown'))}</span>${badge}</span>
+    <span class="radio" aria-hidden="true">${ic('check')}</span>
+  </button>`;
+}
+
+// Section « Profil de connexion » : affichée seulement si le panel propose au moins un profil
+function profilesSectionHtml(){
+  if(Profiles.state !== 'ready' || !Profiles.list.length) return '';
+  const chosen = getSelectedProfile();
+  const auto = `<button type="button" class="server-row${chosen ? '' : ' is-active'}" role="radio" aria-checked="${!chosen}" data-action="selectProfile" data-pid="">
+    <span class="avatar" aria-hidden="true">${ic('server')}</span>
+    <span class="row-main"><span class="row-title" style="display:block">${esc(t('prof.auto'))}</span><span class="row-sub" style="display:block">${esc(t('prof.autoSub'))}</span></span>
+    <span class="radio" aria-hidden="true">${ic('check')}</span>
+  </button>`;
+  return `<div class="section-title">${esc(t('prof.section'))}</div>` + auto + Profiles.list.map((p) => profileRowHtml(p, chosen === p)).join('');
 }
 
 function pingClass(p){ return p < 70 ? 'good' : (p < 150 ? 'mid' : 'bad'); }
@@ -131,6 +169,7 @@ function renderServers(){
       const others = rows.filter((s) => s !== selected);
       const availableCount = Servers.list.filter((s) => s.available).length;
       host.innerHTML = `<p class="srv-summary">${esc(tn('srv.summary', availableCount, { total: Servers.list.length }))}</p>`
+        + (q ? '' : profilesSectionHtml())
         + section('srv.sectionSelected', chosen)
         + section('srv.sectionAvailable', others.filter((s) => s.available))
         + section('srv.sectionDown', others.filter((s) => !s.available));
@@ -143,6 +182,7 @@ function renderServers(){
 async function loadServers(){
   if(!authToken){
     Servers.state = 'idle'; Servers.list = [];
+    Profiles.state = 'idle'; Profiles.list = [];
     renderServers();
     return;
   }
@@ -164,9 +204,48 @@ async function loadServers(){
     $('srvRefresh').classList.remove('is-spinning');
   }
   if(authToken) renderServers();
+  if(authToken && Servers.state === 'ready') await loadProfiles();
+}
+
+// Profils au choix. Un panel qui ne connaît pas encore cette route (404) : section masquée, comportement historique.
+async function loadProfiles(){
+  if(!authToken){ Profiles.state = 'idle'; Profiles.list = []; return; }
+  Profiles.state = 'loading';
+  let parsed;
+  try{
+    parsed = ProfileOptions.parse(await apiFetch('/api/user/connect/options'));
+  }catch(e){
+    parsed = { state: 'error' };
+  }
+  if(parsed.authLost){ Profiles.state = 'idle'; Profiles.list = []; return; }   // la session est gérée par apiFetch/l'écran compte
+  Profiles.state = parsed.state;
+  Profiles.list = parsed.state === 'ready' ? parsed.options : [];
+  // le profil mémorisé n'est plus proposé par le panel : on le dit, et on revient au choix automatique
+  if(parsed.state === 'ready' && Profiles.selectedId !== null && Profiles.selectedId !== undefined && !getSelectedProfile()){
+    Profiles.selectedId = null;
+    store.set('hostedProfile', null);
+    toast(t('prof.gone'), 'warning');
+  }
+  if(authToken) renderServers();
 }
 
 Actions.refreshServers = () => { if(authToken) loadServers(); else showScreen('account'); };
+
+Actions.selectProfile = (el) => {
+  const pid = el.dataset.pid;
+  const p = pid ? Profiles.list.find((x) => String(x.id) === String(pid)) : null;
+  if(pid && !p) return;
+  Profiles.selectedId = p ? p.id : null;
+  store.set('hostedProfile', Profiles.selectedId);
+  // le serveur du profil devient le serveur retenu (carte d'accueil cohérente)
+  if(p && p.serverId !== null && Servers.list.some((s) => sameId(s.id, p.serverId))){
+    Servers.selectedId = p.serverId;
+    store.set('server', p.serverId);
+  }
+  renderServers();
+  if(VPN.state === 'on'){ toast(t('srv.appliedNext'), 'info'); return; }
+  setTimeout(() => showScreen('home'), 220);
+};
 
 Actions.selectServer = (el) => {
   const s = Servers.list[+el.dataset.index];
@@ -174,6 +253,9 @@ Actions.selectServer = (el) => {
   if(!s.available){ toast(t('err.serverUnavailable'), 'warning'); return; }
   Servers.selectedId = s.id;
   store.set('server', s.id === undefined ? null : s.id);
+  // choisir un autre serveur que celui du profil retenu = revenir au choix automatique sur ce serveur
+  const prof = getSelectedProfile();
+  if(prof && !sameId(prof.serverId, s.id)){ Profiles.selectedId = null; store.set('hostedProfile', null); }
   renderServers();
   if(VPN.state === 'on'){ toast(t('srv.appliedNext'), 'info'); return; }
   setTimeout(() => showScreen('home'), 220); // retour à l'accueil une fois le choix fait

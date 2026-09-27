@@ -44,6 +44,10 @@ I18N.register('en', {
   'srv.emptyTitle': 'No server available', 'srv.emptyText': 'Your plan determines which servers you can use.',
   'srv.noResult': 'No results',
   'srv.appliedNext': 'This server will be used the next time you connect.',
+  'prof.section': 'Connection profile', 'prof.auto': 'Automatic',
+  'prof.autoSub': 'The Laboratory picks the service of the selected server.',
+  'prof.defaultName': 'Profile {n}', 'prof.healthUnknown': 'Status not verified',
+  'prof.gone': 'The chosen profile is no longer available: back to automatic choice.',
 
   // Activity
   'nav.logs': "Logs and cache",
@@ -304,6 +308,8 @@ I18N.register('en', {
   'conn.err.no_service_available': 'No server is available for your plan right now.',
   'conn.err.service_not_found': "This server doesn't exist or isn't included in your plan. Choose another one.",
   'conn.err.service_unhealthy': 'This server is temporarily unavailable. Choose another one.',
+  'conn.err.profile_not_found': "This profile doesn't exist or isn't included in your plan. Choose another one.",
+  'conn.err.profile_unavailable': "This profile isn't available right now. Choose another one.",
   'conn.err.access_not_found': "Your access couldn't be found.",
   'conn.err.access_disabled': 'Your access is disabled. Contact support.',
   'conn.err.access_expired': 'Your access has expired. Renew it to connect.',

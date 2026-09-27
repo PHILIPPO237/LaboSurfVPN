@@ -1,7 +1,8 @@
 // Contrat avec le Laboratoire du Free-Surf : fonctions PURES (aucun accès au DOM, au réseau ni au natif),
-// donc testables telles quelles (voir tests/js). Deux sujets :
+// donc testables telles quelles (voir tests/js). Trois sujets :
 //   1. ApiBase        — adresse de l'API : configurable, HTTPS obligatoire (sauf boucle locale de développement) ;
-//   2. ConnectContract — lecture stricte de la réponse de POST /api/user/connect.
+//   2. ConnectContract — lecture stricte de la réponse de POST /api/user/connect ;
+//   3. ProfileOptions  — lecture stricte de GET /api/user/connect/options (profils au choix) et corps de connexion.
 //
 // Rien n'est inventé ici : une réponse qui ne respecte pas le contrat est un ÉCHEC (jamais une configuration
 // reconstruite côté Android). Le contenu de la configuration (uri) ne sort jamais de ce module dans un message.
@@ -57,6 +58,9 @@ const ConnectContract = (function(){
     pro_timeout:               'conn.err.pro_timeout',
     incompatible_version:      'conn.err.incompatible_version',
     configuration_unavailable: 'conn.err.configuration_unavailable',
+    // profil choisi par l'utilisateur (hosted_profile_id)
+    profile_not_found:         'conn.err.profile_not_found',
+    profile_unavailable:       'conn.err.profile_unavailable',
   };
   // Erreurs après lesquelles réessayer n'a pas de sens sans action de l'utilisateur
   const NEEDS_USER_ACTION = ['user_not_authenticated', 'subscription_expired', 'account_disabled', 'access_disabled', 'access_expired'];
@@ -114,6 +118,8 @@ const ConnectContract = (function(){
     return {
       ok: true,
       serverId: data.server_id === undefined ? null : data.server_id,
+      // profil réellement utilisé par le panel (0 = choix du panel sur ce serveur ; absent = panel plus ancien)
+      hostedProfileId: typeof data.hosted_profile_id === 'number' && isFinite(data.hosted_profile_id) ? data.hosted_profile_id : null,
       health: health,                                   // available | unknown
       access: { state: accState || 'active', expiresAt: isFinite(expMs) ? expMs : null },   // null = pas d'expiration technique
       config: { uri: uri, protocol: protocol, scheme: scheme[1].toLowerCase(), format: typeof cfg.format === 'string' ? cfg.format : '', remark: typeof cfg.remark === 'string' ? cfg.remark : '' },
@@ -132,5 +138,55 @@ const ConnectContract = (function(){
   return { parse: parse, networkFailure: networkFailure, ERROR_CODES: ERROR_CODES, HEALTH_OK: HEALTH_OK };
 })();
 
+// ─── 3. GET /api/user/connect/options ───
+// Profils que l'utilisateur peut choisir (le panel n'y met que ceux réellement disponibles pour lui).
+// Réponse : {status:'ok', options:[{hosted_profile_id, profile_name, server_id, server_name, country, city, service_health}]}.
+// Ni moteur ni protocole : le panel ne les fournit pas, l'application ne les devine pas.
+const ProfileOptions = (function(){
+  const str = (v) => (typeof v === 'string' ? v.trim() : '');
+  const posInt = (v) => (typeof v === 'number' && isFinite(v) && v > 0 && Math.floor(v) === v ? v : null);
+
+  // res : { ok, status, data, expired } (apiFetch). Résultat :
+  //   { state:'ready', options:[…] } | { state:'unsupported' } (panel sans cette route : 404/405)
+  //   | { state:'error', authLost?, code? }
+  function parse(res){
+    if(!res) return { state: 'error' };
+    if(res.expired || res.status === 401) return { state: 'error', authLost: true };
+    if(res.status === 404 || res.status === 405) return { state: 'unsupported' };
+    const data = res.data && typeof res.data === 'object' ? res.data : null;
+    if(data && data.status === 'error') return { state: 'error', code: typeof data.code === 'string' ? data.code : '' };
+    if(!res.ok || !data || data.status !== 'ok' || !Array.isArray(data.options)) return { state: 'error', code: 'bad_response' };
+    const seen = new Set();
+    const options = [];
+    for(const o of data.options){
+      if(!o || typeof o !== 'object') continue;
+      const id = posInt(o.hosted_profile_id);
+      if(id === null || seen.has(id)) continue;   // sans identifiant valide, un profil ne peut pas être demandé : ignoré
+      seen.add(id);
+      const health = str(o.service_health).toLowerCase();
+      options.push({
+        id: id,
+        name: str(o.profile_name),
+        serverId: posInt(o.server_id),
+        serverName: str(o.server_name),
+        country: str(o.country),
+        city: str(o.city),
+        health: health === 'available' ? 'available' : 'unknown',   // le panel n'envoie que available | unknown
+      });
+    }
+    return { state: 'ready', options: options };
+  }
+
+  // Corps de POST /api/user/connect pour un profil choisi (champ et format EXACTS du panel : entier)
+  function connectBody(option, deviceId){
+    const body = { hosted_profile_id: option.id };
+    if(option.serverId !== null) body.server_id = option.serverId;
+    if(deviceId) body.device_id = deviceId;
+    return body;
+  }
+
+  return { parse: parse, connectBody: connectBody };
+})();
+
 // Chargé aussi par les tests Node (CommonJS) ; sans effet dans le navigateur
-if(typeof module !== 'undefined' && module.exports) module.exports = { ApiBase: ApiBase, ConnectContract: ConnectContract };
+if(typeof module !== 'undefined' && module.exports) module.exports = { ApiBase: ApiBase, ConnectContract: ConnectContract, ProfileOptions: ProfileOptions };

@@ -100,9 +100,10 @@ test('connect : santé ou Access non valides malgré un « succès » -> refus',
 // ─── Les 14 codes d'erreur stables ───
 const CODES = { user_not_authenticated: 401, subscription_expired: 403, account_disabled: 403, no_service_available: 503, service_not_found: 404,
   service_unhealthy: 503, access_not_found: 404, access_disabled: 403, access_expired: 403, pro_unavailable: 503,
-  pro_authentication_failed: 502, pro_timeout: 504, incompatible_version: 502, configuration_unavailable: 503 };
+  pro_authentication_failed: 502, pro_timeout: 504, incompatible_version: 502, configuration_unavailable: 503,
+  profile_not_found: 404, profile_unavailable: 503 };   // choix du profil (hosted_profile_id)
 
-test('connect : les 14 codes du panel sont couverts, chacun avec sa clé de traduction', () => {
+test('connect : les 16 codes du panel sont couverts, chacun avec sa clé de traduction', () => {
   assert.deepEqual(Object.keys(ConnectContract.ERROR_CODES).sort(), Object.keys(CODES).sort());
   for(const [code, status] of Object.entries(CODES)){
     const r = ConnectContract.parse(refused(status, code, { retry_after_s: 30 }));

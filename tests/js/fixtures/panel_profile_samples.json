@@ -1,0 +1,156 @@
+{
+ "_ids": {
+  "admin_ssh": 5,
+  "preparation": 3,
+  "rapide": 1,
+  "stable": 2,
+  "streaming": 4
+ },
+ "connect_rapide": {
+  "body": {
+   "access": {
+    "expires_at": "2026-10-28T00:00:00Z",
+    "state": "active"
+   },
+   "configs": [
+    {
+     "format": "uri",
+     "protocol": "tuic",
+     "remark": "VIP - tuic",
+     "uri": "tuic://11eef689a2a84c3c81b27d1321a64ab6:pw-11eef689@vpn.example.tld:40443?alpn=h3"
+    }
+   ],
+   "hosted_profile_id": 1,
+   "server_id": 1,
+   "service_health": "available",
+   "status": "success"
+  },
+  "http_status": 200
+ },
+ "connect_service_down": {
+  "body": {
+   "code": "service_unhealthy",
+   "message": "Ce serveur est momentanement indisponible. Choisis-en un autre ou reessaie.",
+   "retry_after_s": 30,
+   "status": "error"
+  },
+  "http_status": 503
+ },
+ "connect_stable": {
+  "body": {
+   "access": {
+    "expires_at": "2026-10-28T00:00:00Z",
+    "state": "active"
+   },
+   "configs": [
+    {
+     "format": "uri",
+     "protocol": "xray",
+     "remark": "VIP - xray",
+     "uri": "tuic://227631ad508341ac9a4c9cdf41ea69a5:pw-227631ad@vpn.example.tld:8443?alpn=h3"
+    }
+   ],
+   "hosted_profile_id": 2,
+   "server_id": 1,
+   "service_health": "available",
+   "status": "success"
+  },
+  "http_status": 200
+ },
+ "connect_without_choice": {
+  "body": {
+   "access": {
+    "expires_at": "2026-10-28T00:00:00Z",
+    "state": "active"
+   },
+   "configs": [
+    {
+     "format": "uri",
+     "protocol": "tuic",
+     "remark": "VIP - tuic",
+     "uri": "tuic://11eef689a2a84c3c81b27d1321a64ab6:pw-11eef689@vpn.example.tld:40443?alpn=h3"
+    }
+   ],
+   "hosted_profile_id": 1,
+   "server_id": 1,
+   "service_health": "available",
+   "status": "success"
+  },
+  "http_status": 200
+ },
+ "options": {
+  "body": {
+   "options": [
+    {
+     "city": "Douala",
+     "country": "Cameroun",
+     "hosted_profile_id": 1,
+     "profile_name": "Rapide",
+     "server_id": 1,
+     "server_name": "VPS Douala",
+     "service_health": "available"
+    },
+    {
+     "city": "Douala",
+     "country": "Cameroun",
+     "hosted_profile_id": 2,
+     "profile_name": "Stable",
+     "server_id": 1,
+     "server_name": "VPS Douala",
+     "service_health": "available"
+    },
+    {
+     "city": "Yaoundé",
+     "country": "Cameroun",
+     "hosted_profile_id": 4,
+     "profile_name": "Streaming",
+     "server_id": 2,
+     "server_name": "VPS Yaoundé",
+     "service_health": "available"
+    }
+   ],
+   "status": "ok"
+  },
+  "http_status": 200
+ },
+ "options_all_down": {
+  "body": {
+   "options": [],
+   "status": "ok"
+  },
+  "http_status": 200
+ },
+ "options_unauthenticated": {
+  "body": {
+   "code": "user_not_authenticated",
+   "message": "Connecte-toi pour continuer.",
+   "status": "error"
+  },
+  "http_status": 401
+ },
+ "profile_not_authorized": {
+  "body": {
+   "code": "profile_not_found",
+   "message": "Ce profil n'existe pas ou n'est pas inclus dans ton offre.",
+   "status": "error"
+  },
+  "http_status": 404
+ },
+ "profile_not_found": {
+  "body": {
+   "code": "profile_not_found",
+   "message": "Ce profil n'existe pas ou n'est pas inclus dans ton offre.",
+   "status": "error"
+  },
+  "http_status": 404
+ },
+ "profile_unavailable": {
+  "body": {
+   "code": "profile_unavailable",
+   "message": "Ce profil n'est pas disponible pour le moment. Choisis-en un autre.",
+   "retry_after_s": 30,
+   "status": "error"
+  },
+  "http_status": 503
+ }
+}

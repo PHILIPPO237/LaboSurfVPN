@@ -282,13 +282,15 @@ async function connectVpn(){
   if(!authToken){ toast(t('err.loginFirst'), 'warning'); showScreen('account'); return; }
   if(!sessionStillValid()){ handleSessionExpired(); return; }   // jeton dépassé d'après « expires_in » : reconnexion, sans appel réseau
   if(Servers.state === 'loading'){ toast(t('err.serversLoading'), 'info'); return; }
-  const target = getSelectedServer();
-  if(!target){ toast(t('srv.emptyTitle'), 'warning'); showScreen('servers'); return; }
-  if(!target.available){ toast(t('err.serverUnavailable'), 'warning'); showScreen('servers'); return; }
+  // Profil choisi (GET /api/user/connect/options) : c'est LUI qui désigne le serveur ; sinon, serveur retenu (historique)
+  const profile = getSelectedProfile();
+  const target = profile ? null : getSelectedServer();
+  if(!profile && !target){ toast(t('srv.emptyTitle'), 'warning'); showScreen('servers'); return; }
+  if(!profile && !target.available){ toast(t('err.serverUnavailable'), 'warning'); showScreen('servers'); return; }
 
   if(homeReadiness() === 'expired'){ toast(t('err.expired'), 'warning', 4200); Actions.openRenewal(); return; }
 
-  const name = serverDisplayName(target);
+  const name = profile ? [profileDisplayName(profile), profile.serverName].filter(Boolean).join(' · ') : serverDisplayName(target);
   VPN.target = name;
   if(!API.state.ok){ setVpnState('error', { key: API.state.reason === 'insecure' ? 'err.apiInsecure' : 'err.apiConfig' }); return; }
   if(!isNativeApp() && !PREVIEW){
@@ -310,10 +312,15 @@ async function connectVpn(){
   //    journalisée, jamais stockée au-delà de cette variable locale (voir POST /api/user/connect côté panel).
   let parsed;
   try{
-    const body = { server_id: target.id === undefined ? null : target.id };
     const deviceId = getDeviceId();
-    if(deviceId) body.device_id = deviceId;
-    if(body.server_id === null) delete body.server_id;
+    let body;
+    if(profile){
+      body = ProfileOptions.connectBody(profile, deviceId);   // { hosted_profile_id, server_id?, device_id? }
+    } else {
+      body = { server_id: target.id === undefined ? null : target.id };
+      if(deviceId) body.device_id = deviceId;
+      if(body.server_id === null) delete body.server_id;
+    }
     const res = await apiFetch('/api/user/connect', { method: 'POST', body: JSON.stringify(body), timeout: 20000 });
     parsed = ConnectContract.parse(res);
   }catch(e){
@@ -324,6 +331,8 @@ async function connectVpn(){
     if(parsed.authLost && authToken){ handleSessionExpired(); return; }
     failConnect(name, { key: parsed.key, retryAfter: parsed.retryAfter, panelMessage: parsed.panelMessage });
     if(parsed.code) logEvent('warn', 'log.detail', { detail: parsed.code });
+    // profil refusé par le panel : la liste est relue (jamais de nouvel essai automatique ni de repli sur un autre profil)
+    if(profile && (parsed.code === 'profile_not_found' || parsed.code === 'profile_unavailable') && typeof loadProfiles === 'function') loadProfiles();
     return;
   }
   VPN.trialLimitMinutes = parsed.trialLimitMinutes;
@@ -343,7 +352,7 @@ async function connectVpn(){
       if(VPN.state === 'connecting') failConnect(name, { key: 'err.timeout' });
     }, CONNECT_WATCHDOG_MS);
     try{
-      window.LaboSurfNative.startVpn(JSON.stringify({ name: target.name, proto: parsed.config.protocol, uri: parsed.config.uri, format: parsed.config.format }));
+      window.LaboSurfNative.startVpn(JSON.stringify({ name: profile ? name : target.name, proto: parsed.config.protocol, uri: parsed.config.uri, format: parsed.config.format }));
     }catch(e){
       failConnect(name, { key: 'err.connect' });
     }

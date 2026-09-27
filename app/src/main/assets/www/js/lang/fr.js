@@ -44,6 +44,10 @@ I18N.register('fr', {
   'srv.emptyTitle': 'Aucun serveur disponible', 'srv.emptyText': 'Ton abonnement détermine les serveurs accessibles.',
   'srv.noResult': 'Aucun résultat',
   'srv.appliedNext': 'Ce serveur sera utilisé à la prochaine connexion.',
+  'prof.section': 'Profil de connexion', 'prof.auto': 'Automatique',
+  'prof.autoSub': 'Le Laboratoire choisit le service du serveur sélectionné.',
+  'prof.defaultName': 'Profil {n}', 'prof.healthUnknown': 'État non vérifié',
+  'prof.gone': "Le profil choisi n'est plus disponible : retour au choix automatique.",
 
   // Activité
   'nav.logs': "Journal et cache",
@@ -304,6 +308,8 @@ I18N.register('fr', {
   'conn.err.no_service_available': "Aucun serveur n'est disponible pour ton offre pour le moment.",
   'conn.err.service_not_found': "Ce serveur n'existe pas ou n'est pas inclus dans ton offre. Choisis-en un autre.",
   'conn.err.service_unhealthy': 'Ce serveur est momentanément indisponible. Choisis-en un autre.',
+  'conn.err.profile_not_found': "Ce profil n'existe pas ou n'est pas inclus dans ton offre. Choisis-en un autre.",
+  'conn.err.profile_unavailable': "Ce profil n'est pas disponible pour le moment. Choisis-en un autre.",
   'conn.err.access_not_found': "Ton accès n'a pas pu être retrouvé.",
   'conn.err.access_disabled': 'Ton accès est désactivé. Contacte le support.',
   'conn.err.access_expired': 'Ton accès a expiré. Renouvelle-le pour te connecter.',
