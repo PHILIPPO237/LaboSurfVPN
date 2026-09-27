@@ -2,7 +2,18 @@
 
 Application Android « LaboSurfVPN » — **seul dépôt PUBLIC** de l'écosystème LABOSURF. Versions listées d'après les messages de commit, au plus près du code réel.
 
-> Statut de publication : la seule release présente sur GitHub est `v1.0.0-test.1` (test uniquement, **non présentée comme version finale**). Les travaux postérieurs (UDM/design) n'ont pas de release.
+> Statut de publication : releases GitHub `v1.0.0-test.1` (test) et `v1.1.0` (pré-version de test, refonte visuelle). `v1.2.0` : voir ci-dessous.
+
+## `v1.2.0` — 2026-09-28 (versionCode 3)
+
+- `d5fadc3` feat(profils): choix du profil de connexion (`hosted_profile_id`, via le panel `/api/user/connect/options`)
+- `3234b4c` feat(securite): identifiant d'installation (jamais l'ANDROID_ID), Mes appareils, déconnexion de tous les appareils,
+  changement de mot de passe, déconnexion révoquée côté panel, plus aucune réponse d'API en cache (service worker)
+- L'application parle uniquement au panel (Laboratoire du Free-Surf) ; jamais directement à LABOSURF PRO.
+
+## `v1.1.0` — 2026-09-26 (pré-version de test, versionCode 2)
+
+- `86be834` refonte visuelle (identité vert néon, bannière opérateurs, Journal et cache, pages légales, assistant intégré)
 
 ## Non publié (après `v1.0.0-test.1` — branche `phase7-udp-real`)
 
