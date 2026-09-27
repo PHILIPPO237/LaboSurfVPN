@@ -20,3 +20,8 @@ node_modules/
 design-previews/
 __pycache__/
 *.pyc
+# Signature de production : jamais dans le depot (voir .github/workflows/release-apk.yml)
+*.p12
+*.pfx
+*.secrets.json
+signing/

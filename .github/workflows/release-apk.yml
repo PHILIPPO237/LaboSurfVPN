@@ -1,0 +1,118 @@
+name: Release APK Labo Surf (signee)
+
+# APK de DISTRIBUTION signee avec la cle de production. Le keystore et ses mots de passe viennent UNIQUEMENT
+# des secrets du depot (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD) :
+# rien dans le depot, rien dans les journaux, keystore efface du runner a la fin.
+#  - push sur release/**  : build de controle (APK en artefact, aucune Release)
+#  - push d'un tag v*.*.*  : meme build + Release GitHub en BROUILLON avec l'APK (publication manuelle)
+#  - workflow_dispatch     : build de controle
+on:
+  push:
+    branches: [ 'release/**' ]
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Empreinte SHA-256 PUBLIQUE du certificat de production (non secrete) : un APK signe avec une autre cle est refuse.
+  EXPECTED_CERT_SHA256: 18bbb34bc7a6e4ac3e12f4f86948ca152772b0d8209d3b5ffb910e81f00995f5
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Tests JavaScript
+        run: node --test tests/js/*.test.js
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Tests unitaires Android
+        run: gradle testDebugUnitTest --stacktrace --console=plain
+
+      - name: Preparer le keystore de production (depuis les secrets)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$KS_B64" || { echo "::error::secret ANDROID_KEYSTORE_BASE64 absent : signature impossible"; exit 1; }
+          umask 077
+          mkdir -p "$RUNNER_TEMP/signing"
+          printf '%s' "$KS_B64" | base64 -d > "$RUNNER_TEMP/signing/release.p12"
+          echo "LABOSURF_KEYSTORE_FILE=$RUNNER_TEMP/signing/release.p12" >> "$GITHUB_ENV"
+
+      - name: Compiler l'APK release signee
+        env:
+          LABOSURF_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LABOSURF_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          LABOSURF_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: gradle assembleRelease --stacktrace --console=plain
+
+      - name: Verifier la signature, la version et calculer le SHA-256
+        id: verify
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/release/app-release.apk
+          test -f "$APK" || { echo "::error::APK release absente (non signee ?) : $APK"; ls -R app/build/outputs/apk || true; exit 1; }
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" > signature.txt
+          grep -E "Verified using v1 scheme|Verified using v2 scheme|Verified using v3 scheme" signature.txt
+          CERT=$(grep -m1 "Signer #1 certificate SHA-256 digest:" signature.txt | awk '{print $NF}' | tr 'A-F' 'a-f')
+          test "$CERT" = "$EXPECTED_CERT_SHA256" || { echo "::error::certificat inattendu ($CERT) : APK NON signee avec la cle de production"; exit 1; }
+          "$BT/aapt2" dump badging "$APK" > badging.txt
+          VNAME=$(sed -n "s/.*versionName='\([^']*\)'.*/\1/p" badging.txt | head -1)
+          VCODE=$(sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" badging.txt | head -1)
+          grep -q "name='com.philippo237.labosurf'" badging.txt
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            test "v$VNAME" = "$GITHUB_REF_NAME" || { echo "::error::le tag $GITHUB_REF_NAME ne correspond pas a versionName $VNAME"; exit 1; }
+          fi
+          OUT="LaboSurfVPN-v${VNAME}.apk"
+          cp "$APK" "$OUT"
+          sha256sum "$OUT" > "$OUT.sha256"
+          echo "::notice title=APK release signee::$OUT ; versionName $VNAME ; versionCode $VCODE ; $(stat -c %s "$OUT") octets ; sha256 $(cut -d' ' -f1 "$OUT.sha256") ; certificat $CERT"
+          echo "::notice title=Architectures::$(unzip -l "$OUT" | grep -o 'lib/[^/]*/' | sort -u | tr '\n' ' ' || true) (aucune bibliotheque native = toutes architectures)"
+          echo "apk=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Effacer le keystore du runner
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/signing"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: labo-surf-vpn-release
+          path: |
+            LaboSurfVPN-v*.apk
+            LaboSurfVPN-v*.apk.sha256
+          retention-days: 90
+
+      - name: Release GitHub en BROUILLON (tag uniquement)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="${{ steps.verify.outputs.apk }}"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            test "$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)" = "true" || { echo "::error::la Release $GITHUB_REF_NAME est deja publiee : rien n'est remplace"; exit 1; }
+            gh release upload "$GITHUB_REF_NAME" "$APK" "$APK.sha256" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$APK" "$APK.sha256" --draft --title "LaboSurfVPN $GITHUB_REF_NAME" --notes "APK release signee (cle de production). Notes a completer avant publication."
+          fi

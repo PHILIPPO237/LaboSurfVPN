@@ -20,7 +20,7 @@ android {
         minSdk = 24        // Android 7.0+ (couvre la grande majorite des telephones au Cameroun)
         targetSdk = 34
         versionCode = 3
-        versionName = "1.2.0"
+        versionName = "1.0.0"
         buildConfigField("String", "PANEL_BASE_URL", "\"$panelBaseUrl\"")
     }
 
@@ -28,10 +28,29 @@ android {
         buildConfig = true
     }
 
+    // Signature de PRODUCTION : lue UNIQUEMENT dans l'environnement (secrets GitHub dans la CI, voir
+    // .github/workflows/release-apk.yml). Aucun keystore ni mot de passe dans le depot. Sans ces variables,
+    // le build release n'est pas signe (et la CI de release echoue : jamais d'APK signe avec une autre cle).
+    val releaseKeystore: String? = System.getenv("LABOSURF_KEYSTORE_FILE")
+    signingConfigs {
+        if (releaseKeystore != null && file(releaseKeystore).exists()) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storeType = "pkcs12"
+                storePassword = System.getenv("LABOSURF_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("LABOSURF_KEY_ALIAS")
+                keyPassword = System.getenv("LABOSURF_KEY_PASSWORD")
+                enableV1Signing = true   // Android 7.0 (minSdk 24) verifie aussi le schema v1
+                enableV2Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 
