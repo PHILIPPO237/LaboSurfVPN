@@ -4,6 +4,10 @@ Application Android « LaboSurfVPN » — **seul dépôt PUBLIC** de l'écosyst�
 
 > Statut de publication : `v1.0.0-test.1` et `v1.1.0` sont des pré-versions de TEST (APK debug). `v1.2.0` est la première version officielle, signée avec la clé de production.
 
+## `v1.2.1` — non publiée (versionCode 4, APK de test signée)
+
+- `88c82dd` choix de photo dans l'APK (WebView : galerie + appareil photo), adresse du panel joignable (`https://laboratoire.free-surf237-4all.xyz`), rôle et offre lus du panel
+
 ## `v1.2.0` — 2026-09-28 — première version officielle (versionCode 3, APK release signé)
 
 - `d5fadc3` feat(profils): choix du profil de connexion (`hosted_profile_id`, via le panel `/api/user/connect/options`)

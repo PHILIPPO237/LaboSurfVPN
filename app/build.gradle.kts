@@ -20,8 +20,8 @@ android {
         applicationId = "com.philippo237.labosurf"
         minSdk = 24        // Android 7.0+ (couvre la grande majorite des telephones au Cameroun)
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.2.1"
         buildConfigField("String", "PANEL_BASE_URL", "\"$panelBaseUrl\"")
     }
 
