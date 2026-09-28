@@ -2,9 +2,9 @@
 
 Application Android « LaboSurfVPN » — **seul dépôt PUBLIC** de l'écosystème LABOSURF. Versions listées d'après les messages de commit, au plus près du code réel.
 
-> Statut de publication : `v1.0.0-test.1` et `v1.1.0` sont des pré-versions de TEST (APK debug). `v1.0.0` est la première version officielle, signée avec la clé de production.
+> Statut de publication : `v1.0.0-test.1` et `v1.1.0` sont des pré-versions de TEST (APK debug). `v1.2.0` est la première version officielle, signée avec la clé de production.
 
-## `v1.0.0` — 2026-09-28 — première version officielle (versionCode 3, APK release signé)
+## `v1.2.0` — 2026-09-28 — première version officielle (versionCode 3, APK release signé)
 
 - `d5fadc3` feat(profils): choix du profil de connexion (`hosted_profile_id`, via le panel `/api/user/connect/options`)
 - `3234b4c` feat(securite): identifiant d'installation (jamais l'ANDROID_ID), Mes appareils, déconnexion de tous les appareils,
