@@ -6,10 +6,11 @@ plugins {
 // Adresse de l'API du Laboratoire du Free-Surf, fixee a la compilation (lue par l'interface via
 // LaboSurfNative.getApiBase()). HTTPS obligatoire ; jamais de secret ici. Changer sans modifier le code :
 //   gradle assembleDebug -PlabosurfPanelBaseUrl=https://mon-panel.exemple
-// La valeur par defaut est la « topologie de reference » du panel (docs/guides/LOCAL_ENV_SETUP.md : « App publique ») :
-// A CONFIRMER avant une diffusion (voir docs/AUDIT_LABOSURFVPN.md).
+// Valeur par defaut VERIFIEE le 2026-09-28 : https://laboratoire.free-surf237-4all.xyz repond en HTTPS valide (/health = 200).
+// L'ancienne valeur app.laboratoire.free-surf237-4all.xyz echoue au TLS (le certificat Cloudflare ne couvre pas
+// deux niveaux de sous-domaine) : l'APK v1.2.0 ne pouvait joindre aucun panel.
 val panelBaseUrl: String = (project.findProperty("labosurfPanelBaseUrl") as String?)
-    ?: "https://app.laboratoire.free-surf237-4all.xyz"
+    ?: "https://laboratoire.free-surf237-4all.xyz"
 
 android {
     namespace = "com.philippo237.labosurf"

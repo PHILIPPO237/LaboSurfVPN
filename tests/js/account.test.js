@@ -58,6 +58,29 @@ test('session : durée lue de expires_in, jamais supposée', () => {
   assert.equal(a.ev('sessionStillValid()'), false);
 });
 
+test('rôle et offre : lus séparément depuis le panel, jamais déduits l\'un de l\'autre', () => {
+  const a = app();
+  const ro = (me) => JSON.parse(a.ev(`JSON.stringify(roleAndOffer(${JSON.stringify(me)}))`));
+  assert.deepEqual(ro({ role: 'client', offer: 'premium', type: 'VIP' }), { role: 'client', offer: 'premium', plan: 'vip' });
+  assert.deepEqual(ro({ role: 'client', offer: 'free', type: 'Gratuit' }), { role: 'client', offer: 'free', plan: 'gratuit' });
+  // un super administrateur garde son offre propre ; le badge affiche le rôle
+  assert.deepEqual(ro({ role: 'super_admin', offer: 'free', type: 'ADMIN' }), { role: 'super_admin', offer: 'free', plan: 'admin' });
+  assert.deepEqual(ro({ role: 'reseller', offer: 'premium', type: 'REVENDEUR' }), { role: 'reseller', offer: 'premium', plan: 'revendeur' });
+  // panel ancien (sans role/offer) : repli sur « type »
+  assert.deepEqual(ro({ type: 'VIP' }), { role: 'client', offer: 'premium', plan: 'vip' });
+  assert.deepEqual(ro({ type: 'ADMIN' }), { role: 'admin', offer: 'free', plan: 'admin' });
+  // valeurs inconnues : jamais de rôle inventé
+  assert.equal(ro({ role: 'dieu', offer: 'or', type: 'Gratuit' }).role, 'client');
+});
+
+test('espace revendeur : visible selon le RÔLE donné par le panel', () => {
+  const a = app();
+  const row = (me) => { a.ev(`renderAccountCard(accountFromApi(${JSON.stringify(me)}, {}, ''))`); return a.ev("document.getElementById('accResellerRow').hidden"); };
+  assert.equal(row({ username: 'u', role: 'client', offer: 'premium' }), true, 'un VIP n\'est pas revendeur');
+  assert.equal(row({ username: 'u', role: 'reseller', offer: 'free' }), false);
+  assert.equal(row({ username: 'u', role: 'super_admin', offer: 'free' }), false);
+});
+
 test('déconnexion du compte : jeton et durée de session effacés, tunnel coupé', () => {
   const a = loadApp({ native: { engine: { integrated: true, protocols: ['tuic'] }, apiBase: 'https://panel.example.tld' } });
   a.signIn();

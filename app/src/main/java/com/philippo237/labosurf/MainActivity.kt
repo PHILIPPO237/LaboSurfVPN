@@ -42,6 +42,31 @@ class MainActivity : AppCompatActivity() {
 
     private var pendingServerConfig: String? = null
 
+    // ─── Choix de photo (<input type="file"> de l'interface : photo de profil, piece jointe) ───
+    // Une WebView n'ouvre AUCUN selecteur de fichiers sans WebChromeClient.onShowFileChooser : sans ceci, le bouton
+    // « Choisir une photo » ne faisait rien dans l'APK. Galerie (aucune permission) + appareil photo (la photo est
+    // ecrite dans le cache PRIVE de l'app via FileProvider ; permission CAMERA non declaree = aucune demande).
+    private var filePathCallback: android.webkit.ValueCallback<Array<Uri>>? = null
+    private var cameraPhotoUri: Uri? = null
+    private val fileChooserLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val callback = filePathCallback
+        filePathCallback = null
+        val picked: Array<Uri>? = if (result.resultCode == RESULT_OK) {
+            val data = result.data
+            val clip = data?.clipData
+            when {
+                data?.data != null -> arrayOf(data.data!!)
+                clip != null && clip.itemCount > 0 -> Array(clip.itemCount) { clip.getItemAt(it).uri }
+                cameraPhotoUri != null -> arrayOf(cameraPhotoUri!!)   // photo prise : ecrite a l'emplacement fourni
+                else -> null
+            }
+        } else null
+        cameraPhotoUri = null
+        callback?.onReceiveValue(picked)   // null = annule : le champ reste utilisable
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -53,6 +78,7 @@ class MainActivity : AppCompatActivity() {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.webViewClient = ExternalLinkWebViewClient()
+        webView.webChromeClient = FileChooserChromeClient()
         webView.addJavascriptInterface(NativeBridge(), "LaboSurfNative")
         webView.loadUrl("file:///android_asset/www/index.html")
 
@@ -85,6 +111,53 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e(TAG, "Impossible d'ouvrir le lien : $url", e)
                 false
+            }
+        }
+    }
+
+    inner class FileChooserChromeClient : android.webkit.WebChromeClient() {
+        override fun onShowFileChooser(
+            view: WebView,
+            callback: android.webkit.ValueCallback<Array<Uri>>,
+            params: FileChooserParams
+        ): Boolean {
+            filePathCallback?.onReceiveValue(null)   // une demande precedente restee ouverte est annulee proprement
+            filePathCallback = callback
+            val gallery = Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+            }
+            val extras = mutableListOf<Intent>()
+            val camera = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+            if (camera.resolveActivity(packageManager) != null) {
+                try {
+                    val dir = java.io.File(cacheDir, "photos").apply { mkdirs() }
+                    dir.listFiles()?.forEach { it.delete() }   // jamais d'accumulation de photos dans le cache
+                    val photo = java.io.File(dir, "photo_${System.currentTimeMillis()}.jpg")
+                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                        this@MainActivity, "$packageName.fileprovider", photo
+                    )
+                    cameraPhotoUri = uri
+                    camera.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
+                    camera.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    extras.add(camera)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Appareil photo indisponible pour le choix de photo", e)
+                    cameraPhotoUri = null
+                }
+            }
+            val chooser = Intent.createChooser(gallery, null).apply {
+                if (extras.isNotEmpty()) putExtra(Intent.EXTRA_INITIAL_INTENTS, extras.toTypedArray())
+            }
+            return try {
+                fileChooserLauncher.launch(chooser)
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "Impossible d'ouvrir le selecteur de photo", e)
+                filePathCallback = null
+                cameraPhotoUri = null
+                callback.onReceiveValue(null)
+                true
             }
         }
     }

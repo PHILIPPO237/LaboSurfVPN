@@ -82,7 +82,8 @@ IPv6). Spécification serveur : `LABOSURF_PRO/PROTOCOL.md`.
 ## 6. Configuration et installation
 
 * **Adresse de l'API** : fixée à la compilation, HTTPS obligatoire — `gradle assembleDebug -PlabosurfPanelBaseUrl=https://mon-panel.example`.
-  Valeur par défaut `https://app.laboratoire.free-surf237-4all.xyz`, **actuellement injoignable** (voir docs). Émulateur + panel local :
+  Valeur par défaut `https://laboratoire.free-surf237-4all.xyz` (HTTPS valide, vérifié le 2026-09-28 ; l'ancienne valeur
+  `app.laboratoire…` échoue au TLS). Le panel qui y est déployé doit être à jour (v1.0.0) pour le parcours complet. Émulateur + panel local :
   `-PlabosurfPanelBaseUrl=http://10.0.2.2:8000` (clair toléré **uniquement** sur la boucle locale, en debug).
 * **Navigateur (développement)** : `python -m http.server 5173 --directory app/src/main/assets/www` puis `index.html?api=http://127.0.0.1:8000`.
   Aucune connexion VPN n'existe dans un navigateur (l'app le dit). `?preview=1` ne sert qu'à mettre au point les écrans (bandeau permanent).

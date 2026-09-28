@@ -13,6 +13,22 @@ function planKeyFromType(type){
   if(v === 'admin') return 'admin';
   return 'gratuit';
 }
+// Rôle et offre SÉPARÉS, calculés par le panel (/api/user/me : role = client|reseller|admin|super_admin,
+// offer = free|premium). L'app ne les déduit plus d'un « type » qui les mélange ; repli sur « type » seulement si le
+// panel est ancien. « plan » n'est que la clé d'AFFICHAGE du badge : le rôle prime (revendeur, administrateur).
+const ROLE_CODES = ['client', 'reseller', 'admin', 'super_admin'];
+function roleAndOffer(me){
+  me = me || {};
+  let role = ROLE_CODES.includes(me.role) ? me.role : null;
+  let offer = me.offer === 'premium' || me.offer === 'free' ? me.offer : null;
+  if(!role || !offer){
+    const legacy = planKeyFromType(me.type);
+    role = role || (legacy === 'admin' ? 'admin' : legacy === 'revendeur' ? 'reseller' : 'client');
+    offer = offer || (legacy === 'vip' ? 'premium' : 'free');
+  }
+  const plan = role === 'reseller' ? 'revendeur' : (role === 'admin' || role === 'super_admin') ? 'admin' : (offer === 'premium' ? 'vip' : 'gratuit');
+  return { role, offer, plan };
+}
 const isProPlan = (plan) => plan !== 'gratuit';
 const planLabel = (plan) => t('plan.' + plan);
 
@@ -50,7 +66,7 @@ function renderAccountCard(acc){
   const pro = isProPlan(acc.plan);
   $('proBadgeAcc').hidden = !pro;
   $('proBadgeHome').hidden = !pro;
-  $('accResellerRow').hidden = !(acc.plan === 'revendeur' || acc.plan === 'admin');
+  $('accResellerRow').hidden = !['reseller', 'admin', 'super_admin'].includes(acc.role);   // droit donné par le RÔLE (panel)
   $('accPanelRow').hidden = !API.state.ok;   // point d'accès aux fonctions avancées (paiement, offres…) : le Laboratoire du Free-Surf
 
   // Jours restants
@@ -136,13 +152,15 @@ function subscriptionTotalDays(startedAt, expIso){
 
 // ─── Chargement du compte réel ───
 function accountFromApi(me, sub, fallbackName){
-  const plan = planKeyFromType(me.type);
+  const { role, offer, plan } = roleAndOffer(me);
   const expiresAt = (sub && sub.expires_at) || me.expiration || '';
   const used = toNumber(me.quota_used_gb !== undefined ? me.quota_used_gb : me.used_gb); // null tant que l'API ne le fournit pas
   return {
     username: me.username || fallbackName || '',
     avatar: me.avatar || '',
-    plan,
+    role,     // rôle (panel)
+    offer,    // offre (panel)
+    plan,     // clé d'affichage du badge
     daysLeft: plan === 'gratuit' ? null : daysLeftFromExpiration(expiresAt),
     totalDays: plan === 'gratuit' ? null : subscriptionTotalDays(sub && sub.started_at, expiresAt),   // null = inconnue (jamais inventée)
     graceDays: 3,

@@ -10,6 +10,14 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Choix de photo : l'appareil photo est propose s'il existe (Android 11+ : visibilite a declarer). La permission
+         CAMERA n'est PAS demandee : l'app photo du systeme ecrit la photo via FileProvider. -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:label="Labo Surf"
@@ -29,6 +37,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Photo prise avec l'appareil photo : fichier du cache PRIVE de l'app (photos/), partage temporairement
+             avec l'app photo du systeme ; jamais exporte, jamais d'acces au stockage de l'utilisateur. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <!--
           Le moteur VPN. android:permission="android.permission.BIND_VPN_SERVICE"
