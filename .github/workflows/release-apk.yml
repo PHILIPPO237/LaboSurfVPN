@@ -5,12 +5,18 @@ name: Release APK Labo Surf (signee)
 # rien dans le depot, rien dans les journaux, keystore efface du runner a la fin.
 #  - push sur release/**  : build de controle (APK en artefact, aucune Release)
 #  - push d'un tag v*.*.*  : meme build + Release GitHub en BROUILLON avec l'APK (publication manuelle)
-#  - workflow_dispatch     : build de controle
+#  - workflow_dispatch     : build de controle ; avec l'entree « ref » = un tag existant (ex. v1.2.0), construit
+#                            EXACTEMENT le code de ce tag et cree/complete son brouillon de Release (tag jamais deplace)
 on:
   push:
     branches: [ 'release/**' ]
     tags: [ 'v*.*.*' ]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag existant a construire (ex. v1.2.0). Vide = branche du declenchement, sans Release."
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -18,12 +24,18 @@ permissions:
 env:
   # Empreinte SHA-256 PUBLIQUE du certificat de production (non secrete) : un APK signe avec une autre cle est refuse.
   EXPECTED_CERT_SHA256: 18bbb34bc7a6e4ac3e12f4f86948ca152772b0d8209d3b5ffb910e81f00995f5
+  # Version d'outils FIXE (celle installee ci-dessous) : sortie d'apksigner / aapt2 reproductible
+  BUILD_TOOLS: '34.0.0'
+  # Tag vise : tag pousse, ou entree « ref » d'un declenchement manuel (vide = build de controle)
+  RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.ref }}
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -69,20 +81,31 @@ jobs:
       - name: Verifier la signature, la version et calculer le SHA-256
         id: verify
         run: |
+          # Chaque controle echoue avec un message ::error:: explicite (aucun arret silencieux). Tout ce qui est
+          # affiche ici est PUBLIC (certificat public, version) : aucun secret.
           set -euo pipefail
+          fail() { echo "::error title=Verification APK::$1"; exit 1; }
           APK=app/build/outputs/apk/release/app-release.apk
-          test -f "$APK" || { echo "::error::APK release absente (non signee ?) : $APK"; ls -R app/build/outputs/apk || true; exit 1; }
-          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          "$BT/apksigner" verify --verbose --print-certs "$APK" > signature.txt
-          grep -E "Verified using v1 scheme|Verified using v2 scheme|Verified using v3 scheme" signature.txt
-          CERT=$(grep -m1 "Signer #1 certificate SHA-256 digest:" signature.txt | awk '{print $NF}' | tr 'A-F' 'a-f')
-          test "$CERT" = "$EXPECTED_CERT_SHA256" || { echo "::error::certificat inattendu ($CERT) : APK NON signee avec la cle de production"; exit 1; }
-          "$BT/aapt2" dump badging "$APK" > badging.txt
-          VNAME=$(sed -n "s/.*versionName='\([^']*\)'.*/\1/p" badging.txt | head -1)
-          VCODE=$(sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" badging.txt | head -1)
-          grep -q "name='com.philippo237.labosurf'" badging.txt
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            test "v$VNAME" = "$GITHUB_REF_NAME" || { echo "::error::le tag $GITHUB_REF_NAME ne correspond pas a versionName $VNAME"; exit 1; }
+          test -f "$APK" || { ls -R app/build/outputs/apk || true; fail "APK release absente (non signee ?) : $APK"; }
+          BT="$ANDROID_HOME/build-tools/$BUILD_TOOLS"
+          test -x "$BT/apksigner" && test -x "$BT/aapt2" || fail "build-tools $BUILD_TOOLS introuvables dans $ANDROID_HOME"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" > signature.txt 2>&1 || { cat signature.txt; fail "apksigner : signature INVALIDE"; }
+          echo "--- apksigner (informations publiques)"; grep -v -i "warning" signature.txt || true
+          grep -q -E "Verified using v(2|3) scheme.*: true" signature.txt || fail "ni v2 ni v3 verifie"
+          CERT=$(grep -i -m1 -E "certificate SHA-256 digest" signature.txt | sed -E 's/.*digest:[[:space:]]*//' | tr -d ' :' | tr 'A-F' 'a-f' || true)
+          test -n "$CERT" || fail "empreinte SHA-256 du certificat introuvable dans la sortie d'apksigner"
+          test "$CERT" = "$EXPECTED_CERT_SHA256" || fail "certificat inattendu ($CERT) : APK NON signee avec la cle de production"
+          "$BT/aapt2" dump badging "$APK" > badging.txt 2>&1 || { head -5 badging.txt; fail "aapt2 dump badging a echoue"; }
+          PKGLINE=$(grep -m1 "^package:" badging.txt || true)
+          echo "--- $PKGLINE"
+          echo "$PKGLINE" | grep -q "name='com.philippo237.labosurf'" || fail "paquet inattendu : $PKGLINE"
+          VNAME=$(echo "$PKGLINE" | sed -n "s/.* versionName='\([^']*\)'.*/\1/p")
+          VCODE=$(echo "$PKGLINE" | sed -n "s/.* versionCode='\([^']*\)'.*/\1/p")
+          test -n "$VNAME" && test -n "$VCODE" || fail "versionName/versionCode illisibles"
+          if [[ -n "$RELEASE_TAG" ]]; then
+            test "v$VNAME" = "$RELEASE_TAG" || fail "le tag $RELEASE_TAG ne correspond pas a versionName $VNAME"
+            TAGSHA=$(git ls-remote origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)
+            test "$(git rev-parse HEAD)" = "$TAGSHA" || fail "le code construit ($(git rev-parse --short HEAD)) n'est pas celui du tag $RELEASE_TAG"
           fi
           OUT="LaboSurfVPN-v${VNAME}.apk"
           cp "$APK" "$OUT"
@@ -104,15 +127,16 @@ jobs:
           retention-days: 90
 
       - name: Release GitHub en BROUILLON (tag uniquement)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           APK="${{ steps.verify.outputs.apk }}"
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            test "$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)" = "true" || { echo "::error::la Release $GITHUB_REF_NAME est deja publiee : rien n'est remplace"; exit 1; }
-            gh release upload "$GITHUB_REF_NAME" "$APK" "$APK.sha256" --clobber
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true" || { echo "::error::la Release $RELEASE_TAG est deja publiee : rien n'est remplace"; exit 1; }
+            gh release upload "$RELEASE_TAG" "$APK" "$APK.sha256" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "$APK" "$APK.sha256" --draft --title "LaboSurfVPN $GITHUB_REF_NAME" --notes "APK release signee (cle de production). Notes a completer avant publication."
+            gh release create "$RELEASE_TAG" "$APK" "$APK.sha256" --draft --verify-tag --title "LaboSurfVPN $RELEASE_TAG" --notes "APK release signee (cle de production). Notes a completer avant publication."
           fi
