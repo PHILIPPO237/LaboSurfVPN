@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- FileProvider : uniquement le sous-dossier « photos » du cache prive de l'app (photo prise pour le profil). -->
-<paths>
-    <cache-path name="photos" path="photos/" />
-</paths>

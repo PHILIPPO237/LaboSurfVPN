@@ -1,0 +1,8 @@
+{
+  "name": "Labo Surf VPN",
+  "description": "Application client officielle du Laboratoire du Free-Surf pour la gestion de compte, profils de connexion et tunnel VPN.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

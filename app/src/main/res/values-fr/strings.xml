@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">Labo Surf</string>
-    <string name="notif_channel">Labo Surf VPN</string>
-    <string name="notif_active">Connexion sécurisée active</string>
-</resources>
