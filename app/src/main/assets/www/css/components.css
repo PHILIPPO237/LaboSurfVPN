@@ -314,6 +314,7 @@ button.row:active, a.row:active{ background:var(--surface-2); }
 .bubble{ max-width:82%; padding:8px 11px; border-radius:14px; font-size:var(--fs-sm); line-height:1.4; background:var(--surface-2); border:1px solid var(--border); border-bottom-left-radius:4px; word-break:break-word; }
 .mine .bubble{ background:var(--brand-soft); border-color:var(--brand-line); border-bottom-left-radius:14px; border-bottom-right-radius:4px; }
 .bubble-meta{ font-size:9.5px; color:var(--text-muted); margin-top:3px; }
+.bubble.token-offer{ white-space:pre-line; border-color:var(--brand-line); }
 .bubble img{ max-width:100%; border-radius:8px; margin-top:6px; border:1px solid var(--border); }
 .bubble-file{ display:inline-flex; align-items:center; gap:5px; margin-top:6px; padding:5px 9px; border-radius:8px; background:var(--input-bg); border:1px solid var(--border); font-size:11px; text-decoration:none; }
 .composer{ display:flex; align-items:flex-end; gap:6px; }

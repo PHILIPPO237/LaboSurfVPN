@@ -595,6 +595,28 @@ Actions.activateKey = async () => {
   }
 };
 
+// Bouton ACTIVER d'une offre de token (message de l'administrateur). L'API décide : activé ou refusé avec une raison.
+Actions.activateOffer = async (el) => {
+  if(!authToken || !el) return;
+  const id = String(el.dataset.offer || '');
+  if(!/^\d{1,9}$/.test(id) || isBusy(el)) return;
+  setBusy(el, true, 'common.dots');
+  try{
+    const res = await apiFetch('/api/user/tokens/' + id + '/activate', { method: 'POST', body: '{}' });
+    if(res.ok && res.data && res.data.status === 'ok'){
+      toast(apiMessage(res, 'tok.activated'), 'success');
+      await loadAndShowAccount();
+      await loadAppMessages();
+    } else {
+      toast(apiMessage(res, 'tok.refused'), 'error');   // message du serveur : token expiré, révoqué, appareils au maximum…
+    }
+  }catch(e){
+    toast(t('err.panelRetry'), 'error');
+  }finally{
+    setBusy(el, false, 'tok.activate');
+  }
+};
+
 Actions.renewal = async () => {
   clearFormError('renewalError');
   if(!authToken) return;
@@ -670,7 +692,11 @@ function renderAppMessages(messages){
     }
     const avatar = mine ? '' : `<span class="avatar" style="width:26px;height:26px;border-radius:50%;font-size:10px">${
       m.sender_avatar ? `<img src="${esc(m.sender_avatar)}" alt="" onerror="this.remove()">` : esc(role.charAt(0).toUpperCase())}</span>`;
-    return `<div class="bubble-row${mine ? ' mine' : ''}">${avatar}<div class="bubble">${esc(m.body)}${attach}<div class="bubble-meta">${esc(role)}</div></div></div>`;
+    // Offre de token envoyée par l'administrateur : le serveur ne met JAMAIS la valeur du token dans le message ;
+    // le bouton ACTIVER demande au serveur d'activer l'offre attribuée à CE compte (le serveur décide, pas l'application).
+    const offerId = (m.message_type === 'token_offer' && /^token:\d{1,9}$/.test(String(m.attachment_filename || ''))) ? String(m.attachment_filename).slice(6) : '';
+    const offer = offerId ? `<div style="margin-top:8px"><button class="btn btn-primary" type="button" data-action="activateOffer" data-offer="${esc(offerId)}" data-i18n="tok.activate">${esc(t('tok.activate'))}</button></div>` : '';
+    return `<div class="bubble-row${mine ? ' mine' : ''}">${avatar}<div class="bubble${offerId ? ' token-offer' : ''}">${esc(m.body)}${attach}${offer}<div class="bubble-meta">${esc(role)}</div></div></div>`;
   }).join('');
   thread.scrollTop = thread.scrollHeight;
 }
