@@ -30,7 +30,7 @@ function makeEl(id){
 function loadApp(opts){
   opts = opts || {};
   const els = {};
-  const calls = { apiFetch: [], toasts: [], native: { startVpn: [], stopVpn: [] }, sessionExpired: 0, logs: [] };
+  const calls = { apiFetch: [], toasts: [], native: { startVpn: [], stopVpn: [], resetNetwork: 0, restartApp: 0 }, sessionExpired: 0, logs: [] };
   const timers = [];
   let timerSeq = 1;
   const storage = new Map();
@@ -76,6 +76,12 @@ function loadApp(opts){
       stopVpn: () => { calls.native.stopVpn.push(true); },
       getAppVersion: () => '1.0.0-test', openVpnSettings(){}, setSystemBars(){}, clearWebCache(){},
     };
+    // Reprise réseau après l'arrêt du tunnel (MainActivity.NativeBridge) : présente seulement si n.network est fourni
+    if(n.network){
+      sandbox.LaboSurfNative.resetNetwork = () => { calls.native.resetNetwork++; };
+      sandbox.LaboSurfNative.needsAppRestart = () => n.network.needsRestart === true;
+      sandbox.LaboSurfNative.restartApp = () => { calls.native.restartApp++; };
+    }
     if(n.engine === undefined) delete sandbox.LaboSurfNative.getEngineInfo;
     if(n.installId === undefined) delete sandbox.LaboSurfNative.getInstallId;
     if(n.deviceLabel === undefined) delete sandbox.LaboSurfNative.getDeviceLabel;

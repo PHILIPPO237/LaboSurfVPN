@@ -46,6 +46,9 @@ class LaboVpnService : VpnService() {
         private const val NOTIF_CHANNEL_ID = "labo_surf_vpn"
         private const val NOTIF_ID = 1
 
+        /** true tant qu'un tunnel est établi (interface TUN ouverte) : l'application ne se redémarre jamais pendant un tunnel actif. */
+        @Volatile var tunnelActive = false
+
         /** MainActivity est notifiée des changements d'état (jamais de secret dans `detail` : un code stable ou vide). */
         var stateListener: ((state: String, detail: String?) -> Unit)? = null
 
@@ -129,6 +132,7 @@ class LaboVpnService : VpnService() {
                 val pfd = builder.establish()
                 if (pfd == null) { udp.stop(); fail("vpn_permission_denied"); return@Thread }
                 tunInterface = pfd
+                tunnelActive = true
                 udp.start(FileInputStream(pfd.fileDescriptor), FileOutputStream(pfd.fileDescriptor)) { code ->
                     if (myGeneration == generation) { stateListener?.invoke(STATE_ERROR, code ?: "tunnel_closed"); teardown(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf() }
                 }
@@ -166,10 +170,15 @@ class LaboVpnService : VpnService() {
     /** Arrête proprement tout ce qui tourne (sans notifier l'interface). */
     private fun teardown() {
         generation++
+        val hadTunnel = tunInterface != null
         try { client?.stop() } catch (_: Exception) { }
         client = null
         try { tunInterface?.close() } catch (_: Exception) { }
         tunInterface = null
+        tunnelActive = false
+        // Un tunnel qui avait été établi vient de se fermer : la WebView peut garder un état réseau hérité du VPN
+        // (voir NetworkRecovery et js/api.js). Mémorisé pour décider d'un éventuel redémarrage de l'application.
+        if (hadTunnel) NetworkRecovery.markStopped(applicationContext)
         worker?.interrupt(); worker = null
         statsThread?.interrupt(); statsThread = null
     }

@@ -402,7 +402,9 @@ window.onNativeVpnState = function(nativeState, detail){
     if(VPN.state === 'on') setVpnState('disconnecting');
   } else if(nativeState === 'disconnected'){
     markDisconnected();
+    resetNativeNetwork();   // le tunnel vient de se fermer : la WebView doit oublier l'état réseau hérité du VPN (voir api.js)
   } else if(nativeState === 'error'){
+    resetNativeNetwork();
     const name = VPN.session ? VPN.session.server : (VPN.target || '');
     const raw = nativeDetailText(detail);
     failConnect(name, { key: NATIVE_ERRORS[detail] || 'err.connect', params: { proto: '' } });

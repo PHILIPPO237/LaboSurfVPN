@@ -281,7 +281,7 @@ I18N.register('en', {
   // Technical log
   'log.tag.ok': 'OK', 'log.tag.info': 'INFO', 'log.tag.warn': 'WARN', 'log.tag.err': 'ERROR',
   'log.connecting': 'Connecting to {server}', 'log.connected': 'Tunnel established to {server}',
-  'log.disconnected': 'Disconnected from {server}', 'log.connectFailed': 'Connection failed — {server}: {detail}', 'log.detail': 'Detail: {detail}',
+  'log.disconnected': 'Disconnected from {server}', 'log.connectFailed': 'Connection failed — {server}: {detail}', 'log.detail': 'Detail: {detail}', 'log.networkRecovered': 'Connection to the panel restored after the tunnel stopped', 'net.restarting': 'The network needs a reset: the app is restarting. Sign in again afterwards.',
 
   // Rail & history
   'nav.community': 'Community', 'nav.shortcuts': 'Shortcuts', 'nav.shortcutsShow': 'Show shortcuts', 'nav.shortcutsHide': 'Hide shortcuts',

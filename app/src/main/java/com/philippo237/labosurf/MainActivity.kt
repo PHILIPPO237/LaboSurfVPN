@@ -42,6 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     private var pendingServerConfig: String? = null
 
+    // Horodatage (horloge monotone) de la derniere reinitialisation du reseau de la WebView (voir NativeBridge.resetNetwork)
+    private var lastNetworkReset = 0L
+
     // ─── Choix de photo (<input type="file"> de l'interface : photo de profil, piece jointe) ───
     // Une WebView n'ouvre AUCUN selecteur de fichiers sans WebChromeClient.onShowFileChooser : sans ceci, le bouton
     // « Choisir une photo » ne faisait rien dans l'APK. Galerie (aucune permission) + appareil photo (la photo est
@@ -208,6 +211,48 @@ class MainActivity : AppCompatActivity() {
         fun stopVpn() {
             Log.d(TAG, "stopVpn appele depuis le JS")
             LaboVpnService.stop(this@MainActivity)
+        }
+
+        /**
+         * Reprise reseau apres l'arret du tunnel (voir js/api.js et NetworkRecovery) : la WebView peut garder un etat
+         * reseau herite du VPN et echouer avant d'atteindre le panel. On lui signale une coupure puis un retour du reseau,
+         * ce qui lui fait fermer ses connexions et vider son cache DNS. Au plus une fois toutes les 3 s.
+         */
+        @JavascriptInterface
+        fun resetNetwork() {
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (now - lastNetworkReset < 3000) return
+            lastNetworkReset = now
+            runOnUiThread {
+                webView.setNetworkAvailable(false)
+                webView.postDelayed({ webView.setNetworkAvailable(true) }, 250)
+            }
+        }
+
+        /**
+         * true si un tunnel vient d'etre arrete (moins de 30 min), qu'aucun tunnel n'est actif et que l'application n'a
+         * pas deja ete redemarree pour CET arret : c'est le seul cas ou le JS peut demander restartApp().
+         */
+        @JavascriptInterface
+        fun needsAppRestart(): Boolean =
+            !LaboVpnService.tunnelActive && NetworkRecovery.needsRestart(this@MainActivity)
+
+        /**
+         * Dernier recours : relance l'application (equivalent de « Forcer l'arret » puis ouverture). La session etant
+         * gardee en memoire seulement, l'utilisateur se reconnecte a son compte. Refuse pendant un tunnel actif et
+         * une seule fois par arret de tunnel (jamais de boucle).
+         */
+        @JavascriptInterface
+        fun restartApp() {
+            if (LaboVpnService.tunnelActive || !NetworkRecovery.needsRestart(this@MainActivity)) return
+            val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return
+            NetworkRecovery.markRestarted(this@MainActivity)
+            runOnUiThread {
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                startActivity(launch)
+                finishAffinity()
+                webView.postDelayed({ android.os.Process.killProcess(android.os.Process.myPid()) }, 200)
+            }
         }
 
         /** Ouvre les reglages VPN d'Android (VPN permanent, blocage des connexions hors VPN = kill switch). */

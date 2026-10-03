@@ -281,7 +281,7 @@ I18N.register('fr', {
   // Journal technique
   'log.tag.ok': 'OK', 'log.tag.info': 'INFO', 'log.tag.warn': 'ALERTE', 'log.tag.err': 'ERREUR',
   'log.connecting': 'Connexion en cours vers {server}', 'log.connected': 'Tunnel établi vers {server}',
-  'log.disconnected': 'Déconnecté de {server}', 'log.connectFailed': 'Échec de connexion — {server} : {detail}', 'log.detail': 'Détail : {detail}',
+  'log.disconnected': 'Déconnecté de {server}', 'log.connectFailed': 'Échec de connexion — {server} : {detail}', 'log.detail': 'Détail : {detail}', 'log.networkRecovered': 'Connexion au panel rétablie après la coupure du tunnel', 'net.restarting': "Réseau à réinitialiser : l'application redémarre. Reconnecte-toi ensuite.",
 
   // Rail & historique
   'nav.community': 'Communauté', 'nav.shortcuts': 'Raccourcis', 'nav.shortcutsShow': 'Afficher les raccourcis', 'nav.shortcutsHide': 'Masquer les raccourcis',

@@ -69,6 +69,63 @@ function deviceHeaders(){
   return h;
 }
 
+// ─── Reprise réseau après l'arrêt du tunnel ───
+// Constat terrain (v1.2.1) : après un STOP, la WebView garde un état réseau hérité du VPN et chaque requête échoue AVANT
+// d'atteindre le panel (aucune trace côté serveur), jusqu'au redémarrage du processus. Reprise graduée :
+//   1. réinitialisation du réseau de la WebView (pont natif resetNetwork), faite dès l'arrêt du tunnel (vpn.js) ;
+//   2. si une requête échoue quand même : UNE nouvelle tentative après réinitialisation ;
+//   3. si elle échoue encore ET que le tunnel vient d'être arrêté : redémarrage de l'application, UNE fois par arrêt
+//      de tunnel (décidé côté natif : NetworkRecovery). La session est en mémoire seulement : reconnexion au compte.
+// Hors de l'application Android (navigateur), rien de tout cela n'existe : l'erreur est rendue telle quelle.
+const NET_RETRY_DELAY_MS = 700;
+const NET_RESTART_DELAY_MS = 2000;
+const NET_RETRY_POST_PATHS = ['/api/auth/login', '/api/user/connect'];   // seuls POST relancés : ils n'ont pas atteint le serveur et sont idempotents
+
+function nativeNet(name){
+  try{
+    if(isNativeApp() && typeof window.LaboSurfNative[name] === 'function') return window.LaboSurfNative[name].bind(window.LaboSurfNative);
+  }catch(e){}
+  return null;
+}
+// Réinitialise le réseau de la WebView ; false si l'application native ne le propose pas.
+function resetNativeNetwork(){
+  const reset = nativeNet('resetNetwork');
+  if(!reset) return false;
+  try{ reset(); return true; }catch(e){ return false; }
+}
+function netCanRetry(path, method){
+  const m = String(method || 'GET').toUpperCase();
+  return m === 'GET' || (m === 'POST' && NET_RETRY_POST_PATHS.indexOf(path) >= 0);
+}
+// Dernier recours : le natif décide s'il faut redémarrer l'application (arrêt de tunnel récent, pas déjà fait pour cet arrêt).
+function offerAppRestart(){
+  const needs = nativeNet('needsAppRestart'), restart = nativeNet('restartApp');
+  if(!needs || !restart) return;
+  let must = false;
+  try{ must = needs() === true; }catch(e){}
+  if(!must) return;
+  if(typeof toast === 'function') toast(t('net.restarting'), 'warning', NET_RESTART_DELAY_MS);
+  setTimeout(() => { try{ restart(); }catch(e){} }, NET_RESTART_DELAY_MS);
+}
+async function fetchWithNetworkRecovery(url, init, path){
+  try{
+    return await fetch(url, init);
+  }catch(err){
+    // Délai dépassé (AbortError) : le panel est peut-être lent ou arrêté, pas de relance. Requête non relançable : idem.
+    if(!err || err.name === 'AbortError' || !netCanRetry(path, init.method)) throw err;
+    if(!resetNativeNetwork()) throw err;
+    await new Promise((resolve) => setTimeout(resolve, NET_RETRY_DELAY_MS));
+    try{
+      const res = await fetch(url, init);
+      if(typeof logEvent === 'function') logEvent('info', 'log.networkRecovered');
+      return res;
+    }catch(err2){
+      offerAppRestart();
+      throw err2;
+    }
+  }
+}
+
 const API_TIMEOUT_MS = 15000;
 let authToken = null;
 let authExpiresAt = null;   // instant d'expiration de la session (ms), d'après « expires_in » du panel ; null = inconnu
@@ -87,7 +144,7 @@ async function apiFetch(path, options){
   const timer = setTimeout(() => ctrl.abort(), options.timeout || API_TIMEOUT_MS);
   try{
     // cache: no-store, credentials: omit : jamais de configuration ni de cookie conservés par le navigateur
-    const res = await fetch(`${FREE_SURF_API_BASE}${path}`, Object.assign({ cache: 'no-store', credentials: 'omit' }, options, { headers, signal: ctrl.signal }));
+    const res = await fetchWithNetworkRecovery(`${FREE_SURF_API_BASE}${path}`, Object.assign({ cache: 'no-store', credentials: 'omit' }, options, { headers, signal: ctrl.signal }), path);
     let data = null;
     try{ data = await res.json(); }catch(e){ data = null; }
     // Jeton refusé alors qu'on se croyait connecté -> session expirée (voir account.js)

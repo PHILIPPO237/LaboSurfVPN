@@ -4,6 +4,15 @@ Application Android « LaboSurfVPN » — **seul dépôt PUBLIC** de l'écosyst�
 
 > Statut de publication : `v1.0.0-test.1` et `v1.1.0` sont des pré-versions de TEST (APK debug). `v1.2.0` est la première version officielle, signée avec la clé de production.
 
+## Non publié — branche `fix/network-recovery-after-vpn-stop`
+
+- **Correction (à valider sur téléphone)** : après un STOP, l'interface ne joignait plus le panel (« Connexion au panel impossible »)
+  jusqu'à « Forcer l'arrêt ». Le tunnel est bien fermé (pas de clé VPN), mais la WebView garde un état réseau hérité du VPN et ses
+  requêtes échouent avant d'atteindre le serveur. Reprise graduée : réinitialisation du réseau de la WebView dès la fermeture du
+  tunnel, une nouvelle tentative pour toute requête qui échoue (GET, login, connect), puis, en dernier recours, redémarrage de
+  l'application — une seule fois par arrêt de tunnel, jamais pendant un tunnel actif, seulement si l'arrêt a moins de 30 min.
+  Cause exacte non reproduite hors téléphone : l'efficacité de la réinitialisation reste à confirmer sur appareil.
+
 ## `v1.2.1` — non publiée (versionCode 4, APK de test signée)
 
 - `88c82dd` choix de photo dans l'APK (WebView : galerie + appareil photo), adresse du panel joignable (`https://laboratoire.free-surf237-4all.xyz`), rôle et offre lus du panel
