@@ -117,11 +117,44 @@ function diagRows(){
 }
 function renderDiag(){
   $('diagCard').innerHTML = diagRows().map(([k, v]) => `<div class="info-row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('');
+  $('diagProbe').hidden = !Activity.probe;
+  $('diagProbe').innerHTML = Activity.probe ? probeRows(Activity.probe).map(([k, v]) => `<div class="info-row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('') : '';
 }
+
+// Résultat du dernier test de connexion au panel (en mémoire seulement) -> lignes [libellé, valeur]
+function probeRows(p){
+  const cell = (r) => !r ? '—' : (r.ok ? t('diag.p.ok') + (r.status ? ' (' + r.status + ')' : '') + ' · ' + r.ms + ' ms' : t('diag.p.fail') + ' · ' + r.error);
+  return [
+    [t('diag.p.internetIp'), cell(p.internetIp)],
+    [t('diag.p.internetName'), cell(p.internetName)],
+    [t('diag.p.panelReach'), cell(p.panelReach)],
+    [t('diag.p.panelCors'), cell(p.panelCors)],
+    [t('diag.p.verdict'), t('diag.v.' + p.verdict, { code: p.panelCors && p.panelCors.status })],
+  ];
+}
+
+// « Tester la connexion au panel » : dit CE QUI échoue (voir probeNetwork dans api.js). Aucun jeton ni donnée personnelle.
+Actions.testPanel = async (btn) => {
+  if(btn && btn.disabled) return;
+  if(btn) btn.disabled = true;
+  Activity.probe = null; renderDiag();
+  toast(t('diag.testing'), 'info', 1500);
+  try{
+    Activity.probe = await probeNetwork((u, o) => fetch(u, o), FREE_SURF_API_BASE);
+    logEvent(Activity.probe.verdict === 'ok' ? 'info' : 'warn', 'log.detail', { detail: t('diag.v.' + Activity.probe.verdict, { code: Activity.probe.panelCors && Activity.probe.panelCors.status }) });
+  }catch(e){
+    Activity.probe = null;
+  }finally{
+    if(btn) btn.disabled = false;
+    renderDiag();
+  }
+};
 
 // « Copier le rapport » : diagnostic + journal, en texte, pour le support. Aucun identifiant, jeton ni configuration n'y figure.
 Actions.copyReport = async () => {
-  const lines = ['Labo Surf — ' + t('diag.title'), ...diagRows().map(([k, v]) => k + ' : ' + v), '', t('act.logTitle')];
+  const lines = ['Labo Surf — ' + t('diag.title'), ...diagRows().map(([k, v]) => k + ' : ' + v)];
+  if(Activity.probe) lines.push('', t('diag.test'), ...probeRows(Activity.probe).map(([k, v]) => k + ' : ' + v));
+  lines.push('', t('act.logTitle'));
   Activity.log.slice().reverse().forEach((l) => lines.push(new Date(l.ts).toLocaleTimeString(I18N.locale(), { hour12: false }) + '  ' + t('log.tag.' + l.tag) + '  ' + t(l.key, l.params)));
   if(!Activity.log.length) lines.push(t('act.logEmpty'));
   const text = lines.join('\n');

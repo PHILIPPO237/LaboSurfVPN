@@ -12,6 +12,11 @@ Application Android « LaboSurfVPN » — **seul dépôt PUBLIC** de l'écosyst�
   tunnel, une nouvelle tentative pour toute requête qui échoue (GET, login, connect), puis, en dernier recours, redémarrage de
   l'application — une seule fois par arrêt de tunnel, jamais pendant un tunnel actif, seulement si l'arrêt a moins de 30 min.
   Cause exacte non reproduite hors téléphone : l'efficacité de la réinitialisation reste à confirmer sur appareil.
+- **Diagnostic** : bouton « Tester la connexion au panel » dans Réglages > Journal et cache. Quatre requêtes de contrôle (Internet par
+  adresse, Internet par nom/DNS, panel atteint, réponse du panel acceptée) disent LAQUELLE des causes de « Failed to fetch » est en jeu :
+  pas d'Internet, DNS, panel injoignable, réponse bloquée (Cloudflare / CORS) ou erreur HTTP. Aucune donnée personnelle envoyée ;
+  le résultat figure dans « Copier le rapport ». Hypothèse à confirmer avec ce bouton : DNS de l'opérateur qui ne résout pas le
+  domaine du panel (le tunnel VPN impose 1.1.1.1/8.8.8.8, ce qui masquerait le problème tant qu'il est actif).
 
 ## `v1.2.1` — non publiée (versionCode 4, APK de test signée)
 

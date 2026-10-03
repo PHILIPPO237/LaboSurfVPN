@@ -126,6 +126,42 @@ async function fetchWithNetworkRecovery(url, init, path){
   }
 }
 
+// ─── Diagnostic réseau (écran « Journal et cache ») ───
+// « Failed to fetch » mélange des causes très différentes (pas d'Internet, DNS, panel injoignable, réponse bloquée par
+// Cloudflare ou par les règles CORS). Quatre requêtes de contrôle disent LAQUELLE : aucune donnée personnelle, aucun jeton.
+//   internetIp   : https://1.1.1.1 (sans DNS) -> l'application a-t-elle Internet ?
+//   internetName : https://www.cloudflare.com  -> la résolution des noms (DNS) fonctionne-t-elle ?
+//   panelReach   : <panel>/health en « no-cors » -> le panel est-il atteint (réponse opaque acceptée) ?
+//   panelCors    : <panel>/health en « cors »    -> sa réponse est-elle ACCEPTÉE par la WebView ?
+async function probeNetwork(fetchFn, base){
+  const attempt = async (url, mode) => {
+    const t0 = Date.now();
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try{
+      const r = await fetchFn(url, { mode: mode, cache: 'no-store', credentials: 'omit', signal: ctrl.signal });
+      return { ok: true, status: mode === 'cors' ? r.status : 0, ms: Date.now() - t0 };
+    }catch(e){
+      return { ok: false, error: (e && e.name === 'AbortError') ? 'timeout' : String((e && e.message) || e).slice(0, 60), ms: Date.now() - t0 };
+    }finally{ clearTimeout(timer); }
+  };
+  const [internetIp, internetName, panelReach, panelCors] = await Promise.all([
+    attempt('https://1.1.1.1/cdn-cgi/trace', 'no-cors'),
+    attempt('https://www.cloudflare.com/cdn-cgi/trace', 'no-cors'),
+    base ? attempt(base + '/health', 'no-cors') : Promise.resolve(null),
+    base ? attempt(base + '/health', 'cors') : Promise.resolve(null),
+  ]);
+  let verdict;
+  if(!base) verdict = 'no_base';
+  else if(!internetIp.ok) verdict = 'no_internet';
+  else if(!internetName.ok) verdict = 'dns';
+  else if(!panelReach.ok) verdict = 'panel_unreachable';
+  else if(!panelCors.ok) verdict = 'blocked';
+  else if(panelCors.status !== 200) verdict = 'http_status';
+  else verdict = 'ok';
+  return { verdict: verdict, internetIp: internetIp, internetName: internetName, panelReach: panelReach, panelCors: panelCors };
+}
+
 const API_TIMEOUT_MS = 15000;
 let authToken = null;
 let authExpiresAt = null;   // instant d'expiration de la session (ms), d'après « expires_in » du panel ; null = inconnu
