@@ -615,3 +615,4 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
 .legal-sec ul{ margin:var(--sp-1) 0 0; padding-left:20px; display:flex; flex-direction:column; gap:var(--sp-2); }
 .legal-sec li{ font-size:var(--fs-sm); line-height:1.6; color:var(--text-muted); }
 .legal-sec li::marker{ color:var(--brand); }
+.panel-cta{ margin-top:var(--sp-4); } .panel-cta .hint{ text-align:center; margin-top:var(--sp-2); }

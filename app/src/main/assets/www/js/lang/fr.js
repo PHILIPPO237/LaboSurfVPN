@@ -355,7 +355,7 @@ I18N.register('fr', {
   'log.engineUnavailable': 'Moteur de connexion indisponible : aucune demande envoyée au service.',
   'log.healthUnknown': "Santé du serveur non vérifiée par le service (état inconnu).",
   'access.fiveMin': 'Ton accès se termine dans 5 minutes.', 'access.ended': 'Ton accès est arrivé à son terme. Renouvelle-le depuis ton compte.',
-  'acc.menu.panel': 'Continuer sur le Laboratoire du Free-Surf', 'acc.menu.panelSub': 'Paiement, offres et gestion avancée du compte',
+  'acc.menu.panel': 'Continuer sur le Laboratoire du Free-Surf', 'acc.panelBtn': 'Accès au panel', 'acc.menu.panelSub': 'Paiement, offres et gestion avancée du compte',
   'preview.ribbon': 'Aperçu — connexion non réelle',
 
   // Aide, guide et assistant

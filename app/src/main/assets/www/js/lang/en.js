@@ -355,7 +355,7 @@ I18N.register('en', {
   'log.engineUnavailable': 'Connection engine unavailable: no request was sent to the service.',
   'log.healthUnknown': "The service couldn't verify the server's health (unknown state).",
   'access.fiveMin': 'Your access ends in 5 minutes.', 'access.ended': 'Your access has ended. Renew it from your account.',
-  'acc.menu.panel': 'Continue on the Laboratoire du Free-Surf', 'acc.menu.panelSub': 'Payment, plans and advanced account management',
+  'acc.menu.panel': 'Continue on the Laboratoire du Free-Surf', 'acc.panelBtn': 'Open the panel', 'acc.menu.panelSub': 'Payment, plans and advanced account management',
   'preview.ribbon': 'Preview — not a real connection',
 
   // Help, guide and assistant

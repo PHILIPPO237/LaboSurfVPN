@@ -46,3 +46,15 @@ test('quota dépassé : restant 0 %, pas de valeur négative', () => {
   render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 12, usage_quota_gb: 10, remaining_gb: 0, usage_percent: 100 });
   assert.equal(a.ev("document.getElementById('accQuotaPct').textContent"), '0%');
 });
+
+test("profil : l'accès au panel est un bouton (plus un lien), affiché seulement si le panel est joignable", () => {
+  const html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8');
+  assert.match(html, /<div class="panel-cta" id="accPanelRow" hidden>[\s\S]*?<button class="btn btn-primary btn-block"[^>]*data-action="openPanel"/);
+  assert.doesNotMatch(html, /class="row"[^>]*data-action="openPanel"/, 'plus de ligne-lien');
+  const a = app();
+  assert.equal(a.ev("t('acc.panelBtn')"), 'Accès au panel');
+  a.ev("I18N.set('en', false)");
+  assert.equal(a.ev("t('acc.panelBtn')"), 'Open the panel');
+  assert.match(fs.readFileSync(path.join(WWW, 'js', 'account.js'), 'utf8'), /\$\('accPanelRow'\)\.hidden = !API\.state\.ok/);
+});
+
