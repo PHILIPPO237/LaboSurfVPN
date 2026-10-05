@@ -225,7 +225,7 @@ I18N.register('en', {
   'acc.subscription': 'Subscription', 'acc.quota': 'Quota', 'acc.noExpiry': 'No expiration date.',
   'acc.freePlanNote': 'Free plan: limited trial access.',
   'acc.daysLeft_one': '{n} day left', 'acc.daysLeft_other': '{n} days left',
-  'acc.quotaLeft': '{left} left of {total}',
+  'acc.quotaLeft': '{left} left of {total}', 'acc.quotaUsed': '{used} used', 'acc.usageUnavailable': 'Usage currently unavailable.',
   'acc.sync': 'Synchronization', 'acc.lastSync': 'Last sync', 'acc.refresh': 'Refresh my account',
   'acc.syncing': 'Syncing…', 'acc.syncFailed': 'Sync failed', 'acc.panelDown': 'Panel unreachable',
   'acc.activateTitle': 'Activate a code', 'acc.activateText': 'Did you receive a code or a token (LABOSURF-…) from your reseller or the administrator? Enter it here. A personal token only works on the account it is assigned to.',

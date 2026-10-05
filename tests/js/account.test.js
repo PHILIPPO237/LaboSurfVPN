@@ -35,6 +35,45 @@ test('jauge des jours restants : pas de pourcentage inventé sans date de début
   void iso0;
 });
 
+const gone = (a, id) => a.ev(`document.getElementById('${id}').hidden`);
+const txt = (a, id) => a.ev(`document.getElementById('${id}').textContent`);
+
+test('consommation : lue du panel, jauge = restant, aucun calcul local', () => {
+  const a = app();
+  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 2.5, usage_quota_gb: 10, remaining_gb: 7.5, usage_percent: 25 }, {}, ''))`);
+  assert.equal(gone(a, 'quotaGauge'), false);
+  assert.equal(gone(a, 'quotaUnavailable'), true);
+  assert.equal(txt(a, 'accQuotaPct'), '75%');
+  assert.match(txt(a, 'accQuotaLabel'), /7[.,]5/);
+});
+
+test('consommation indisponible : message clair, jamais 0 ni jauge, même si des chiffres traînent', () => {
+  const a = app();
+  const acc = a.ev(`accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10, usage_available: false, usage_reason: 'engine_not_metered', quota_used_gb: 0, remaining_gb: 0, usage_percent: 0 }, {}, '')`);
+  assert.equal(acc.quotaUsedGB, null);
+  assert.equal(acc.remainingGB, null);
+  assert.equal(acc.usagePercent, null);
+  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10, usage_available: false, usage_reason: 'engine_not_metered' }, {}, ''))`);
+  assert.equal(gone(a, 'quotaGauge'), true);
+  assert.equal(gone(a, 'quotaUnavailable'), false);
+  assert.equal(gone(a, 'quotaPlain'), false, 'le quota reste affiché');
+});
+
+test('consommation : ancien panel (sans les champs) = indisponible, pas 0', () => {
+  const a = app();
+  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10 }, {}, ''))`);
+  assert.equal(gone(a, 'quotaGauge'), true);
+  assert.equal(gone(a, 'quotaUnavailable'), false);
+});
+
+test('consommation mesurée mais quota illimité : consommation seule, sans jauge', () => {
+  const a = app();
+  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 1.2, usage_quota_gb: null, remaining_gb: null, usage_percent: null }, {}, ''))`);
+  assert.equal(gone(a, 'quotaGauge'), true);
+  assert.equal(gone(a, 'quotaPlain'), false);
+  assert.match(txt(a, 'quotaPlainValue'), /1[.,]2/);
+});
+
 test('quota : jamais de consommation inventée (le panel ne la fournit pas)', () => {
   const a = app();
   const acc = a.ev("accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 50 }, {}, '')");

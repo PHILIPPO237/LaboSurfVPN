@@ -86,23 +86,28 @@ function renderAccountCard(acc){
   }
 
   // Quota : jauge seulement si l'API fournit la consommation réelle (jamais de chiffre inventé)
+  // Les chiffres viennent TOUS du panel (aucun calcul ici) ; consommation inconnue = « indisponible », jamais 0.
   const hasQuota = !!acc.quotaGB;
-  const hasUsage = hasQuota && acc.quotaUsedGB !== null;
-  $('quotaBlock').hidden = !hasQuota;
+  const hasUsage = hasQuota && acc.usageAvailable && acc.remainingGB !== null && acc.usagePercent !== null;
+  const usedOnly = acc.usageAvailable && !hasUsage && acc.quotaUsedGB !== null;   // mesure connue, quota illimité
+  $('quotaBlock').hidden = !(hasQuota || usedOnly);
   $('quotaGauge').hidden = !hasUsage;
-  $('quotaPlain').hidden = !(hasQuota && !hasUsage);
+  $('quotaPlain').hidden = !(hasQuota && !hasUsage) && !usedOnly;
+  $('quotaUnavailable').hidden = !(hasQuota && !acc.usageAvailable);
   if(hasUsage){
-    const remaining = Math.max(0, acc.quotaGB - acc.quotaUsedGB);
-    const pct = Math.max(0, Math.min(100, Math.round((remaining / acc.quotaGB) * 100)));
+    const remaining = acc.remainingGB;
+    const pct = Math.max(0, Math.min(100, Math.round(100 - acc.usagePercent)));
     $('accQuotaFill').style.width = pct + '%';
     $('accQuotaFill').className = 'gauge-fill ' + gaugeClass(pct);
     $('accQuotaLabel').textContent = t('acc.quotaLeft', { left: fmtGB(remaining), total: fmtGB(acc.quotaGB) });
     $('accQuotaPct').textContent = pct + '%';
+  } else if(usedOnly){
+    $('quotaPlainValue').textContent = t('acc.quotaUsed', { used: fmtGB(acc.quotaUsedGB) });
   } else if(hasQuota){
     $('quotaPlainValue').textContent = fmtGB(acc.quotaGB);
   }
   const noSub = $('accNoSub');
-  noSub.hidden = hasDays || hasQuota;
+  noSub.hidden = hasDays || hasQuota || usedOnly;
   noSub.textContent = t(acc.plan === 'gratuit' ? 'acc.freePlanNote' : 'acc.noExpiry');
 
   // Sous-titre du menu « Accès et abonnement » : jours restants réels, sinon l'offre
@@ -154,7 +159,9 @@ function subscriptionTotalDays(startedAt, expIso){
 function accountFromApi(me, sub, fallbackName){
   const { role, offer, plan } = roleAndOffer(me);
   const expiresAt = (sub && sub.expires_at) || me.expiration || '';
-  const used = toNumber(me.quota_used_gb !== undefined ? me.quota_used_gb : me.used_gb); // null tant que l'API ne le fournit pas
+  // Contrat du panel : usage_available=false => tout le reste est ignoré (jamais lu comme 0)
+  const usageAvailable = me.usage_available === true;
+  const used = usageAvailable ? toNumber(me.quota_used_gb) : null;
   return {
     username: me.username || fallbackName || '',
     avatar: me.avatar || '',
@@ -166,6 +173,10 @@ function accountFromApi(me, sub, fallbackName){
     graceDays: 3,
     quotaGB: (me.quota_gb !== undefined && me.quota_gb !== null) ? Number(me.quota_gb) : null,
     quotaUsedGB: used,
+    usageAvailable,
+    usageReason: usageAvailable ? null : (me.usage_reason || null),
+    remainingGB: usageAvailable ? toNumber(me.remaining_gb) : null,
+    usagePercent: usageAvailable ? toNumber(me.usage_percent) : null,
   };
 }
 
