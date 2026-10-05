@@ -36,7 +36,7 @@ test("écran Chat : sans compte on arrive sur la connexion ; avec compte on l'ou
   assert.match(src, /const RAIL_ORDER = \['home', 'services', 'account', 'chat'/);
 });
 
-test('un compte qui cesse d'être abonné perd le bouton et est renvoyé du Chat vers le profil', () => {
+test("un compte qui cesse d'être abonné perd le bouton et est renvoyé du Chat vers le profil", () => {
   const a = app();
   render(a, { type: 'VIP', username: 'a', expiration: iso(12) });
   assert.equal(railHidden(a), false);
