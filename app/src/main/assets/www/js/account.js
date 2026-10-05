@@ -119,6 +119,16 @@ function renderPass(acc){
   setPassBar('passDTrack', 'passDFill', dp, t('acc.pass.validity'));
 }
 
+// Abonné : une offre autre que « gratuit », non expirée. Le bouton Chat du rail n'existe que pour lui (l'écran, lui, renvoie à
+// la connexion sans compte). Les comptes gratuits gardent « Messages et annonces » dans le profil : c'est par là que
+// arrivent les offres de token et les factures.
+function isSubscriber(acc){ return !!acc && acc.plan !== 'gratuit' && acc.daysLeft !== 0; }
+function updateChatRail(acc){
+  const sub = isSubscriber(acc);
+  $('railBtn-chat').hidden = !sub;
+  if(!sub && currentScreen === 'chat' && acc) showScreen('account');
+}
+
 function renderAccountCard(acc){
   Account.last = acc;
   $('accNameTxt').textContent = acc.username;
@@ -141,6 +151,7 @@ function renderAccountCard(acc){
   $('accPanelRow').hidden = !API.state.ok;   // point d'accès aux fonctions avancées (paiement, offres…) : le Laboratoire du Free-Surf
 
   renderPass(acc);
+  updateChatRail(acc);
 
   // Sous-titre du menu « Accès et abonnement » : jours restants réels, sinon l'offre
   $('accMenuAccessSub').textContent = acc.plan !== 'gratuit' && acc.daysLeft !== null
@@ -463,14 +474,12 @@ Actions.forgotReset = async () => {
 
 // ─── Sous-écrans du compte : menu · accès et abonnement · messages et annonces · sécurité ───
 function setAccView(name){
-  Account.view = ['menu', 'access', 'messages', 'security'].includes(name) ? name : 'menu';
+  Account.view = ['menu', 'access', 'security'].includes(name) ? name : 'menu';
   $('accHome').hidden = Account.view !== 'menu';
   $('accViewAccess').hidden = Account.view !== 'access';
-  $('accViewMessages').hidden = Account.view !== 'messages';
   $('accViewSecurity').hidden = Account.view !== 'security';
   $('screen-account').scrollTop = 0;
   // Ouvrir les messages les marque comme lus côté serveur (comportement historique) : seulement ici, jamais en arrière-plan
-  if(Account.view === 'messages'){ loadAppMessages(); loadAnnouncements(true); }
   if(Account.view === 'security') loadDevices();
 }
 
@@ -550,10 +559,17 @@ Actions.changePassword = async () => {
 };
 Actions.accOpen = (el) => setAccView(el.dataset.view);
 Actions.accBack = () => setAccView('menu');
+Actions.toggleAnnouncements = (el) => {
+  const list = $('announcementsList'), open = list.hidden;
+  list.hidden = !open;
+  el.setAttribute('aria-expanded', String(open));
+};
 
 // ─── Déconnexion du compte / session expirée ───
 function resetToLoggedOut(){
   authToken = null;
+  $('railBtn-chat').hidden = true;
+  if(currentScreen === 'chat') showScreen('account');
   authExpiresAt = null;
   Account.last = null;
   clearInterval(Account.pollTimer);
@@ -715,6 +731,18 @@ Actions.clearAttachment = () => {
   $('msgAttachPreview').hidden = true;
 };
 
+// Heure et jour RÉELS du message (created_at fourni par le panel) ; rien d'affiché si la date est absente ou illisible
+function chatTime(m){
+  const d = new Date(String(m.created_at || m.created || m.timestamp || ''));
+  if(isNaN(d.getTime())) return { day: '', dayLabel: '', hour: '' };
+  const pad = (n) => String(n).padStart(2, '0');
+  const key = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const now = new Date(), yest = new Date(Date.now() - 86400000);
+  const same = (x) => x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth() && x.getDate() === d.getDate();
+  const label = same(now) ? t('chat.today') : (same(yest) ? t('chat.yesterday') : pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear());
+  return { day: key, dayLabel: label, hour: pad(d.getHours()) + ':' + pad(d.getMinutes()) };
+}
+
 let messagesCache = [];
 function renderAppMessages(messages){
   if(messages) messagesCache = messages;
@@ -723,6 +751,7 @@ function renderAppMessages(messages){
     thread.innerHTML = `<div class="empty" style="padding:var(--sp-4) 0">${esc(t('acc.noMessages'))}</div>`;
     return;
   }
+  let lastDay = '';
   thread.innerHTML = messagesCache.map((m) => {
     const mine = m.sender_role === 'client';
     const role = m.sender_role === 'admin' ? t('plan.admin') : (m.sender_role === 'revendeur' ? t('plan.revendeur') : t('acc.you'));
@@ -740,7 +769,10 @@ function renderAppMessages(messages){
     // le bouton ACTIVER demande au serveur d'activer l'offre attribuée à CE compte (le serveur décide, pas l'application).
     const offerId = (m.message_type === 'token_offer' && /^token:\d{1,9}$/.test(String(m.attachment_filename || ''))) ? String(m.attachment_filename).slice(6) : '';
     const offer = offerId ? `<div style="margin-top:8px"><button class="btn btn-primary" type="button" data-action="activateOffer" data-offer="${esc(offerId)}" data-i18n="tok.activate">${esc(t('tok.activate'))}</button></div>` : '';
-    return `<div class="bubble-row${mine ? ' mine' : ''}">${avatar}<div class="bubble${offerId ? ' token-offer' : ''}">${esc(m.body)}${attach}${offer}<div class="bubble-meta">${esc(role)}</div></div></div>`;
+    const when = chatTime(m);
+    const sep = (when.day && when.day !== lastDay) ? `<div class="chat-day"><span>${esc(when.dayLabel)}</span></div>` : '';
+    if(when.day) lastDay = when.day;
+    return `${sep}<div class="bubble-row${mine ? ' mine' : ''}">${avatar}<div class="bubble${offerId ? ' token-offer' : ''}">${esc(m.body)}${attach}${offer}<div class="bubble-meta">${mine ? '' : esc(role) + (when.hour ? ' · ' : '')}${esc(when.hour)}</div></div></div>`;
   }).join('');
   thread.scrollTop = thread.scrollHeight;
 }
@@ -760,12 +792,20 @@ async function pollUnreadMessages(){
   if(!authToken) return;
   try{
     const res = await apiFetch('/api/user/messages');
-    if(res.ok && res.data && res.data.messages && !(currentScreen === 'account' && Account.view === 'messages')){
+    if(res.ok && res.data && res.data.messages && currentScreen !== 'chat'){
       Account.unreadMessages = res.data.messages.filter((m) => m.sender_role !== 'client' && !m.read_at).length;
       updateAccountBadge();
     }
   }catch(e){}
 }
+
+// Zone de saisie : grandit avec le texte (jusqu'à 4 lignes), comme les messageries modernes
+function growComposer(){
+  const el = $('msgComposerInput');
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight || 0, 120) + 'px';
+}
+document.addEventListener('input', (e) => { if(e.target && e.target.id === 'msgComposerInput') growComposer(); });
 
 Actions.sendMessage = async () => {
   if(!authToken){ toast(t('err.loginFirst'), 'warning'); return; }
@@ -782,6 +822,7 @@ Actions.sendMessage = async () => {
     const res = await apiFetch('/api/user/messages', { method: 'POST', body: JSON.stringify(payload) });
     if(res.ok && res.data && res.data.status === 'ok'){
       input.value = '';
+      growComposer();
       Actions.clearAttachment();
       await loadAppMessages();
     } else {
@@ -833,12 +874,16 @@ function updateAccountBadge(){
   const tab = $('accountBadge');
   tab.hidden = total === 0;
   tab.textContent = total > 9 ? '9+' : String(total);
+  const cnt = (n) => n > 9 ? '9+' : String(n);
+  const chat = $('chatBadge');
+  chat.hidden = total === 0;
+  chat.textContent = cnt(total);
   const cardBadge = $('messagesCardBadge');
   cardBadge.hidden = Account.unreadMessages === 0;
-  cardBadge.textContent = Account.unreadMessages > 9 ? '9+' : String(Account.unreadMessages);
+  cardBadge.textContent = cnt(Account.unreadMessages);
   const rowBadge = $('messagesRowBadge');
-  rowBadge.hidden = Account.unreadMessages + Account.unreadAnnouncements === 0;
-  rowBadge.textContent = Account.unreadMessages + Account.unreadAnnouncements > 9 ? '9+' : String(Account.unreadMessages + Account.unreadAnnouncements);
+  rowBadge.hidden = total === 0;
+  rowBadge.textContent = cnt(total);
 }
 
 function pollAccountSignals(){ pollUnreadMessages(); loadAnnouncements(false); }

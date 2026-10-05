@@ -332,6 +332,7 @@ I18N.register('en', {
   'conn.err.configuration_unavailable': 'Your connection is being prepared.',
   'conn.err.badResponse': 'Unexpected answer from the connection service. Try again.',
   'conn.err.unknown': 'Connection refused. Try again.',
+  'nav.chat': "Chat", 'chat.title': "Chat", 'chat.sub': "Talk to your manager", 'chat.today': "Today", 'chat.yesterday': "Yesterday",
   'conn.retryIn': 'Try again in {s} s.',
   'home.state.connecting.waitOld': "Your previous connection is closing… retrying automatically.", 'log.waitOldSession': "Previous session still open on the server: automatic retry ({n}/{max}).", 'log.waitOldSessionCancel': "Wait cancelled.",
   'err.offline': 'No internet connection. Check your network, then try again.',

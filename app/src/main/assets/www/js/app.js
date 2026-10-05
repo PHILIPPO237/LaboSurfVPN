@@ -5,14 +5,14 @@
 // Rien n'est supprimé : Serveurs s'ouvre depuis Services, Historique et Espace revendeur depuis Compte,
 // Communauté depuis Réglages (voir PARENT_OF).
 
-const SCREENS = ['home', 'services', 'servers', 'activity', 'account', 'clients', 'community', 'settings', 'about', 'logs', 'legal'];
+const SCREENS = ['home', 'services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'settings', 'about', 'logs', 'legal'];
 // Sous-écrans : le bouton du parent reste allumé sur le rail, et « retour » y ramène
 const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', community: 'settings', legal: 'settings' };
 let currentScreen = 'home';
 document.documentElement.dataset.screen = 'home';
 
 // Sens de la transition : sous-page = +1 (le contenu arrive du bas), retour = -1, sinon selon la position des boutons dans le rail
-const RAIL_ORDER = ['home', 'services', 'account', 'settings', 'logs', 'about'];   // même ordre que le rail (du plus au moins prioritaire)
+const RAIL_ORDER = ['home', 'services', 'account', 'chat', 'settings', 'logs', 'about'];   // même ordre que le rail (du plus au moins prioritaire)
 function transitionDir(from, to){
   if(PARENT_OF[to] === from) return 1;
   if(PARENT_OF[from] === to) return -1;
@@ -22,6 +22,7 @@ function transitionDir(from, to){
 
 function showScreen(name){
   if(!SCREENS.includes(name)) return;
+  if(name === 'chat' && !authToken) name = 'account';   // le chat est celui d'un compte : sans compte, on arrive sur la connexion
   const wasActive = name === currentScreen;
   const prevEl = wasActive ? null : $('screen-' + currentScreen);
   const dir = wasActive ? 1 : transitionDir(currentScreen, name);
@@ -49,6 +50,7 @@ function showScreen(name){
   if(name === 'services' && authToken && Services.state === 'idle') loadServices();
   if(name === 'servers' && authToken && Servers.state === 'idle') loadServers();
   if(name === 'clients'){ loadPendingRequests(); loadResellerClients(); }
+  if(name === 'chat'){ loadAppMessages(); loadAnnouncements(true); }   // ouvrir le chat marque les messages comme lus (seulement ici)
   if(name === 'account') pollAccountSignals();   // met à jour les pastilles sans marquer les messages comme lus
 }
 Actions.nav = (el) => showScreen(el.dataset.screen);

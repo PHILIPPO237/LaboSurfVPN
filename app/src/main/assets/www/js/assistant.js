@@ -17,12 +17,12 @@ const FAQ = [
   { id: 'history', go: { screen: 'activity' } },
   { id: 'lang',    go: { screen: 'settings' } },
   { id: 'photo',   go: { screen: 'account' } },
-  { id: 'support', go: { screen: 'account', view: 'messages' } },
+  { id: 'support', go: { screen: 'chat' } },
   { id: 'privacy', go: { legal: 'privacy' } },
   { id: 'about',   go: { screen: 'about' } },
 ];
 const FAQ_SUGGESTIONS = ['signin', 'start', 'fail', 'server', 'renew', 'cache'];   // puces affichées sous la conversation
-const GO_LABEL = { home: 'nav.home', account: 'nav.account', servers: 'nav.servers', logs: 'nav.logs', activity: 'nav.activity', settings: 'nav.settings', about: 'nav.about' };
+const GO_LABEL = { home: 'nav.home', account: 'nav.account', chat: 'nav.chat', servers: 'nav.servers', logs: 'nav.logs', activity: 'nav.activity', settings: 'nav.settings', about: 'nav.about' };
 
 const Assistant = {
   available: false,          // futur : un endpoint du panel pourra répondre en langage libre (voir ask)

@@ -332,6 +332,7 @@ I18N.register('fr', {
   'conn.err.configuration_unavailable': 'Ta connexion est en cours de préparation.',
   'conn.err.badResponse': 'Réponse inattendue du service de connexion. Réessaie.',
   'conn.err.unknown': 'Connexion refusée. Réessaie.',
+  'nav.chat': "Chat", 'chat.title': "Chat", 'chat.sub': "Échanges avec ton gestionnaire", 'chat.today': "Aujourd'hui", 'chat.yesterday': "Hier",
   'conn.retryIn': 'Réessaie dans {s} s.',
   'home.state.connecting.waitOld': "Ta précédente connexion se ferme… nouvelle tentative automatique.", 'log.waitOldSession': "Ancienne session encore ouverte côté serveur : nouvelle tentative automatique ({n}/{max}).", 'log.waitOldSessionCancel': "Attente annulée.",
   'err.offline': "Pas de connexion internet. Vérifie ton réseau, puis réessaie.",

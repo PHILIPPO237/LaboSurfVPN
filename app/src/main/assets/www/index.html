@@ -77,6 +77,7 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
   <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/><path d="M12 14h6"/></symbol>
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20.5 11.2a8 8 0 0 1-8.7 7.9 8.3 8.3 0 0 1-3-.7L4 20l1.6-4.1A7.9 7.9 0 0 1 4 11.2 8.2 8.2 0 0 1 12.3 3a8.1 8.1 0 0 1 8.2 8.2z"/><circle cx="8.6" cy="11.4" r=".9" fill="currentColor" stroke="none"/><circle cx="12.3" cy="11.4" r=".9" fill="currentColor" stroke="none"/><circle cx="16" cy="11.4" r=".9" fill="currentColor" stroke="none"/><path d="M19.5 2.2v2.6M18.2 3.5h2.6" stroke-width="1.6"/></symbol>
   <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
   <symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
@@ -97,6 +98,7 @@
       <button class="rail-btn active" type="button" id="railBtn-home" data-action="nav" data-screen="home" data-i18n-attr="title:nav.home;aria-label:nav.home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg></button>
       <button class="rail-btn" type="button" id="railBtn-services" data-action="nav" data-screen="services" data-i18n-attr="title:nav.services;aria-label:nav.services"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></button>
       <button class="rail-btn" type="button" id="railBtn-account" data-action="nav" data-screen="account" data-i18n-attr="title:nav.account;aria-label:nav.account"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="rail-badge" id="accountBadge" hidden></span></button>
+      <button class="rail-btn" type="button" id="railBtn-chat" data-action="nav" data-screen="chat" hidden data-i18n-attr="title:nav.chat;aria-label:nav.chat"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span class="rail-badge" id="chatBadge" hidden></span></button>
       <div class="rail-group" id="railGroup">
         <button class="rail-btn" type="button" id="railBtn-settings" data-action="nav" data-screen="settings" data-i18n-attr="title:nav.settings;aria-label:nav.settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg></button>
         <button class="rail-caret" type="button" id="railCaret" data-action="toggleRail" aria-expanded="false" aria-controls="railExpand" data-i18n-attr="aria-label:nav.shortcutsShow"><svg class="ic" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
@@ -410,7 +412,7 @@
           <div class="section-title" data-i18n="acc.menu.mine"></div>
           <div class="list">
         <button class="row" type="button" data-action="accOpen" data-view="access"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-card"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.access"></div><div class="row-sub" id="accMenuAccessSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
-        <button class="row" type="button" data-action="accOpen" data-view="messages"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-message"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.messages"></div><div class="row-sub" data-i18n="acc.menu.messagesSub"></div></div><span class="badge-dot" id="messagesRowBadge" hidden></span><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+        <button class="row" type="button" data-action="nav" data-screen="chat"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-message"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.messages"></div><div class="row-sub" data-i18n="acc.menu.messagesSub"></div></div><span class="badge-dot" id="messagesRowBadge" hidden></span><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="nav" data-screen="activity"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-clock"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.history"></div><div class="row-sub" data-i18n="acc.menu.historySub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="accOpen" data-view="security"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-lock"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.security"></div><div class="row-sub" data-i18n="acc.menu.securitySub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
           </div>
@@ -470,30 +472,6 @@
 
         </div>
 
-        <div id="accViewMessages" hidden>
-          <div class="subhead"><button class="icon-btn back-btn" type="button" data-action="accBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h2 class="subhead-title" data-i18n="acc.menu.messages"></h2></div>
-        <div class="card" id="announcementsCard" hidden>
-          <div class="card-title"><span data-i18n="acc.announcements"></span><span class="badge-dot" id="announcementsCardBadge" hidden></span></div>
-          <div id="announcementsList" style="max-height:220px;overflow-y:auto"></div>
-        </div>
-
-        <div class="card" id="messagesCard">
-          <div class="card-title"><span data-i18n="acc.messages"></span><span class="badge-dot" id="messagesCardBadge" hidden></span></div>
-          <div class="thread" id="messagesThread"></div>
-          <form class="composer" data-submit="sendMessage" novalidate>
-            <label class="icon-btn" style="cursor:pointer" data-i18n-attr="aria-label:acc.attach"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>
-              <input type="file" accept="image/*" hidden id="msgAttachInput"></label>
-            <textarea class="textarea" id="msgComposerInput" rows="1" data-i18n-attr="placeholder:acc.writeMessage;aria-label:acc.writeMessage"></textarea>
-            <button class="icon-btn" type="submit" data-i18n-attr="aria-label:acc.send" style="background:var(--brand);color:var(--on-brand);border-color:var(--brand)"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg></button>
-          </form>
-          <div class="muted" id="msgAttachPreview" hidden style="font-size:var(--fs-xs);margin-top:6px">
-            <svg class="ic" aria-hidden="true" style="width:12px;height:12px"><use href="#i-camera"/></svg> <span id="msgAttachName"></span>
-            <button type="button" class="link-btn" style="min-height:0;padding:0 6px;color:var(--danger)" data-action="clearAttachment" data-i18n="common.cancel"></button>
-          </div>
-        </div>
-
-        </div>
-
         <div id="accViewSecurity" hidden>
           <div class="subhead"><button class="icon-btn back-btn" type="button" data-action="accBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h2 class="subhead-title" data-i18n="acc.menu.security"></h2></div>
           <div class="card">
@@ -522,6 +500,30 @@
     </section>
 
     <!-- ===================== COMMUNAUTÉ ===================== -->
+    <section class="screen" id="screen-chat" aria-labelledby="chatTitle">
+      <div class="chat">
+        <header class="chat-head">
+          <span class="chat-ava" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></span>
+          <div class="chat-id"><h1 id="chatTitle" data-i18n="chat.title"></h1><p data-i18n="chat.sub"></p></div>
+          <span class="badge-dot" id="messagesCardBadge" hidden></span>
+        </header>
+        <div class="chat-announce" id="announcementsCard" hidden>
+          <button class="chat-announce-head" type="button" data-action="toggleAnnouncements" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg><span data-i18n="acc.announcements"></span><span class="badge-dot" id="announcementsCardBadge" hidden></span><svg class="ic chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+          <div class="chat-announce-list" id="announcementsList" hidden></div>
+        </div>
+        <div class="chat-thread" id="messagesThread" role="log" aria-live="polite"></div>
+        <div class="chat-attach" id="msgAttachPreview" hidden>
+          <svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><span id="msgAttachName"></span>
+          <button type="button" class="link-btn" data-action="clearAttachment" data-i18n="common.cancel"></button>
+        </div>
+        <form class="chat-composer" data-submit="sendMessage" novalidate>
+          <label class="chat-clip" data-i18n-attr="aria-label:acc.attach"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><input type="file" accept="image/*" hidden id="msgAttachInput"></label>
+          <textarea class="chat-input" id="msgComposerInput" rows="1" data-i18n-attr="placeholder:acc.writeMessage;aria-label:acc.writeMessage"></textarea>
+          <button class="chat-send" type="submit" data-i18n-attr="aria-label:acc.send"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg></button>
+        </form>
+      </div>
+    </section>
+
     <section class="screen" id="screen-community" aria-labelledby="comTitle">
       <div class="screen-head"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="settings" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="comTitle">Laboratoire du Free-Surf</h1></div></div>
       <div class="card" style="text-align:center">
