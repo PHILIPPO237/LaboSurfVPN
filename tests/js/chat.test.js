@@ -28,7 +28,7 @@ test('rail : le bouton Chat n\'apparaît que pour un abonné (offre payante non 
 // Le harnais remplace showScreen() par une fonction vide : la navigation est donc vérifiée sur le code source réel (app.js / account.js)
 const SRC = (f) => fs.readFileSync(path.join(WWW, 'js', f), 'utf8');
 
-test('écran Chat : sans compte on arrive sur la connexion ; avec compte on l'ouvre et on charge les messages', () => {
+test("écran Chat : sans compte on arrive sur la connexion ; avec compte on l'ouvre et on charge les messages", () => {
   const src = SRC('app.js');
   assert.match(src, /if\(name === 'chat' && !authToken\) name = 'account';/);
   assert.match(src, /if\(name === 'chat'\)\{ loadAppMessages\(\); loadAnnouncements\(true\); \}/);
