@@ -133,6 +133,14 @@ function fmtWhen(ts){
   return d.toLocaleDateString(I18N.locale(), { day: 'numeric', month: 'short' }) + ', ' + time;
 }
 function fmtGB(n){ return (Number.isInteger(n) ? n : n.toFixed(1)) + ' ' + t('unit.gb'); }
+// Consommation MESURÉE : unité adaptée à l'ordre de grandeur (jamais « 0.0 Go » pour quelques Mo réellement consommés)
+function fmtUsage(gb){
+  if(typeof gb !== 'number' || !isFinite(gb) || gb < 0) return '';
+  if(gb >= 1) return (Number.isInteger(gb) ? gb : gb.toFixed(2)) + ' ' + t('unit.gb');
+  const mb = gb * 1024;
+  if(mb >= 1) return (mb >= 100 ? Math.round(mb) : mb.toFixed(1)) + ' ' + t('unit.mb');
+  return Math.round(mb * 1024) + ' ' + t('unit.kb');
+}
 
 // Ouvre un lien externe (intercepté par MainActivity : Telegram / navigateur du téléphone)
 function openExternal(url){

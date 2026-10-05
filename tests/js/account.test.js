@@ -66,6 +66,21 @@ test('consommation : ancien panel (sans les champs) = indisponible, pas 0', () =
   assert.equal(gone(a, 'quotaUnavailable'), false);
 });
 
+test('consommation : unité adaptée, jamais « 0.0 Go » pour une vraie mesure de quelques Mo', () => {
+  const a = app();
+  assert.equal(a.ev('fmtUsage(0.0064)'), '6.6 Mo');
+  assert.equal(a.ev('fmtUsage(0)'), '0 Ko');
+  assert.equal(a.ev('fmtUsage(0.0000005)'), '1 Ko');
+  assert.equal(a.ev('fmtUsage(0.5)'), '512 Mo');
+  assert.equal(a.ev('fmtUsage(1.234)'), '1.23 Go');
+  assert.equal(a.ev('fmtUsage(2)'), '2 Go');
+  assert.equal(a.ev('fmtUsage(null)'), '');
+  assert.equal(a.ev('fmtUsage(-1)'), '');
+  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 0.0064, usage_quota_gb: null, remaining_gb: null, usage_percent: null }, {}, ''))`);
+  assert.match(txt(a, 'quotaPlainValue'), /6[.,]6 Mo/);
+  assert.equal(a.ev("document.querySelector('#quotaPlain .k').textContent"), 'Consommation');
+});
+
 test('consommation mesurée mais quota illimité : consommation seule, sans jauge', () => {
   const a = app();
   a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 1.2, usage_quota_gb: null, remaining_gb: null, usage_percent: null }, {}, ''))`);

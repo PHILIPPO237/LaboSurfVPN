@@ -94,15 +94,17 @@ function renderAccountCard(acc){
   $('quotaGauge').hidden = !hasUsage;
   $('quotaPlain').hidden = !(hasQuota && !hasUsage) && !usedOnly;
   $('quotaUnavailable').hidden = !(hasQuota && !acc.usageAvailable);
+  const plainKey = document.querySelector('#quotaPlain .k');
+  if(plainKey) plainKey.textContent = t(usedOnly ? 'acc.usageLabel' : 'acc.quota');
   if(hasUsage){
     const remaining = acc.remainingGB;
     const pct = Math.max(0, Math.min(100, Math.round(100 - acc.usagePercent)));
     $('accQuotaFill').style.width = pct + '%';
     $('accQuotaFill').className = 'gauge-fill ' + gaugeClass(pct);
-    $('accQuotaLabel').textContent = t('acc.quotaLeft', { left: fmtGB(remaining), total: fmtGB(acc.quotaGB) });
+    $('accQuotaLabel').textContent = t('acc.quotaLeft', { left: fmtUsage(remaining), total: fmtGB(acc.quotaGB) });
     $('accQuotaPct').textContent = pct + '%';
   } else if(usedOnly){
-    $('quotaPlainValue').textContent = t('acc.quotaUsed', { used: fmtGB(acc.quotaUsedGB) });
+    $('quotaPlainValue').textContent = t('acc.quotaUsed', { used: fmtUsage(acc.quotaUsedGB) });
   } else if(hasQuota){
     $('quotaPlainValue').textContent = fmtGB(acc.quotaGB);
   }

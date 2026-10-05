@@ -6,7 +6,7 @@ I18N.register('fr', {
   'common.cancel': 'Annuler', 'common.confirm': 'Confirmer', 'common.close': 'Fermer', 'common.refresh': '↻ Actualiser',
   'common.retry': 'Réessayer', 'common.delete': 'Supprimer', 'common.today': "Aujourd'hui", 'common.yesterday': 'Hier',
   'common.comingSoon': 'Bientôt disponible', 'common.justNow': "À l'instant", 'common.dots': '…', 'common.sending': 'Envoi…',
-  'unit.gb': 'Go',
+  'unit.gb': 'Go', 'unit.mb': 'Mo', 'unit.kb': 'Ko', 'acc.usageLabel': 'Consommation',
 
   // Navigation
   'nav.label': 'Navigation principale', 'nav.home': 'Accueil', 'nav.servers': 'Serveurs', 'nav.activity': 'Historique',

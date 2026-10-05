@@ -6,7 +6,7 @@ I18N.register('en', {
   'common.cancel': 'Cancel', 'common.confirm': 'Confirm', 'common.close': 'Close', 'common.refresh': '↻ Refresh',
   'common.retry': 'Try again', 'common.delete': 'Delete', 'common.today': 'Today', 'common.yesterday': 'Yesterday',
   'common.comingSoon': 'Coming soon', 'common.justNow': 'Just now', 'common.dots': '…', 'common.sending': 'Sending…',
-  'unit.gb': 'GB',
+  'unit.gb': 'GB', 'unit.mb': 'MB', 'unit.kb': 'KB', 'acc.usageLabel': 'Usage',
 
   // Navigation
   'nav.label': 'Main navigation', 'nav.home': 'Home', 'nav.servers': 'Servers', 'nav.activity': 'History',
