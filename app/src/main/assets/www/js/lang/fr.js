@@ -333,6 +333,7 @@ I18N.register('fr', {
   'conn.err.badResponse': 'Réponse inattendue du service de connexion. Réessaie.',
   'conn.err.unknown': 'Connexion refusée. Réessaie.',
   'conn.retryIn': 'Réessaie dans {s} s.',
+  'home.state.connecting.waitOld': "Ta précédente connexion se ferme… nouvelle tentative automatique.", 'log.waitOldSession': "Ancienne session encore ouverte côté serveur : nouvelle tentative automatique ({n}/{max}).", 'log.waitOldSessionCancel': "Attente annulée.",
   'err.offline': "Pas de connexion internet. Vérifie ton réseau, puis réessaie.",
   'err.apiConfig': "L'adresse du service de connexion n'est pas configurée dans cette version de l'application.",
   'err.apiInsecure': "L'adresse du service de connexion n'est pas sécurisée (HTTPS obligatoire).",

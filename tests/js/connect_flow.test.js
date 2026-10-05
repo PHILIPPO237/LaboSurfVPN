@@ -277,3 +277,56 @@ test('le mode aperçu (?preview=1) ne concerne jamais l\'application Android', a
   assert.equal(a.state(), 'error');
   assert.equal(a.ev('VPN.session'), null);
 });
+
+// ─── Reconnexion rapide : « ancienne session encore ouverte » (max_connections) ───
+const tick = () => new Promise((r) => setImmediate(r));
+const fireRetry = async (a) => { const tm = a.timers.filter((x) => x.ms === 9000).pop(); assert.ok(tm, 'une relance est programmée'); tm.fn(); await tick(); };
+
+test('max_connections : relance automatique sans erreur, puis connecté dès que l\'ancienne session a expiré', async () => {
+  const a = app(NATIVE_READY, () => okResponse());
+  await connect(a);
+  a.ctx.onNativeVpnState('error', 'max_connections');
+  assert.equal(a.state(), 'connecting', 'pas d\'erreur affichée');
+  assert.equal(a.ev('VPN.errorSpec'), null);
+  assert.equal(a.ev('VPN.mcRetries'), 1);
+  assert.equal(a.calls.native.startVpn.length, 1);
+  await fireRetry(a);
+  assert.equal(a.calls.native.startVpn.length, 2, 'nouvelle demande au panel puis nouveau démarrage du tunnel');
+  a.ctx.onNativeVpnState('connected', '');
+  assert.equal(a.state(), 'on');
+  assert.equal(a.ev('VPN.mcRetries'), 0, 'compteur remis à zéro après succès');
+});
+
+test('max_connections : après 8 relances (72 s), l\'erreur est affichée telle quelle', async () => {
+  const a = app(NATIVE_READY, () => okResponse());
+  await connect(a);
+  for (let i = 1; i <= 8; i++) {
+    a.ctx.onNativeVpnState('error', 'max_connections');
+    assert.equal(a.state(), 'connecting', 'relance ' + i);
+    await fireRetry(a);
+  }
+  a.ctx.onNativeVpnState('error', 'max_connections');
+  assert.equal(a.state(), 'error');
+  assert.equal(a.ev('VPN.errorSpec.key'), 'err.native.max_connections');
+  assert.equal(a.ev('VPN.mcRetries'), 0);
+});
+
+test('max_connections : appuyer sur le bouton pendant l\'attente annule la relance', async () => {
+  const a = app(NATIVE_READY, () => okResponse());
+  await connect(a);
+  a.ctx.onNativeVpnState('error', 'max_connections');
+  const before = a.calls.native.startVpn.length;
+  a.ev('Actions.togglePower()');
+  assert.equal(a.state(), 'off');
+  assert.equal(a.ev('VPN.mcTimer'), null);
+  assert.equal(a.calls.native.startVpn.length, before, 'aucun nouveau démarrage');
+});
+
+test('les autres erreurs du natif ne sont jamais relancées automatiquement', async () => {
+  const a = app(NATIVE_READY, () => okResponse());
+  await connect(a);
+  a.ctx.onNativeVpnState('error', 'auth_failed');
+  assert.equal(a.state(), 'error');
+  assert.equal(a.ev('VPN.mcRetries'), 0);
+  assert.equal(a.timers.filter((x) => x.ms === 9000).length, 0);
+});

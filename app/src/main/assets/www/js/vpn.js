@@ -22,6 +22,8 @@ const VPN = {
   stats: null,          // { rx, tx, rxSpeed, txSpeed } : uniquement des valeurs réellement fournies par le moteur natif
   statsState: 'loading',// loading | ready | unavailable (jamais de valeur inventée)
   statsTimer: null,
+  mcRetries: 0,         // relances automatiques « ancienne session encore ouverte » (max_connections)
+  mcTimer: null,
 };
 // Mode aperçu (navigateur seulement, ?preview=1) : montre les écrans « connecté » pour la mise au point du design.
 // Rien n'est tunnelé et un bandeau permanent l'indique — sans ce paramètre, le navigateur ne simule jamais une connexion.
@@ -30,6 +32,10 @@ const STATS_FIRST_WAIT_MS = 10000;  // sans statistiques après 10 s de connexio
 const STATS_STALE_MS = 30000;       // plus aucune mise à jour depuis 30 s -> « indisponibles »
 const CONNECT_WATCHDOG_MS = 60000;    // large : Android peut afficher sa boîte d'autorisation VPN
 const DISCONNECT_WATCHDOG_MS = 10000;
+// Le serveur UDP garde l'ancienne session jusqu'à 60 s après la coupure (pas de message de fin dans le protocole) : on attend
+// qu'elle expire plutôt que d'afficher « trop d'appareils » à chaque reconnexion rapide.
+const MAXCONN_RETRY_DELAY_MS = 9000;
+const MAXCONN_RETRY_MAX = 8;   // 8 x 9 s = 72 s > 60 s
 
 // Message d'erreur affiché : texte du panel dans la langue courante s'il en fournit un (data.message[_fr|_en]),
 // sinon texte traduit de l'app. Conserver la SPEC (et non le texte) permet de re-traduire si la langue change.
@@ -43,6 +49,7 @@ function errorText(spec){
 }
 function setVpnState(state, spec){
   VPN.state = state;
+  if(state !== 'connecting'){ clearTimeout(VPN.mcTimer); VPN.mcTimer = null; VPN.mcRetries = 0; }
   VPN.errorSpec = state === 'error' ? normalizeErr(spec) : null;
   renderHome();
 }
@@ -92,7 +99,7 @@ function renderHome(){
   $('home').dataset.ready = ready;
   const statusKey = st === 'off' ? 'home.ready.' + ready : 'home.state.' + st;
   $('statusTitle').textContent = t(statusKey + '.title');
-  $('statusSub').textContent = st === 'error' ? '' : t(statusKey + '.sub');
+  $('statusSub').textContent = st === 'error' ? '' : t(st === 'connecting' && VPN.mcRetries > 0 ? 'home.state.connecting.waitOld' : statusKey + '.sub');
   if(statusKey !== lastStatusKey){   // petit fondu à chaque vrai changement d'état (jamais à un simple redessin)
     lastStatusKey = statusKey;
     const box = $('statusTitle').parentNode;
@@ -378,7 +385,8 @@ Actions.togglePower = () => {
   if(!authToken && (VPN.state === 'off' || VPN.state === 'error')){ showScreen('account'); return; }   // sans compte : START mène à la connexion au compte
   if(VPN.state === 'on') disconnectVpn();
   else if(VPN.state === 'off' || VPN.state === 'error') connectVpn();
-  // connecting / disconnecting : on ignore les taps (le bouton affiche un indicateur)
+  else if(VPN.state === 'connecting' && VPN.mcTimer){ logEvent('info', 'log.waitOldSessionCancel'); setVpnState('off'); }   // annule l'attente automatique
+  // connecting / disconnecting : on ignore les autres taps (le bouton affiche un indicateur)
 };
 
 // ─── Pont natif (Kotlin -> JS) ───
@@ -404,6 +412,15 @@ window.onNativeVpnState = function(nativeState, detail){
     markDisconnected();
     resetNativeNetwork();   // le tunnel vient de se fermer : la WebView doit oublier l'état réseau hérité du VPN (voir api.js)
   } else if(nativeState === 'error'){
+    if(detail === 'max_connections' && VPN.state === 'connecting' && VPN.mcRetries < MAXCONN_RETRY_MAX){
+      // Ancienne session pas encore expirée côté serveur : nouvelle tentative automatique, sans erreur affichée
+      VPN.mcRetries++;
+      clearTimeout(VPN.watchdog); clearTimeout(VPN.mcTimer);
+      logEvent('info', 'log.waitOldSession', { n: VPN.mcRetries, max: MAXCONN_RETRY_MAX });
+      renderHome();
+      VPN.mcTimer = setTimeout(() => { VPN.mcTimer = null; if(VPN.state === 'connecting') connectVpn(); }, MAXCONN_RETRY_DELAY_MS);
+      return;
+    }
     resetNativeNetwork();
     const name = VPN.session ? VPN.session.server : (VPN.target || '');
     const raw = nativeDetailText(detail);

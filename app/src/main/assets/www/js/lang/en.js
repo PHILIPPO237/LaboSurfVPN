@@ -333,6 +333,7 @@ I18N.register('en', {
   'conn.err.badResponse': 'Unexpected answer from the connection service. Try again.',
   'conn.err.unknown': 'Connection refused. Try again.',
   'conn.retryIn': 'Try again in {s} s.',
+  'home.state.connecting.waitOld': "Your previous connection is closing… retrying automatically.", 'log.waitOldSession': "Previous session still open on the server: automatic retry ({n}/{max}).", 'log.waitOldSessionCancel': "Wait cancelled.",
   'err.offline': 'No internet connection. Check your network, then try again.',
   'err.apiConfig': "The connection service address isn't configured in this version of the app.",
   'err.apiInsecure': "The connection service address isn't secure (HTTPS required).",
