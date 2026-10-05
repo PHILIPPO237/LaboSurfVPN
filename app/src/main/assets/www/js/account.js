@@ -49,6 +49,76 @@ function daysLeftFromExpiration(expIso){
 // ─── Carte de profil / abonnement ───
 function gaugeClass(pct){ return pct >= 60 ? '' : (pct >= 25 ? 'mid' : 'low'); }
 
+function fmtExpiry(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+}
+// Barre de progression : cachée si le pourcentage est inconnu (jamais de barre « vide » inventée)
+function setPassBar(trackId, fillId, pct, label){
+  const track = $(trackId);
+  track.hidden = pct === null;
+  if(pct === null) return;
+  $(fillId).style.width = pct + '%';
+  track.setAttribute('role', 'progressbar');
+  track.setAttribute('aria-valuemin', '0');
+  track.setAttribute('aria-valuemax', '100');
+  track.setAttribute('aria-valuenow', String(Math.round(pct)));
+  track.setAttribute('aria-label', label);
+}
+
+// Pass de consommation : DONNÉES (quota) + VALIDITÉ (jours). Tous les chiffres viennent du panel, aucun calcul de consommation ici.
+function renderPass(acc){
+  const card = $('accGaugeCard');
+  card.setAttribute('data-tier', acc.plan === 'gratuit' ? 'std' : 'premium');
+  card.setAttribute('data-state', 'ready');
+  $('passTier').textContent = String(planLabel(acc.plan)).toUpperCase();
+
+  // DONNÉES
+  const hasQuota = !!acc.quotaGB;
+  const hasUsage = hasQuota && acc.usageAvailable && acc.remainingGB !== null && acc.usagePercent !== null;
+  const usedOnly = acc.usageAvailable && !hasUsage && acc.quotaUsedGB !== null;   // mesure connue, pas de quota
+  let lvl = 'na', pct = null;
+  if(hasUsage){
+    pct = Math.max(0, Math.min(100, acc.usagePercent));
+    lvl = pct >= 85 ? 'high' : (pct >= 50 ? 'mid' : 'low');
+    $('passQVal').textContent = fmtUsage(acc.quotaUsedGB);
+    $('passQOf').textContent = '/ ' + fmtGB(acc.quotaGB);
+    $('passQNote').textContent = pct >= 100 ? t('acc.pass.reached') : t('acc.pass.left', { left: fmtUsage(acc.remainingGB) });
+  } else if(usedOnly){
+    lvl = 'low';
+    $('passQVal').textContent = fmtUsage(acc.quotaUsedGB);
+    $('passQOf').textContent = t('acc.pass.noQuota');
+    $('passQNote').textContent = '';
+  } else {
+    $('passQVal').textContent = t('acc.pass.unavailable');
+    $('passQOf').textContent = hasQuota ? t('acc.pass.quotaOf', { quota: fmtGB(acc.quotaGB) }) : '';
+    $('passQNote').textContent = t('acc.usageUnavailable');
+  }
+  $('passQuota').setAttribute('data-lvl', lvl);
+  setPassBar('passQTrack', 'passQFill', pct, t('acc.pass.data'));
+
+  // VALIDITÉ (jours restants ; barre seulement si la durée totale est connue)
+  const date = fmtExpiry(acc.expiresAt);
+  let dl = 'ok', dp = null;
+  if(acc.daysLeft === null){
+    $('passDVal').textContent = t('acc.pass.noExpiry');
+    $('passDNote').textContent = '';
+  } else if(acc.daysLeft === 0){
+    dl = 'high';
+    dp = acc.totalDays ? 0 : null;
+    $('passDVal').textContent = t('acc.pass.expired');
+    $('passDNote').textContent = date ? t('acc.pass.expiredOn', { date }) : '';
+  } else {
+    dl = acc.daysLeft <= 3 ? 'high' : (acc.daysLeft <= 7 ? 'mid' : 'ok');
+    dp = acc.totalDays ? Math.max(0, Math.min(100, (acc.daysLeft / acc.totalDays) * 100)) : null;
+    $('passDVal').textContent = tn('acc.pass.days', acc.daysLeft);
+    $('passDNote').textContent = date ? t('acc.pass.expires', { date }) : '';
+  }
+  $('passDOf').textContent = '';
+  $('passDays').setAttribute('data-lvl', dl);
+  setPassBar('passDTrack', 'passDFill', dp, t('acc.pass.validity'));
+}
+
 function renderAccountCard(acc){
   Account.last = acc;
   $('accNameTxt').textContent = acc.username;
@@ -69,48 +139,7 @@ function renderAccountCard(acc){
   $('accResellerRow').hidden = !['reseller', 'admin', 'super_admin'].includes(acc.role);   // droit donné par le RÔLE (panel)
   $('accPanelRow').hidden = !API.state.ok;   // point d'accès aux fonctions avancées (paiement, offres…) : le Laboratoire du Free-Surf
 
-  // Jours restants
-  const hasDays = acc.daysLeft !== null;
-  $('daysGaugeBlock').hidden = !hasDays;
-  if(hasDays){
-    // Pourcentage RÉEL seulement : jours restants / durée de l'abonnement (started_at -> expires_at, fournis par le panel).
-    // Sans date de début, on n'invente pas de durée de référence : seuls les jours restants s'affichent, sans jauge.
-    const pct = acc.totalDays ? Math.max(0, Math.min(100, Math.round((acc.daysLeft / acc.totalDays) * 100))) : null;
-    $('accGaugeFill').parentNode.hidden = pct === null;
-    if(pct !== null){
-      $('accGaugeFill').style.width = pct + '%';
-      $('accGaugeFill').className = 'gauge-fill ' + gaugeClass(pct);
-    }
-    $('accGaugeLabel').textContent = tn('acc.daysLeft', acc.daysLeft);
-    $('accGaugePct').textContent = pct === null ? '' : pct + '%';
-  }
-
-  // Quota : jauge seulement si l'API fournit la consommation réelle (jamais de chiffre inventé)
-  // Les chiffres viennent TOUS du panel (aucun calcul ici) ; consommation inconnue = « indisponible », jamais 0.
-  const hasQuota = !!acc.quotaGB;
-  const hasUsage = hasQuota && acc.usageAvailable && acc.remainingGB !== null && acc.usagePercent !== null;
-  const usedOnly = acc.usageAvailable && !hasUsage && acc.quotaUsedGB !== null;   // mesure connue, quota illimité
-  $('quotaBlock').hidden = !(hasQuota || usedOnly);
-  $('quotaGauge').hidden = !hasUsage;
-  $('quotaPlain').hidden = !(hasQuota && !hasUsage) && !usedOnly;
-  $('quotaUnavailable').hidden = !(hasQuota && !acc.usageAvailable);
-  const plainKey = $('quotaPlainKey');
-  if(plainKey) plainKey.textContent = t(usedOnly ? 'acc.usageLabel' : 'acc.quota');
-  if(hasUsage){
-    const remaining = acc.remainingGB;
-    const pct = Math.max(0, Math.min(100, Math.round(100 - acc.usagePercent)));
-    $('accQuotaFill').style.width = pct + '%';
-    $('accQuotaFill').className = 'gauge-fill ' + gaugeClass(pct);
-    $('accQuotaLabel').textContent = t('acc.quotaLeft', { left: fmtUsage(remaining), total: fmtGB(acc.quotaGB) });
-    $('accQuotaPct').textContent = pct + '%';
-  } else if(usedOnly){
-    $('quotaPlainValue').textContent = t('acc.quotaUsed', { used: fmtUsage(acc.quotaUsedGB) });
-  } else if(hasQuota){
-    $('quotaPlainValue').textContent = fmtGB(acc.quotaGB);
-  }
-  const noSub = $('accNoSub');
-  noSub.hidden = hasDays || hasQuota || usedOnly;
-  noSub.textContent = t(acc.plan === 'gratuit' ? 'acc.freePlanNote' : 'acc.noExpiry');
+  renderPass(acc);
 
   // Sous-titre du menu « Accès et abonnement » : jours restants réels, sinon l'offre
   $('accMenuAccessSub').textContent = acc.plan !== 'gratuit' && acc.daysLeft !== null
@@ -175,6 +204,7 @@ function accountFromApi(me, sub, fallbackName){
     graceDays: 3,
     quotaGB: (me.quota_gb !== undefined && me.quota_gb !== null) ? Number(me.quota_gb) : null,
     quotaUsedGB: used,
+    expiresAt: expiresAt || null,
     usageAvailable,
     usageReason: usageAvailable ? null : (me.usage_reason || null),
     remainingGB: usageAvailable ? toNumber(me.remaining_gb) : null,

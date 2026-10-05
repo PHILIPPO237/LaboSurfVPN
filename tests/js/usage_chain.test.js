@@ -20,7 +20,7 @@ test('le VPN n\'appelle jamais LABOSURF_PRO : aucune route PRO / Agent dans les 
 });
 
 for (const reason of ['no_access', 'engine_not_metered', 'measure_unavailable', 'pro_unavailable', 'pro_not_configured', 'invalid_measure']) {
-  test(`indisponible (${reason}) : « Consommation indisponible », jamais 0, jamais de jauge`, () => {
+  test(`indisponible (${reason}) : « Consommation indisponible », jamais 0, jamais de barre`, () => {
     const a = app();
     const me = { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: false, usage_reason: reason,
       quota_used_gb: null, usage_quota_gb: null, remaining_gb: null, usage_percent: null };
@@ -28,23 +28,25 @@ for (const reason of ['no_access', 'engine_not_metered', 'measure_unavailable', 
     assert.equal(acc.usageReason, reason);
     assert.equal(acc.quotaUsedGB, null);
     render(a, me);
-    assert.equal(hidden(a, 'quotaGauge'), true);
-    assert.equal(hidden(a, 'quotaUnavailable'), false);
+    assert.equal(hidden(a, 'passQTrack'), true);
+    assert.equal(a.ev("document.getElementById('passQVal').textContent"), 'Indisponible');
+    assert.match(a.ev("document.getElementById('passQNote').textContent"), /indisponible/);
   });
 }
 
-test('mesure à 0 Go réellement mesurée : jauge pleine (100 % restant), ce n\'est PAS « indisponible »', () => {
+test('mesure à 0 réellement mesurée : barre vide (0 %), ce n\'est PAS « indisponible »', () => {
   const a = app();
   render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 0, usage_quota_gb: 10, remaining_gb: 10, usage_percent: 0 });
-  assert.equal(hidden(a, 'quotaGauge'), false);
-  assert.equal(hidden(a, 'quotaUnavailable'), true);
-  assert.equal(a.ev("document.getElementById('accQuotaPct').textContent"), '100%');
+  assert.equal(hidden(a, 'passQTrack'), false);
+  assert.equal(a.ev("document.getElementById('passQVal').textContent"), '0 Ko');
+  assert.equal(a.ev("document.getElementById('passQFill').style.width"), '0%');
 });
 
-test('quota dépassé : restant 0 %, pas de valeur négative', () => {
+test('quota dépassé : barre pleine plafonnée à 100 %, « Quota atteint », pas de valeur négative', () => {
   const a = app();
   render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 12, usage_quota_gb: 10, remaining_gb: 0, usage_percent: 100 });
-  assert.equal(a.ev("document.getElementById('accQuotaPct').textContent"), '0%');
+  assert.equal(a.ev("document.getElementById('passQFill').style.width"), '100%');
+  assert.equal(a.ev("document.getElementById('passQNote').textContent"), 'Quota atteint');
 });
 
 test("profil : l'accès au panel est un bouton (plus un lien), affiché seulement si le panel est joignable", () => {

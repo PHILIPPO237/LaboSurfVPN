@@ -18,52 +18,101 @@ test('durée de l\'abonnement : seulement si début ET fin sont fournis par le p
   assert.equal(a.ev("subscriptionTotalDays('n importe quoi', '2026-09-01')"), null);
 });
 
-test('jauge des jours restants : pas de pourcentage inventé sans date de début', () => {
+const gone = (a, id) => a.ev(`document.getElementById('${id}').hidden`);
+const txt = (a, id) => a.ev(`document.getElementById('${id}').textContent`);
+const attr = (a, id, k) => a.ev(`document.getElementById('${id}').getAttribute('${k}')`);
+const render = (a, me) => a.ev(`renderAccountCard(accountFromApi(${JSON.stringify(me)}, {}, ''))`);
+
+test('validité : barre des jours seulement avec une vraie durée (date de début fournie par le panel)', () => {
   const a = app();
   const exp = iso(10);
   const legacy = a.ev(`accountFromApi({ type: 'VIP', username: 'alice', expiration: '${exp}' }, { expires_at: '${exp}', started_at: '' }, '')`);
   assert.equal(legacy.totalDays, null);
   a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', expiration: '${exp}' }, { expires_at: '${exp}', started_at: '' }, ''))`);
-  assert.equal(a.ev("document.getElementById('accGaugePct').textContent"), '', 'aucun pourcentage');
-  assert.match(a.ev("document.getElementById('accGaugeLabel').textContent"), /10|11/, 'les jours restants restent affichés');
+  assert.equal(gone(a, 'passDTrack'), true, 'pas de barre sans durée de référence');
+  assert.match(txt(a, 'passDVal'), /^(10|11) jours$/, 'les jours restants restent affichés');
+  assert.match(txt(a, 'passDNote'), /^expire le \d{2}\/\d{2}\/\d{4}$/);
   // avec une vraie date de début : pourcentage calculé sur la durée réelle
   const start = iso(-20);
   a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', expiration: '${exp}' }, { expires_at: '${exp}', started_at: '${start}' }, ''))`);
-  const pct = a.ev("document.getElementById('accGaugePct').textContent");
-  assert.match(pct, /^\d+%$/);
-  assert.ok(Math.abs(parseInt(pct, 10) - 33) <= 4, 'environ 10 jours sur 30 : ' + pct);
+  assert.equal(gone(a, 'passDTrack'), false);
+  const w = parseFloat(a.ev("document.getElementById('passDFill').style.width"));
+  assert.ok(Math.abs(w - 33) <= 4, 'environ 10 jours sur 30 : ' + w);
+  assert.equal(attr(a, 'passDTrack', 'role'), 'progressbar');
   void iso0;
 });
 
-const gone = (a, id) => a.ev(`document.getElementById('${id}').hidden`);
-const txt = (a, id) => a.ev(`document.getElementById('${id}').textContent`);
-
-test('consommation : lue du panel, jauge = restant, aucun calcul local', () => {
+test('validité : paliers de couleur, expiré, sans expiration', () => {
   const a = app();
-  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 2.5, usage_quota_gb: 10, remaining_gb: 7.5, usage_percent: 25 }, {}, ''))`);
-  assert.equal(gone(a, 'quotaGauge'), false);
-  assert.equal(gone(a, 'quotaUnavailable'), true);
-  assert.equal(txt(a, 'accQuotaPct'), '75%');
-  assert.match(txt(a, 'accQuotaLabel'), /7[.,]5/);
+  const days = (n, extra) => a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', expiration: '${iso(n)}' }, { expires_at: '${iso(n)}', started_at: '${iso(-30)}' }, ''))`);
+  days(20); assert.equal(attr(a, 'passDays', 'data-lvl'), 'ok');
+  days(5);  assert.equal(attr(a, 'passDays', 'data-lvl'), 'mid');
+  days(1);  assert.equal(attr(a, 'passDays', 'data-lvl'), 'high');
+  days(-3);
+  assert.equal(txt(a, 'passDVal'), 'Expiré');
+  assert.equal(attr(a, 'passDays', 'data-lvl'), 'high');
+  assert.match(txt(a, 'passDNote'), /^a expiré le \d{2}\/\d{2}\/\d{4}$/);
+  a.ev("renderAccountCard(accountFromApi({ type: 'ADMIN', username: 'root' }, {}, ''))");
+  assert.equal(txt(a, 'passDVal'), 'Sans expiration', 'pas de date de fin : jamais « 0 jour »');
+  assert.equal(gone(a, 'passDTrack'), true);
 });
 
-test('consommation indisponible : message clair, jamais 0 ni jauge, même si des chiffres traînent', () => {
+test('pass : néon renforcé pour les offres payantes, version sobre pour le gratuit', () => {
+  const a = app();
+  a.ev("renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice' }, {}, ''))");
+  assert.equal(attr(a, 'accGaugeCard', 'data-tier'), 'premium');
+  assert.equal(attr(a, 'accGaugeCard', 'data-state'), 'ready');
+  a.ev("renderAccountCard(accountFromApi({ type: 'Gratuit', username: 'bob' }, {}, ''))");
+  assert.equal(attr(a, 'accGaugeCard', 'data-tier'), 'std');
+});
+
+test('données : consommation lue du panel (utilisé / quota, restant, barre = % utilisé), aucun calcul local', () => {
+  const a = app();
+  render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 4.2, usage_quota_gb: 10, remaining_gb: 5.8, usage_percent: 42 });
+  assert.match(txt(a, 'passQVal'), /^4[.,]20? Go$/);
+  assert.equal(txt(a, 'passQOf'), '/ 10 Go');
+  assert.match(txt(a, 'passQNote'), /^5[.,]8\d* Go restants$/);
+  assert.equal(attr(a, 'passQuota', 'data-lvl'), 'low');
+  assert.equal(gone(a, 'passQTrack'), false);
+  assert.equal(a.ev("document.getElementById('passQFill').style.width"), '42%');
+  assert.equal(attr(a, 'passQTrack', 'aria-valuenow'), '42');
+});
+
+test('données : paliers faible / moyen / élevé / quota atteint (seulement si le panel le confirme)', () => {
+  const a = app();
+  const at = (pct, rem) => render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: pct / 10, usage_quota_gb: 10, remaining_gb: rem, usage_percent: pct });
+  at(49.9, 5.0);  assert.equal(attr(a, 'passQuota', 'data-lvl'), 'low');
+  at(50, 5);      assert.equal(attr(a, 'passQuota', 'data-lvl'), 'mid');
+  at(85, 1.5);    assert.equal(attr(a, 'passQuota', 'data-lvl'), 'high');
+  at(99.9, 0.01); assert.notEqual(txt(a, 'passQNote'), 'Quota atteint', 'pas « atteint » avant 100 %');
+  at(100, 0);
+  assert.equal(txt(a, 'passQNote'), 'Quota atteint');
+  assert.equal(attr(a, 'passQuota', 'data-lvl'), 'high');
+});
+
+test('données indisponibles : message clair, jamais 0 ni barre, même si des chiffres traînent', () => {
   const a = app();
   const acc = a.ev(`accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10, usage_available: false, usage_reason: 'engine_not_metered', quota_used_gb: 0, remaining_gb: 0, usage_percent: 0 }, {}, '')`);
   assert.equal(acc.quotaUsedGB, null);
   assert.equal(acc.remainingGB, null);
   assert.equal(acc.usagePercent, null);
-  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10, usage_available: false, usage_reason: 'engine_not_metered' }, {}, ''))`);
-  assert.equal(gone(a, 'quotaGauge'), true);
-  assert.equal(gone(a, 'quotaUnavailable'), false);
-  assert.equal(gone(a, 'quotaPlain'), false, 'le quota reste affiché');
+  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10, usage_available: false, usage_reason: 'engine_not_metered', quota_used_gb: 0, remaining_gb: 0, usage_percent: 0 }, {}, ''))`);
+  assert.equal(txt(a, 'passQVal'), 'Indisponible');
+  assert.equal(txt(a, 'passQNote'), 'Consommation indisponible pour le moment.');
+  assert.equal(txt(a, 'passQOf'), 'quota : 10 Go', 'le quota réel reste affiché');
+  assert.equal(gone(a, 'passQTrack'), true);
+  assert.equal(attr(a, 'passQuota', 'data-lvl'), 'na');
 });
 
-test('consommation : ancien panel (sans les champs) = indisponible, pas 0', () => {
+test('données : ancien panel (sans les champs) ou compte sans quota ni mesure = indisponible, pas 0', () => {
   const a = app();
-  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', quota_gb: 10 }, {}, ''))`);
-  assert.equal(gone(a, 'quotaGauge'), true);
-  assert.equal(gone(a, 'quotaUnavailable'), false);
+  render(a, { type: 'VIP', username: 'alice', quota_gb: 10 });
+  assert.equal(txt(a, 'passQVal'), 'Indisponible');
+  assert.equal(gone(a, 'passQTrack'), true);
+  render(a, { type: 'ADMIN', username: 'root' });
+  assert.equal(txt(a, 'passQVal'), 'Indisponible');
+  assert.equal(txt(a, 'passQNote'), 'Consommation indisponible pour le moment.');
+  assert.equal(txt(a, 'passQOf'), '');
 });
 
 test('consommation : unité adaptée, jamais « 0.0 Go » pour une vraie mesure de quelques Mo', () => {
@@ -76,17 +125,35 @@ test('consommation : unité adaptée, jamais « 0.0 Go » pour une vraie mesure 
   assert.equal(a.ev('fmtUsage(2)'), '2 Go');
   assert.equal(a.ev('fmtUsage(null)'), '');
   assert.equal(a.ev('fmtUsage(-1)'), '');
-  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 0.0064, usage_quota_gb: null, remaining_gb: null, usage_percent: null }, {}, ''))`);
-  assert.match(txt(a, 'quotaPlainValue'), /6[.,]6 Mo/);
-  assert.equal(a.ev("document.getElementById('quotaPlainKey').textContent"), 'Consommation');
+  render(a, { type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 0.0064, usage_quota_gb: null, remaining_gb: null, usage_percent: null });
+  assert.match(txt(a, 'passQVal'), /^6[.,]6 Mo$/);
 });
 
-test('consommation mesurée mais quota illimité : consommation seule, sans jauge', () => {
+test('données : mesure connue mais sans quota = consommation seule, sans barre', () => {
   const a = app();
-  a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 1.2, usage_quota_gb: null, remaining_gb: null, usage_percent: null }, {}, ''))`);
-  assert.equal(gone(a, 'quotaGauge'), true);
-  assert.equal(gone(a, 'quotaPlain'), false);
-  assert.match(txt(a, 'quotaPlainValue'), /1[.,]2/);
+  render(a, { type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 1.2, usage_quota_gb: null, remaining_gb: null, usage_percent: null });
+  assert.match(txt(a, 'passQVal'), /^1[.,]2\d* Go$/);
+  assert.equal(txt(a, 'passQOf'), 'sans quota');
+  assert.equal(gone(a, 'passQTrack'), true);
+});
+
+test('données : 0 réellement mesuré = « 0 Ko » avec barre vide (ce n\'est PAS indisponible)', () => {
+  const a = app();
+  render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 0, usage_quota_gb: 10, remaining_gb: 10, usage_percent: 0 });
+  assert.equal(txt(a, 'passQVal'), '0 Ko');
+  assert.equal(gone(a, 'passQTrack'), false);
+  assert.equal(a.ev("document.getElementById('passQFill').style.width"), '0%');
+});
+
+test('pass : textes traduits (fr / en), même contrat', () => {
+  const a = app();
+  render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 4.2, usage_quota_gb: 10, remaining_gb: 5.8, usage_percent: 42 });
+  a.ev("I18N.set('en', false)");
+  render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 4.2, usage_quota_gb: 10, remaining_gb: 5.8, usage_percent: 42 });
+  assert.match(txt(a, 'passQNote'), / left$/);
+  render(a, { type: 'ADMIN', username: 'root' });
+  assert.equal(txt(a, 'passDVal'), 'No expiration');
+  assert.equal(txt(a, 'passQVal'), 'Unavailable');
 });
 
 test('quota : jamais de consommation inventée (le panel ne la fournit pas)', () => {

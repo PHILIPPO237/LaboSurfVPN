@@ -415,21 +415,19 @@
 
         <div id="accViewAccess" hidden>
           <div class="subhead"><button class="icon-btn back-btn" type="button" data-action="accBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h2 class="subhead-title" data-i18n="acc.menu.access"></h2></div>
-        <div class="card" id="accGaugeCard">
-          <div class="card-title" data-i18n="acc.subscription"></div>
-          <div id="daysGaugeBlock">
-            <div class="gauge-track"><div class="gauge-fill" id="accGaugeFill"></div></div>
-            <div class="gauge-label"><span id="accGaugeLabel"></span><span id="accGaugePct"></span></div>
+        <div class="pass" id="accGaugeCard" data-tier="std" data-state="loading">
+          <div class="pass-skel" aria-hidden="true"></div>
+          <div class="pass-top"><span class="pass-brand">LABO SURF</span><span class="pass-tier" id="passTier"></span></div>
+          <div class="pass-blk" id="passQuota" data-lvl="na">
+            <div class="pass-row"><b class="pass-val" id="passQVal"></b><span class="pass-of" id="passQOf"></span></div>
+            <div class="pass-track" id="passQTrack" hidden><i id="passQFill"></i></div>
+            <div class="pass-sub"><span class="pass-cap" data-i18n="acc.pass.data"></span><span class="pass-note" id="passQNote"></span></div>
           </div>
-          <div id="quotaBlock" style="margin-top:var(--sp-3)">
-            <div id="quotaGauge" hidden>
-              <div class="gauge-track"><div class="gauge-fill" id="accQuotaFill"></div></div>
-              <div class="gauge-label"><span id="accQuotaLabel"></span><span id="accQuotaPct"></span></div>
-            </div>
-            <div class="muted" style="font-size:var(--fs-sm)" id="quotaUnavailable" hidden data-i18n="acc.usageUnavailable"></div>
-            <div class="info-row" id="quotaPlain" hidden><span class="k" id="quotaPlainKey" data-i18n="acc.quota"></span><span class="v" id="quotaPlainValue"></span></div>
+          <div class="pass-blk" id="passDays" data-lvl="ok">
+            <div class="pass-row"><b class="pass-val" id="passDVal"></b><span class="pass-of" id="passDOf"></span></div>
+            <div class="pass-track pass-track-d" id="passDTrack" hidden><i id="passDFill"></i></div>
+            <div class="pass-sub"><span class="pass-cap" data-i18n="acc.pass.validity"></span><span class="pass-note" id="passDNote"></span></div>
           </div>
-          <div class="muted" style="font-size:var(--fs-sm)" id="accNoSub" hidden data-i18n="acc.noExpiry"></div>
         </div>
 
         <div class="card">

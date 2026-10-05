@@ -224,6 +224,7 @@ I18N.register('fr', {
   'acc.perk1': "Connexion simple, sans réglage", 'acc.perk2': 'Aucun réglage technique à faire', 'acc.perk3': 'Plans Gratuit, VIP et Revendeur',
   'acc.subscription': 'Abonnement', 'acc.quota': 'Quota', 'acc.noExpiry': "Aucune date d'expiration.",
   'acc.freePlanNote': "Plan gratuit : accès d'essai limité.",
+  'acc.pass.data': 'DONNÉES', 'acc.pass.validity': 'VALIDITÉ', 'acc.pass.left': '{left} restants', 'acc.pass.reached': 'Quota atteint', 'acc.pass.noQuota': 'sans quota', 'acc.pass.quotaOf': 'quota : {quota}', 'acc.pass.unavailable': 'Indisponible', 'acc.pass.noExpiry': 'Sans expiration', 'acc.pass.expired': 'Expiré', 'acc.pass.days_one': '{n} jour', 'acc.pass.days_other': '{n} jours', 'acc.pass.expires': 'expire le {date}', 'acc.pass.expiredOn': 'a expiré le {date}',
   'acc.daysLeft_one': '{n} jour restant', 'acc.daysLeft_other': '{n} jours restants',
   'acc.quotaLeft': '{left} restants sur {total}', 'acc.quotaUsed': '{used} utilisés', 'acc.usageUnavailable': 'Consommation indisponible pour le moment.',
   'acc.sync': 'Synchronisation', 'acc.lastSync': 'Dernière synchro', 'acc.refresh': 'Actualiser mon compte',

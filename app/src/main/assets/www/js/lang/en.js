@@ -224,6 +224,7 @@ I18N.register('en', {
   'acc.perk1': "Simple connection, no setup", 'acc.perk2': 'No technical settings to manage', 'acc.perk3': 'Free, VIP and Reseller plans',
   'acc.subscription': 'Subscription', 'acc.quota': 'Quota', 'acc.noExpiry': 'No expiration date.',
   'acc.freePlanNote': 'Free plan: limited trial access.',
+  'acc.pass.data': 'DATA', 'acc.pass.validity': 'VALIDITY', 'acc.pass.left': '{left} left', 'acc.pass.reached': 'Quota reached', 'acc.pass.noQuota': 'no quota', 'acc.pass.quotaOf': 'quota: {quota}', 'acc.pass.unavailable': 'Unavailable', 'acc.pass.noExpiry': 'No expiration', 'acc.pass.expired': 'Expired', 'acc.pass.days_one': '{n} day', 'acc.pass.days_other': '{n} days', 'acc.pass.expires': 'expires {date}', 'acc.pass.expiredOn': 'expired {date}',
   'acc.daysLeft_one': '{n} day left', 'acc.daysLeft_other': '{n} days left',
   'acc.quotaLeft': '{left} left of {total}', 'acc.quotaUsed': '{used} used', 'acc.usageUnavailable': 'Usage currently unavailable.',
   'acc.sync': 'Synchronization', 'acc.lastSync': 'Last sync', 'acc.refresh': 'Refresh my account',

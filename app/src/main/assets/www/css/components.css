@@ -616,3 +616,32 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
 .legal-sec li{ font-size:var(--fs-sm); line-height:1.6; color:var(--text-muted); }
 .legal-sec li::marker{ color:var(--brand); }
 .panel-cta{ margin-top:var(--sp-4); } .panel-cta .hint{ text-align:center; margin-top:var(--sp-2); }
+
+/* ─── Pass de consommation (écran Compte) : quota + jours de validité — vert sombre léger + néon ─── */
+.pass{ --pf1:#b8923a; --pf2:#f1d58a; --pcap:var(--gold); position:relative; overflow:hidden; border-radius:22px; padding:16px; color:#f1f5f2; border:1px solid transparent; background:linear-gradient(135deg,#0d3320 0%,#071c11 52%,#0a2818 100%) padding-box, linear-gradient(135deg,var(--gold) 0%,rgba(57,255,106,.85) 52%,var(--gold) 100%) border-box; box-shadow:0 0 26px rgba(57,255,106,.16), 0 0 18px rgba(216,180,90,.10), 0 14px 30px rgba(0,0,0,.42), inset 0 1px 0 rgba(241,213,138,.25); animation:screenIn .45s var(--ease) both; }
+.pass:before{ content:''; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(120% 70% at 0% 0%, rgba(57,255,106,.10), transparent 60%); pointer-events:none; }
+.pass:after{ content:''; position:absolute; right:-50px; top:-50px; width:170px; height:170px; border-radius:50%; background:radial-gradient(circle,rgba(216,180,90,.26),transparent 65%); pointer-events:none; }
+.pass[data-tier="std"]{ --pf1:#12b34a; --pf2:#7dffa0; --pcap:var(--brand); box-shadow:0 14px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(157,255,182,.2); background:linear-gradient(135deg,#0b2a1a 0%,#06170e 55%,#08200f 100%) padding-box, linear-gradient(135deg,rgba(57,255,106,.7),rgba(57,255,106,.25)) border-box; }
+.pass[data-tier="std"]:after{ background:radial-gradient(circle,rgba(57,255,106,.18),transparent 65%); }
+.pass-top{ position:relative; z-index:1; display:flex; justify-content:space-between; gap:8px; font:700 11px var(--font-mono); letter-spacing:.2em; color:var(--pcap); text-shadow:0 0 10px rgba(57,255,106,.5); }
+.pass-tier{ padding:2px 9px; border-radius:99px; border:1px solid color-mix(in srgb,var(--pcap) 55%,transparent); background:color-mix(in srgb,var(--pcap) 12%,transparent); letter-spacing:.14em; }
+.pass-blk{ margin-top:14px; position:relative; z-index:1; }
+.pass-row{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:2px 10px; }
+.pass-val{ font:700 clamp(22px,7.4vw,28px)/1.15 var(--font-display); min-width:0; overflow-wrap:anywhere; }
+.pass-of{ font:500 12px var(--font-mono); color:#b6c6bb; }
+.pass-track{ height:8px; border-radius:99px; background:rgba(255,255,255,.09); margin:8px 0 5px; overflow:hidden; }
+.pass-track i{ display:block; height:100%; width:0; border-radius:99px; background:linear-gradient(90deg,var(--pf1),var(--pf2) 45%,var(--brand)); box-shadow:0 0 12px rgba(57,255,106,.55), 0 0 6px rgba(216,180,90,.35); transition:width .9s var(--ease); animation:passGrow .9s var(--ease) both; }
+.pass-sub{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 10px; font:600 10px var(--font-mono); letter-spacing:.1em; text-transform:uppercase; }
+.pass-cap{ color:var(--pcap); }
+.pass-note{ color:#b6c6bb; text-align:right; margin-left:auto; text-transform:none; letter-spacing:.02em; font-weight:500; font-size:11px; }
+.pass-blk[data-lvl="mid"] .pass-track i{ background:linear-gradient(90deg,#d99a1f,var(--warning)); box-shadow:0 0 12px rgba(242,174,69,.6); }
+.pass-blk[data-lvl="high"] .pass-track i{ background:linear-gradient(90deg,#d63a58,var(--danger)); box-shadow:0 0 12px rgba(255,92,122,.6); }
+.pass-blk[data-lvl="high"] .pass-val{ color:var(--danger); } .pass-blk[data-lvl="mid"] .pass-val{ color:var(--warning); }
+.pass-blk[data-lvl="na"] .pass-val{ color:#b6c6bb; font-size:clamp(17px,5.4vw,20px); }
+.pass-track-d i{ background:linear-gradient(90deg,#2aa6d4,var(--info)); box-shadow:0 0 12px rgba(79,209,255,.55); }
+.pass-blk[data-lvl="mid"] .pass-track-d i{ background:linear-gradient(90deg,#d99a1f,var(--warning)); box-shadow:0 0 12px rgba(242,174,69,.6); } .pass-blk[data-lvl="high"] .pass-track-d i{ background:linear-gradient(90deg,#d63a58,var(--danger)); box-shadow:0 0 12px rgba(255,92,122,.6); }
+#passDays .pass-val{ color:var(--info); } #passDays[data-lvl="mid"] .pass-val{ color:var(--warning); } #passDays[data-lvl="high"] .pass-val{ color:var(--danger); }
+.pass-skel{ display:none; height:132px; border-radius:14px; background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.12) 50%,rgba(255,255,255,.04) 75%); background-size:200% 100%; animation:shimmer 1.3s linear infinite; }
+.pass[data-state="loading"] .pass-skel{ display:block; } .pass[data-state="loading"] .pass-top, .pass[data-state="loading"] .pass-blk{ display:none; }
+@keyframes passGrow{ from{ width:0; } }
+@media (prefers-reduced-motion: reduce){ .pass, .pass-track i, .pass-skel{ animation:none; transition:none; } }
