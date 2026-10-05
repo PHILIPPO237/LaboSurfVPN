@@ -78,7 +78,7 @@ test('consommation : unité adaptée, jamais « 0.0 Go » pour une vraie mesure 
   assert.equal(a.ev('fmtUsage(-1)'), '');
   a.ev(`renderAccountCard(accountFromApi({ type: 'VIP', username: 'alice', usage_available: true, quota_used_gb: 0.0064, usage_quota_gb: null, remaining_gb: null, usage_percent: null }, {}, ''))`);
   assert.match(txt(a, 'quotaPlainValue'), /6[.,]6 Mo/);
-  assert.equal(a.ev("document.querySelector('#quotaPlain .k').textContent"), 'Consommation');
+  assert.equal(a.ev("document.getElementById('quotaPlainKey').textContent"), 'Consommation');
 });
 
 test('consommation mesurée mais quota illimité : consommation seule, sans jauge', () => {

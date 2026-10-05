@@ -94,7 +94,7 @@ function renderAccountCard(acc){
   $('quotaGauge').hidden = !hasUsage;
   $('quotaPlain').hidden = !(hasQuota && !hasUsage) && !usedOnly;
   $('quotaUnavailable').hidden = !(hasQuota && !acc.usageAvailable);
-  const plainKey = document.querySelector('#quotaPlain .k');
+  const plainKey = $('quotaPlainKey');
   if(plainKey) plainKey.textContent = t(usedOnly ? 'acc.usageLabel' : 'acc.quota');
   if(hasUsage){
     const remaining = acc.remainingGB;
