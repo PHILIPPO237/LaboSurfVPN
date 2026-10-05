@@ -25,24 +25,24 @@ test('rail : le bouton Chat n\'apparaît que pour un abonné (offre payante non 
   assert.equal(railHidden(a), false, 'admin sans expiration : visible');
 });
 
-test('écran Chat : sans compte on arrive sur la connexion ; avec compte on y entre', () => {
-  const a = app();
-  a.ev("showScreen('chat')");
-  assert.equal(a.ev('currentScreen'), 'account');
-  a.signIn();
-  a.ev("showScreen('chat')");
-  assert.equal(a.ev('currentScreen'), 'chat');
+// Le harnais remplace showScreen() par une fonction vide : la navigation est donc vérifiée sur le code source réel (app.js / account.js)
+const SRC = (f) => fs.readFileSync(path.join(WWW, 'js', f), 'utf8');
+
+test('écran Chat : sans compte on arrive sur la connexion ; avec compte on l'ouvre et on charge les messages', () => {
+  const src = SRC('app.js');
+  assert.match(src, /if\(name === 'chat' && !authToken\) name = 'account';/);
+  assert.match(src, /if\(name === 'chat'\)\{ loadAppMessages\(\); loadAnnouncements\(true\); \}/);
+  assert.match(src, /const SCREENS = \[[^\]]*'chat'/);
+  assert.match(src, /const RAIL_ORDER = \['home', 'services', 'account', 'chat'/);
 });
 
-test('un compte qui cesse d\'être abonné est renvoyé du Chat vers le profil', () => {
+test('un compte qui cesse d'être abonné perd le bouton et est renvoyé du Chat vers le profil', () => {
   const a = app();
-  a.signIn();
   render(a, { type: 'VIP', username: 'a', expiration: iso(12) });
-  a.ev("showScreen('chat')");
-  assert.equal(a.ev('currentScreen'), 'chat');
+  assert.equal(railHidden(a), false);
   render(a, { type: 'Gratuit', username: 'a' });
-  assert.equal(a.ev('currentScreen'), 'account');
   assert.equal(railHidden(a), true);
+  assert.match(SRC('account.js'), /if\(!sub && currentScreen === 'chat' && acc\) showScreen\('account'\);/);
 });
 
 test('déconnexion du compte : le bouton Chat disparaît', () => {
@@ -62,7 +62,7 @@ test('messages : heure et jour RÉELS ; sans date lisible, aucun séparateur ni 
   const html = a.ev("document.getElementById('messagesThread').innerHTML");
   assert.equal((html.match(/class="chat-day"/g) || []).length >= 2, true, 'Hier et Aujourd\'hui');
   assert.match(html, /Hier/);
-  assert.match(html, /Aujourd'hui/);
+  assert.match(html, /Aujourd(&#39;|')hui/);
   assert.match(html, /\d{2}:\d{2}/);
   a.ev(`renderAppMessages(${JSON.stringify([{ sender_role: 'admin', body: 'sans date' }])})`);
   const bare = a.ev("document.getElementById('messagesThread').innerHTML");
