@@ -1,0 +1,48 @@
+'use strict';
+// Chaîne PRO → Panel → VPN : le VPN ne lit que le contrat du Panel et n'appelle jamais PRO.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { loadApp } = require('./harness.js');
+
+const app = () => loadApp({ native: { engine: { integrated: false, protocols: [] }, apiBase: 'https://panel.example.tld' } });
+const WWW = path.join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www');
+const hidden = (a, id) => a.ev(`document.getElementById('${id}').hidden`);
+const render = (a, me) => a.ev(`renderAccountCard(accountFromApi(${JSON.stringify(me)}, {}, ''))`);
+
+test('le VPN n\'appelle jamais LABOSURF_PRO : aucune route PRO / Agent dans les écrans', () => {
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+  for (const f of walk(WWW).filter((p) => /\.(js|html)$/.test(p))) {
+    const s = fs.readFileSync(f, 'utf8');
+    assert.doesNotMatch(s, /\/api\/v1\/access|access_usage|labosurf-agent\s*:\s*\d|:8443\/api/, f);
+  }
+});
+
+for (const reason of ['no_access', 'engine_not_metered', 'measure_unavailable', 'pro_unavailable', 'pro_not_configured', 'invalid_measure']) {
+  test(`indisponible (${reason}) : « Consommation indisponible », jamais 0, jamais de jauge`, () => {
+    const a = app();
+    const me = { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: false, usage_reason: reason,
+      quota_used_gb: null, usage_quota_gb: null, remaining_gb: null, usage_percent: null };
+    const acc = a.ev(`accountFromApi(${JSON.stringify(me)}, {}, '')`);
+    assert.equal(acc.usageReason, reason);
+    assert.equal(acc.quotaUsedGB, null);
+    render(a, me);
+    assert.equal(hidden(a, 'quotaGauge'), true);
+    assert.equal(hidden(a, 'quotaUnavailable'), false);
+  });
+}
+
+test('mesure à 0 Go réellement mesurée : jauge pleine (100 % restant), ce n\'est PAS « indisponible »', () => {
+  const a = app();
+  render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 0, usage_quota_gb: 10, remaining_gb: 10, usage_percent: 0 });
+  assert.equal(hidden(a, 'quotaGauge'), false);
+  assert.equal(hidden(a, 'quotaUnavailable'), true);
+  assert.equal(a.ev("document.getElementById('accQuotaPct').textContent"), '100%');
+});
+
+test('quota dépassé : restant 0 %, pas de valeur négative', () => {
+  const a = app();
+  render(a, { type: 'VIP', username: 'alice', quota_gb: 10, usage_available: true, quota_used_gb: 12, usage_quota_gb: 10, remaining_gb: 0, usage_percent: 100 });
+  assert.equal(a.ev("document.getElementById('accQuotaPct').textContent"), '0%');
+});
