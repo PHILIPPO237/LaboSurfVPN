@@ -645,3 +645,4 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
 .pass[data-state="loading"] .pass-skel{ display:block; } .pass[data-state="loading"] .pass-top, .pass[data-state="loading"] .pass-blk{ display:none; }
 @keyframes passGrow{ from{ width:0; } }
 @media (prefers-reduced-motion: reduce){ .pass, .pass-track i, .pass-skel{ animation:none; transition:none; } }
+#accHome > .pass{ margin:var(--sp-3) 0 var(--sp-2); }

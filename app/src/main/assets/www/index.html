@@ -392,6 +392,21 @@
             </div>
           </div>
 
+          <div class="pass" id="accGaugeCard" data-tier="std" data-state="loading">
+            <div class="pass-skel" aria-hidden="true"></div>
+            <div class="pass-top"><span class="pass-brand">LABO SURF</span><span class="pass-tier" id="passTier"></span></div>
+            <div class="pass-blk" id="passQuota" data-lvl="na">
+              <div class="pass-row"><b class="pass-val" id="passQVal"></b><span class="pass-of" id="passQOf"></span></div>
+              <div class="pass-track" id="passQTrack" hidden><i id="passQFill"></i></div>
+              <div class="pass-sub"><span class="pass-cap" data-i18n="acc.pass.data"></span><span class="pass-note" id="passQNote"></span></div>
+            </div>
+            <div class="pass-blk" id="passDays" data-lvl="ok">
+              <div class="pass-row"><b class="pass-val" id="passDVal"></b><span class="pass-of" id="passDOf"></span></div>
+              <div class="pass-track pass-track-d" id="passDTrack" hidden><i id="passDFill"></i></div>
+              <div class="pass-sub"><span class="pass-cap" data-i18n="acc.pass.validity"></span><span class="pass-note" id="passDNote"></span></div>
+            </div>
+          </div>
+
           <div class="section-title" data-i18n="acc.menu.mine"></div>
           <div class="list">
         <button class="row" type="button" data-action="accOpen" data-view="access"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-card"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.access"></div><div class="row-sub" id="accMenuAccessSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
@@ -415,21 +430,6 @@
 
         <div id="accViewAccess" hidden>
           <div class="subhead"><button class="icon-btn back-btn" type="button" data-action="accBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h2 class="subhead-title" data-i18n="acc.menu.access"></h2></div>
-        <div class="pass" id="accGaugeCard" data-tier="std" data-state="loading">
-          <div class="pass-skel" aria-hidden="true"></div>
-          <div class="pass-top"><span class="pass-brand">LABO SURF</span><span class="pass-tier" id="passTier"></span></div>
-          <div class="pass-blk" id="passQuota" data-lvl="na">
-            <div class="pass-row"><b class="pass-val" id="passQVal"></b><span class="pass-of" id="passQOf"></span></div>
-            <div class="pass-track" id="passQTrack" hidden><i id="passQFill"></i></div>
-            <div class="pass-sub"><span class="pass-cap" data-i18n="acc.pass.data"></span><span class="pass-note" id="passQNote"></span></div>
-          </div>
-          <div class="pass-blk" id="passDays" data-lvl="ok">
-            <div class="pass-row"><b class="pass-val" id="passDVal"></b><span class="pass-of" id="passDOf"></span></div>
-            <div class="pass-track pass-track-d" id="passDTrack" hidden><i id="passDFill"></i></div>
-            <div class="pass-sub"><span class="pass-cap" data-i18n="acc.pass.validity"></span><span class="pass-note" id="passDNote"></span></div>
-          </div>
-        </div>
-
         <div class="card">
           <div class="card-title" data-i18n="acc.sync"></div>
           <div class="info-row"><span class="k" data-i18n="acc.lastSync"></span><span class="v" id="accSyncTime">—</span></div>
