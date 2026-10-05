@@ -137,6 +137,7 @@ function renderAccountCard(acc){
   $('proBadgeAcc').hidden = !pro;
   $('proBadgeHome').hidden = !pro;
   $('accResellerRow').hidden = !['reseller', 'admin', 'super_admin'].includes(acc.role);   // droit donné par le RÔLE (panel)
+  $('accMoreTitle').hidden = $('accMoreList').hidden = $('accResellerRow').hidden;   // « Plus » n'apparaît que s'il contient quelque chose
   $('accPanelRow').hidden = !API.state.ok;   // point d'accès aux fonctions avancées (paiement, offres…) : le Laboratoire du Free-Surf
 
   renderPass(acc);

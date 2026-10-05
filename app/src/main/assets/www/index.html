@@ -415,10 +415,8 @@
         <button class="row" type="button" data-action="accOpen" data-view="security"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-lock"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.security"></div><div class="row-sub" data-i18n="acc.menu.securitySub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
           </div>
 
-          <div class="section-title" data-i18n="acc.menu.more"></div>
-          <div class="list">
-        <button class="row" type="button" data-action="nav" data-screen="settings"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-settings"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.prefs"></div><div class="row-sub" data-i18n="acc.menu.prefsSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
-        <button class="row" type="button" data-action="openGuide" data-topic="access"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.help"></div><div class="row-sub" data-i18n="acc.menu.helpSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+          <div class="section-title" id="accMoreTitle" data-i18n="acc.menu.more"></div>
+          <div class="list" id="accMoreList">
         <button class="row" type="button" data-action="nav" data-screen="clients" id="accResellerRow" hidden><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-users"/></svg></span><div class="row-main"><div class="row-title" data-i18n="acc.menu.reseller"></div><div class="row-sub" data-i18n="acc.menu.resellerSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
           </div>
 
@@ -627,9 +625,7 @@
 
       <div class="section-title" data-i18n="about.contact.title"></div>
       <div class="list">
-        <a class="row" href="https://t.me/laboratoire_du_free_surf_chat" target="_blank" rel="noopener"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-users"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.group"></div><div class="row-sub" data-i18n="set.groupSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
-        <a class="row" href="https://t.me/laboratoire_du_free_surf" target="_blank" rel="noopener"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-megaphone"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.channel"></div><div class="row-sub" data-i18n="set.channelSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
-        <a class="row" href="https://t.me/Philippo237" target="_blank" rel="noopener"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-user"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.developer"></div><div class="row-sub" data-i18n="set.developerSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+        <button class="row" type="button" data-action="nav" data-screen="community"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-users"/></svg></span><div class="row-main"><div class="row-title" data-i18n="nav.community"></div><div class="row-sub" data-i18n="set.communitySub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
       </div>
 
       <div class="section-title" data-i18n="about.info.title"></div>
@@ -733,8 +729,6 @@
         </div>
         <button class="row" type="button" data-action="nav" data-screen="about"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-info"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.aboutRow"></div><div class="row-sub" data-i18n="set.aboutRowSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <div class="row"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-info"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.version"></div></div><span class="row-value" id="appVersion">—</span></div>
-        <button class="row" type="button" data-action="openLegal" data-value="terms"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-file"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.terms"></div></div><span class="row-tail" data-legal-tail="terms"></span></button>
-        <button class="row" type="button" data-action="openLegal" data-value="privacy"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-lock"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.privacy"></div></div><span class="row-tail" data-legal-tail="privacy"></span></button>
       </div>
       <div class="sig sig-settings"><i class="sig-rule"></i><div class="sig-org"><span class="sig-g">Laboratoire</span> <span class="sig-w">du Free-Surf</span></div><div class="sig-credit"><span class="sig-by" data-i18n="sig.by"></span> <b class="sig-name">Philippo</b></div><i class="sig-rule"></i></div>
     </section>
