@@ -9,6 +9,8 @@
 //
 // Le « panel » est simule UNIQUEMENT ici (reponse de POST /api/user/connect au format reel du contrat) ; le moteur natif, le
 // VpnService, l'interface TUN, le handshake et la verification du chemin de donnees sont ceux de l'APK.
+import { readFileSync } from 'node:fs';
+const EXPECTED_VERSION = /versionName\s*=\s*"([^"]+)"/.exec(readFileSync(new URL('../../app/build.gradle.kts', import.meta.url), 'utf8'))[1];
 const [port = '9222', phase = 'base', ...args] = process.argv.slice(2);
 const results = [];
 const check = (name, ok, detail) => { results.push({ name, ok: !!ok }); console.log((ok ? 'OK   ' : 'ECHEC') + ' ' + name + (detail !== undefined ? ' -> ' + JSON.stringify(detail) : '')); };
@@ -69,7 +71,7 @@ if (phase === 'base') {
   check('moteur : UDP integre, seul protocole supporte', info.integrated === true && JSON.stringify(info.protocols) === '["udp"]', info);
   const base = await ev('LaboSurfNative.getApiBase()');
   check('adresse API compilee en HTTPS', /^https:\/\//.test(base), base);
-  check('version de l\'application lue du natif', (await ev('LaboSurfNative.getAppVersion()')) === '1.2.1');   // = versionName de app/build.gradle.kts
+  check('version de l\'application lue du natif', (await ev('LaboSurfNative.getAppVersion()')) === EXPECTED_VERSION);   // = versionName de app/build.gradle.kts (lu, jamais recopie)
   check('identifiant d\'appareil fourni', (await ev('LaboSurfNative.getDeviceId().length')) > 0);
   check('origine locale (assets)', /^file:\/\/\/android_asset\//.test(await ev('location.href')));
 
