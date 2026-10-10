@@ -1,6 +1,7 @@
 // Français — langue de référence : toute clé ajoutée ici doit aussi exister dans en.js.
 I18N.register('fr', {
   'app.title': 'Labo Surf',
+  'acc.exchangeDone': "Vous êtes connecté depuis le Laboratoire du Free-Surf.", 'acc.exchangeFailed': "Ce lien de connexion est invalide ou a expiré. Connectez-vous avec vos identifiants.",
 
   // Commun
   'common.cancel': 'Annuler', 'common.confirm': 'Confirmer', 'common.close': 'Fermer', 'common.refresh': '↻ Actualiser',

@@ -36,6 +36,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Session unifiee Panel -> application : https://<hote du panel>/app/open#code=... (code a usage unique, 60 s).
+                 autoVerify : Android verifie /.well-known/assetlinks.json (package + empreinte du certificat de production).
+                 Le chemin est limite a /app/open : aucun autre lien du panel n'est capture par l'application. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="${panelHost}" android:pathPrefix="/app/open" />
+            </intent-filter>
         </activity>
 
         <!-- Photo prise avec l'appareil photo : fichier du cache PRIVE de l'app (photos/), partage temporairement

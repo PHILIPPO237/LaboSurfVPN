@@ -1,6 +1,7 @@
 // English — same keys as fr.js.
 I18N.register('en', {
   'app.title': 'Labo Surf',
+  'acc.exchangeDone': "You are signed in from Laboratoire du Free-Surf.", 'acc.exchangeFailed': "This sign-in link is invalid or has expired. Please sign in with your credentials.",
 
   // Common
   'common.cancel': 'Cancel', 'common.confirm': 'Confirm', 'common.close': 'Close', 'common.refresh': '↻ Refresh',

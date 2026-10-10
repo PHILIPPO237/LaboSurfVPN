@@ -75,6 +75,8 @@ function loadApp(opts){
       startVpn: (cfg) => { calls.native.startVpn.push(cfg); },
       stopVpn: () => { calls.native.stopVpn.push(true); },
       getAppVersion: () => '1.0.0-test', openVpnSettings(){}, setSystemBars(){}, clearWebCache(){},
+      // code d'échange reçu par lien du panel : remis UNE fois, vide ensuite (MainActivity.NativeBridge.consumeExchangeCode)
+      consumeExchangeCode: () => { const c = n.exchangeCode || ''; n.exchangeCode = ''; calls.native.exchangeConsumed = (calls.native.exchangeConsumed || 0) + 1; return c; },
     };
     // Reprise réseau après l'arrêt du tunnel (MainActivity.NativeBridge) : présente seulement si n.network est fourni
     if(n.network){

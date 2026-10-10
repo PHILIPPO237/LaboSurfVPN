@@ -26,6 +26,11 @@ class MainActivity : AppCompatActivity() {
     private val INSTALL_PREFS = "labosurf_install"   // preferences privees de l'app (non sauvegardees : allowBackup=false)
     private val INSTALL_ID_KEY = "install_id"
 
+    // Code d'echange de session recu du panel (App Link ou intention Chrome) : garde EN MEMOIRE seulement, remis UNE fois au JS,
+    // jamais journalise ni ecrit sur le disque. Il expire de toute facon 60 s apres sa creation (cote panel).
+    @Volatile private var pendingExchangeCode: String? = null
+    private val panelHost: String by lazy { try { Uri.parse(BuildConfig.PANEL_BASE_URL).host ?: "" } catch (e: Exception) { "" } }
+
     // Lance la boite de dialogue systeme Android ("Labo Surf souhaite configurer
     // une connexion VPN") — obligatoire, ce n'est pas quelque chose qu'on peut
     // sauter ou personnaliser : c'est une protection standard d'Android.
@@ -83,6 +88,7 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = ExternalLinkWebViewClient()
         webView.webChromeClient = FileChooserChromeClient()
         webView.addJavascriptInterface(NativeBridge(), "LaboSurfNative")
+        captureExchange(intent)
         webView.loadUrl("file:///android_asset/www/index.html")
 
         // Ecoute les mises a jour d'etat envoyees par LaboVpnService (broadcast local)
@@ -104,6 +110,12 @@ class MainActivity : AppCompatActivity() {
      * l'app Telegram (si installée), soit dans le navigateur du téléphone.
      */
     inner class ExternalLinkWebViewClient : WebViewClient() {
+        // Interface chargee : si l'application a ete ouverte par un lien du panel, l'echange de session peut commencer
+        override fun onPageFinished(view: WebView, url: String) {
+            super.onPageFinished(view, url)
+            if (pendingExchangeCode != null) deliverExchange()
+        }
+
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             val url = request.url.toString()
             // Les pages internes de l'app (assets locaux) restent gerees par la WebView elle-meme
@@ -163,6 +175,31 @@ class MainActivity : AppCompatActivity() {
                 true
             }
         }
+    }
+
+    /** Application deja ouverte (launchMode singleTask) : un nouveau lien du panel arrive ici. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (captureExchange(intent)) deliverExchange()
+    }
+
+    /**
+     * Accepte un code d'echange SEULEMENT s'il vient d'un lien du panel compile (https, meme hote, chemin /app/open) :
+     *  - App Link verifie : code dans le FRAGMENT (#code=...) ;
+     *  - lien « intent:// » de Chrome (bouton « Ouvrir l'app » du panel) : meme adresse, code dans l'extra « exchange_code ».
+     */
+    private fun captureExchange(intent: Intent?): Boolean {
+        val data = intent?.data ?: return false
+        val code = ExchangeLink.extract(data.scheme, data.host, data.path, data.fragment,
+            intent.getStringExtra(ExchangeLink.EXTRA_CODE), panelHost) ?: return false
+        pendingExchangeCode = code
+        return true
+    }
+
+    /** Previent l'interface qu'un code attend (elle le recupere par LaboSurfNative.consumeExchangeCode()). */
+    private fun deliverExchange() {
+        runOnUiThread { webView.evaluateJavascript("window.LaboOnExchange && window.LaboOnExchange()", null) }
     }
 
     override fun onDestroy() {
@@ -289,6 +326,14 @@ class MainActivity : AppCompatActivity() {
          */
         @JavascriptInterface
         fun getApiBase(): String = BuildConfig.PANEL_BASE_URL
+
+        /** Remet le code d'echange recu du panel UNE seule fois (vide ensuite). */
+        @JavascriptInterface
+        fun consumeExchangeCode(): String {
+            val code = pendingExchangeCode ?: ""
+            pendingExchangeCode = null
+            return code
+        }
 
         /** Version affichee dans Reglages > Application. */
         @JavascriptInterface

@@ -178,7 +178,46 @@ Actions.dismissExpiry = () => {
 };
 // « Continuer sur le Laboratoire du Free-Surf » : ouvre le site du panel (navigateur du téléphone) pour tout ce qui n'a pas sa place
 // dans l'application VPN — paiement, offres, gestion avancée. Même adresse que l'API (voir ApiBase) ; jamais d'identifiant dans l'adresse.
-Actions.openPanel = () => { if(API.state.ok) openExternal(API.state.base + '/'); };
+// Connecté : la session passe au navigateur par un code d'échange à usage unique (60 s) placé dans le FRAGMENT de l'adresse
+// (#code=…, jamais envoyé au serveur ni journalisé) ; le panel ouvre alors une session web sans redemander le mot de passe.
+// Non connecté ou échec : le site s'ouvre normalement (connexion classique).
+Actions.openPanel = async (next) => {
+  if(!API.state.ok) return;
+  const path = typeof next === 'string' && /^\/[a-z0-9/#-]*$/.test(next) ? next : '/dashboard';
+  if(sessionStillValid()){
+    try{
+      const res = await apiFetch('/api/auth/exchange', { method: 'POST', body: JSON.stringify({ target: 'web', next: path }) });
+      const url = res.ok && res.data && typeof res.data.url === 'string' ? res.data.url : '';
+      if(/^\/auth\/exchange#code=[A-Za-z0-9_-]{32,100}$/.test(url)){ openExternal(API.state.base + url); return; }
+    }catch(e){ /* repli : site sans session */ }
+  }
+  openExternal(API.state.base + '/');
+};
+
+// Panel -> application : un code d'échange reçu par lien (App Link /app/open ou bouton « Ouvrir l'app » du panel) ouvre la session
+// de l'application sans mot de passe. Ignoré si une session est déjà ouverte (on ne remplace jamais un compte connecté).
+async function redeemExchange(code){
+  if(sessionStillValid()) return;
+  try{
+    const res = await apiFetch('/api/auth/exchange/redeem', { method: 'POST', device: true, body: JSON.stringify({ code: code, target: 'app' }) });
+    if(!res.ok || !res.data || res.data.status !== 'ok' || !res.data.token){ toast(apiMessage(res, 'acc.exchangeFailed'), 'error', 4500); return; }
+    authToken = res.data.token;
+    authExpiresAt = sessionExpiryFrom(res.data);
+    const name = res.data.user && res.data.user.username ? res.data.user.username : '';
+    await afterAuth(name);
+    toast(t('acc.exchangeDone'), 'success');
+  }catch(e){ toast(t('err.panelOffline'), 'error'); }
+}
+window.LaboOnExchange = (attempt) => {
+  if(!isNativeApp() || typeof window.LaboSurfNative.consumeExchangeCode !== 'function') return;
+  if(!API.state.ok){   // adresse du panel pas encore prête au démarrage : on réessaie un peu plus tard (le code reste côté natif)
+    if((attempt || 0) < 20) setTimeout(() => window.LaboOnExchange((attempt || 0) + 1), 500);
+    return;
+  }
+  let code = '';
+  try{ code = window.LaboSurfNative.consumeExchangeCode() || ''; }catch(e){ code = ''; }
+  if(/^[A-Za-z0-9_-]{32,100}$/.test(code)) redeemExchange(code);
+};
 // Ouvre directement la carte de renouvellement du Compte (sans masquer le bandeau d'expiration)
 Actions.openRenewal = () => {
   showScreen('account');
