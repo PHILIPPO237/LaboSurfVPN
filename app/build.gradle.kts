@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -24,7 +26,7 @@ android {
         versionName = "1.2.4"
         buildConfigField("String", "PANEL_BASE_URL", "\"$panelBaseUrl\"")
         // App Link (https://<hôte du panel>/app/open) : vérifié par Android grâce à /.well-known/assetlinks.json servi par le panel
-        manifestPlaceholders["panelHost"] = java.net.URI(panelBaseUrl).host
+        manifestPlaceholders["panelHost"] = URI(panelBaseUrl).host
     }
 
     buildFeatures {
