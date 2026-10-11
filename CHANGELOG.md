@@ -4,6 +4,17 @@ Application Android « LaboSurfVPN » — **seul dépôt PUBLIC** de l'écosyst�
 
 > Statut de publication : `v1.0.0-test.1` et `v1.1.0` sont des pré-versions de TEST (APK debug). `v1.2.0` est la première version officielle, signée avec la clé de production.
 
+## `v1.2.5` — session unifiée avec le Panel (versionCode 8, APK release signé)
+
+- `a594ba2` / `ccaee1b` **Connexion sans retaper le mot de passe entre le Panel et l'application** :
+  - Panel → application : bouton « Ouvrir l'app » des espaces VIP / Gratuit / Revendeur, ou App Link vérifié
+    `https://laboratoire.free-surf237-4all.xyz/app/open` (Android vérifie `/.well-known/assetlinks.json` : package + certificat de production).
+  - Application → Panel : « Continuer sur le Laboratoire » ouvre le site déjà connecté.
+  - Code d'échange à usage unique, valable 60 s, lié à son utilisateur et à sa cible, transporté hors de toute URL envoyée au serveur
+    (fragment `#code=` ou extra d'intention) ; une session déjà ouverte dans l'application n'est jamais remplacée par un lien.
+  - Déconnexion liée : se déconnecter dans l'application déconnecte aussi la session web ouverte par l'échange (et inversement).
+- Panel requis : `0fbc62c` ou plus récent (routes `/api/auth/exchange`, `/app/open`, `assetlinks.json`).
+
 ## Non publié — branche `fix/network-recovery-after-vpn-stop`
 
 - **Correction (à valider sur téléphone)** : après un STOP, l'interface ne joignait plus le panel (« Connexion au panel impossible »)
