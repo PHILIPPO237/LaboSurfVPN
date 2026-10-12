@@ -14,6 +14,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/elliptic"
@@ -475,23 +476,13 @@ func TestRealXrayVariantsThroughTheCore(t *testing.T) {
 	needReal(t)
 	bin := xrayBinary(t)
 	cp, kp, pin, _ := testCert(t)
-	out, err := exec.Command(bin, "x25519").CombinedOutput()
+	// Clés REALITY jetables, générées ici (format d'Xray : X25519 en base64url sans remplissage).
+	k, err := ecdh.X25519().GenerateKey(rand.Reader)
 	if err != nil {
-		t.Fatalf("xray x25519 : %v %s", err, out)
+		t.Fatal(err)
 	}
-	var privKey, pubKey string
-	for _, l := range strings.Split(string(out), "\n") {
-		k, v, _ := strings.Cut(l, ":")
-		switch strings.ToLower(strings.TrimSpace(k)) {
-		case "privatekey", "private key":
-			privKey = strings.TrimSpace(v)
-		case "password", "public key", "publickey":
-			pubKey = strings.TrimSpace(v)
-		}
-	}
-	if privKey == "" || pubKey == "" {
-		t.Fatalf("clés REALITY illisibles : %s", out)
-	}
+	privKey := base64.RawURLEncoding.EncodeToString(k.Bytes())
+	pubKey := base64.RawURLEncoding.EncodeToString(k.PublicKey().Bytes())
 	const id = "0b6f1b4a-5c2e-4c47-9d1a-2a4f0e7b3c11"
 	for _, v := range []struct{ network, security string }{
 		{"tcp", "reality"}, {"tcp", "tls"}, {"tcp", "none"}, {"ws", "tls"}, {"ws", "none"},
