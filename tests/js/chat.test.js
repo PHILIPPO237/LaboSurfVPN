@@ -56,9 +56,15 @@ test('déconnexion du compte : le bouton Chat disparaît', () => {
 
 test('messages : heure et jour RÉELS ; sans date lisible, aucun séparateur ni heure inventée', () => {
   const a = app();
-  const now = Date.now();
-  const m = (h, role, body) => ({ sender_role: role, body, created_at: new Date(now - h * 3600e3).toISOString() });
-  a.ev(`renderAppMessages(${JSON.stringify([m(30, 'admin', 'Bonjour'), m(29, 'client', 'Merci'), m(0.1, 'client', 'Re')])})`);
+  // Jours ancrés sur le CALENDRIER (hier / aujourd'hui) : un décalage en heures échoue après minuit,
+  // « il y a 30 h » tombant sur avant-hier entre 00h et 06h (échec aléatoire constaté en CI la nuit).
+  const at = (dayOffset, h, min, role, body) => {
+    const d = new Date(Date.now());
+    d.setDate(d.getDate() + dayOffset);
+    d.setHours(h, min, 0, 0);
+    return { sender_role: role, body, created_at: d.toISOString() };
+  };
+  a.ev(`renderAppMessages(${JSON.stringify([at(-1, 14, 30, 'admin', 'Bonjour'), at(-1, 15, 10, 'client', 'Merci'), at(0, 9, 5, 'client', 'Re')])})`);
   const html = a.ev("document.getElementById('messagesThread').innerHTML");
   assert.equal((html.match(/class="chat-day"/g) || []).length >= 2, true, 'Hier et Aujourd\'hui');
   assert.match(html, /Hier/);

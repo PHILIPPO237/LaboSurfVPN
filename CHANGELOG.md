@@ -4,6 +4,22 @@ Application Android « LaboSurfVPN » — **seul dépôt PUBLIC** de l'écosyst�
 
 > Statut de publication : `v1.0.0-test.1` et `v1.1.0` sont des pré-versions de TEST (APK debug). `v1.2.0` est la première version officielle, signée avec la clé de production.
 
+## `v1.2.6` — consommation du profil relue en continu (versionCode 9, **non publiée**)
+
+- `264e9e3` **Consommation affichée toujours à jour** : dans « Mon profil », la consommation restait figée sur la
+  lecture faite à la connexion (22,7 Mo affichés alors que PRO mesurait déjà 314 Mo) — le sondage de 20 s ne
+  rafraîchissait que messages et annonces. Il relit maintenant `/api/user/me` + `/api/user/subscription` à chaque
+  cycle **tant que l'écran Profil est ouvert** (et à son ouverture), sans requête inutile hors écran et sans toucher
+  aux autres écrans. Contrat inchangé : une mesure retirée reste « Indisponible », une erreur du panel conserve la
+  dernière valeur connue — **jamais 0**.
+- Tests : 3 tests de régression pour la consommation (relecture à chaque cycle, contrat indisponible / valeur
+  conservée, aucune relecture hors écran ou sans session) et 1 test d'isolation A/B du code d'échange (une séance
+  ouverte n'est jamais écrasée par le lien d'un autre compte, jeton du panel ignoré).
+- Test de dates du Chat rendu déterministe (jours ancrés sur le calendrier) : il échouait aléatoirement en CI
+  entre 00h et 06h (« il y a 30 h » tombant sur avant-hier).
+- **Statut** : APK release signé produit en CI (contrôle uniquement, aucune release) ; la **validation réelle sur
+  téléphone reste à faire** avant toute publication.
+
 ## `v1.2.5` — session unifiée avec le Panel (versionCode 8, APK release signé)
 
 - `a594ba2` / `ccaee1b` **Connexion sans retaper le mot de passe entre le Panel et l'application** :
