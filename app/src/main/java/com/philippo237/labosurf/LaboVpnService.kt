@@ -18,9 +18,11 @@ import java.io.FileOutputStream
 /**
  * LaboVpnService : le moteur VPN Android.
  *
- * Moteur réellement intégré : UDP (protocole LABOSURF PRO, voir udp/UdpTunnelClient.kt et PROTOCOL.md de LABOSURF_PRO).
- * Les autres protocoles (xray, hysteria, tuic, wireguard, ssh, slowdns, dnstt...) NE SONT PAS intégrés : ils sont refusés
- * (`unsupported_protocol`), jamais simulés. Voir docs/LABOSURFVPN_REAL_FUNCTIONALITY.md.
+ * Moteurs réellement intégrés :
+ *  - UDP (protocole LABOSURF PRO) : implémentation Kotlin d'origine (udp/UdpTunnelClient.kt), INCHANGÉE ;
+ *  - xray, hysteria2, wireguard, tuic, ssh, shssl, sshhttp : cœur Go `labocore` (CoreTunnel, core/), qui reçoit
+ *    l'interface TUN. Voir docs/ARCHITECTURE_MULTI_MOTEURS.md.
+ * Un protocole sans moteur (dnstt, slowdns, hysteria maison…) est refusé (`unsupported_protocol`), jamais simulé.
  *
  * « connected » n'est émis QU'APRÈS : handshake réussi + vraie requête DNS aller-retour à travers le tunnel + interface TUN établie.
  * ⚠ Le protocole UDP LABOSURF ne chiffre pas le trafic IP (limitation documentée du protocole).
@@ -35,8 +37,12 @@ class LaboVpnService : VpnService() {
         /** true : un moteur réel est intégré (UDP). Voir SUPPORTED_PROTOCOLS pour ce qu'il sait transporter. */
         const val ENGINE_INTEGRATED = true
 
-        /** Protocoles (champ « protocol » de la configuration émise par PRO) que le moteur intégré sait REELLEMENT transporter. */
-        val SUPPORTED_PROTOCOLS: List<String> = listOf("udp")
+        /** Protocoles (champ « protocol » de la configuration émise par PRO) que les moteurs intégrés savent REELLEMENT
+         *  transporter : l'UDP (Kotlin) + ceux du cœur Go embarqué (vide s'il est absent). */
+        val SUPPORTED_PROTOCOLS: List<String> by lazy { listOf("udp") + CoreTunnel.engines.filter { it != "udp" } }
+
+        /** MTU de l'interface TUN des moteurs du cœur Go. */
+        private const val CORE_MTU = 1500
 
         const val STATE_CONNECTING = "connecting"
         const val STATE_CONNECTED = "connected"
@@ -73,6 +79,7 @@ class LaboVpnService : VpnService() {
 
     private var tunInterface: ParcelFileDescriptor? = null
     private var client: UdpTunnelClient? = null
+    @Volatile private var coreActive = false   // le cœur Go (moteur autre que l'UDP) tient l'interface TUN
     private var worker: Thread? = null
     private var statsThread: Thread? = null
 
@@ -109,6 +116,7 @@ class LaboVpnService : VpnService() {
             fail("invalid_config"); return
         }
         if (proto !in SUPPORTED_PROTOCOLS) { fail("unsupported_protocol"); return }
+        if (proto != "udp") { startCoreTunnel(serverConfigJson ?: ""); return }   // moteurs du cœur Go
         val link = try { UdpLink.parse(uri) } catch (e: UdpLink.Invalid) { fail("invalid_config"); return }
 
         val myGeneration = ++generation
@@ -148,6 +156,73 @@ class LaboVpnService : VpnService() {
         worker?.start()
     }
 
+    /**
+     * Moteurs du cœur Go : l'interface TUN est établie, remise au cœur, puis une VRAIE requête DNS doit traverser le
+     * moteur (CoreTunnel.probe) avant tout « connecté ». L'application elle-même est exclue du VPN : le cœur rejoint
+     * son serveur hors du tunnel (jamais de boucle). La configuration (secrets) n'est jamais journalisée.
+     */
+    private fun startCoreTunnel(configJson: String) {
+        val myGeneration = ++generation
+        stateListener?.invoke(STATE_CONNECTING, null)
+        worker = Thread({
+            try {
+                val builder = Builder()
+                    .setSession("Labo Surf")
+                    .addAddress("172.19.0.1", 30)
+                    .addRoute("0.0.0.0", 0)            // tout l'IPv4 dans le tunnel
+                    .addRoute("::", 0)                 // l'IPv6 est capté (aucune fuite hors du tunnel)
+                    .addDnsServer("1.1.1.1")
+                    .addDnsServer("8.8.8.8")
+                    .setMtu(CORE_MTU)
+                    .addDisallowedApplication(packageName)
+                val pfd = builder.establish()
+                if (pfd == null) { fail("vpn_permission_denied"); return@Thread }
+                if (myGeneration != generation) { pfd.close(); return@Thread }
+                tunInterface = pfd
+                tunnelActive = true
+                try {
+                    CoreTunnel.start(configJson, pfd.fd, CORE_MTU)
+                } catch (e: Exception) {
+                    // le cœur préfixe par « configuration invalide » toute erreur due à la configuration (labocore.ErrInvalidConfig)
+                    if (myGeneration == generation) fail(if ((e.message ?: "").startsWith("configuration invalide")) "invalid_config" else "connect_failed")
+                    return@Thread
+                }
+                coreActive = true
+                try {
+                    CoreTunnel.probe()                 // une vraie requête DNS traverse le moteur : sinon PAS de « connecté »
+                } catch (e: Exception) {
+                    if (myGeneration == generation) fail("tunnel_unverified")
+                    return@Thread
+                }
+                if (myGeneration != generation) return@Thread
+                startCoreStats(myGeneration)
+                stateListener?.invoke(STATE_CONNECTED, null)
+            } catch (e: Exception) {
+                if (myGeneration == generation) fail("connect_failed")
+            }
+        }, "labosurf-core-connect")
+        worker?.isDaemon = true
+        worker?.start()
+    }
+
+    private fun startCoreStats(myGeneration: Int) {
+        statsThread = Thread({
+            var lastRx = 0L
+            var lastTx = 0L
+            try {
+                while (myGeneration == generation) {
+                    Thread.sleep(1000)
+                    val (rx, tx) = CoreTunnel.stats() ?: continue   // inconnu : rien n'est inventé
+                    statsListener?.invoke(rx, tx, rx - lastRx, tx - lastTx)
+                    lastRx = rx; lastTx = tx
+                }
+            } catch (e: InterruptedException) {
+            }
+        }, "labosurf-core-stats")
+        statsThread?.isDaemon = true
+        statsThread?.start()
+    }
+
     private fun startStats(udp: UdpTunnelClient, myGeneration: Int) {
         statsThread = Thread({
             var lastRx = 0L
@@ -173,6 +248,7 @@ class LaboVpnService : VpnService() {
         val hadTunnel = tunInterface != null
         try { client?.stop() } catch (_: Exception) { }
         client = null
+        if (coreActive) { CoreTunnel.stop(); coreActive = false }   // le cœur relâche l'interface TUN avant sa fermeture
         try { tunInterface?.close() } catch (_: Exception) { }
         tunInterface = null
         tunnelActive = false

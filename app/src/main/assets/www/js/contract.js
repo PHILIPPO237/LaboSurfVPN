@@ -67,6 +67,9 @@ const ConnectContract = (function(){
   // service_health accepté : « available », ou « unknown » (non vérifié — jamais présenté comme sain)
   const HEALTH_OK = ['available', 'unknown'];
   const URI_SCHEME = /^([a-z][a-z0-9+.-]*):\/\//i;
+  // Formats émis par LABOSURF PRO qui ne sont PAS une URI : commande SSH (avec un profil structuré : clé, hôte…)
+  // et fichier wg-quick. Le format vient du panel ; l'application ne le devine pas.
+  const NON_URI_FORMATS = ['ssh-command', 'wireguard-conf'];
 
   const fail = (fields) => Object.assign({ ok: false, code: '', key: 'conn.err.badResponse', retryAfter: null, panelMessage: '', authLost: false }, fields);
 
@@ -102,8 +105,11 @@ const ConnectContract = (function(){
     const uri = typeof cfg.uri === 'string' ? cfg.uri.trim() : '';
     const protocol = typeof cfg.protocol === 'string' ? cfg.protocol.trim().toLowerCase() : '';
     if(!uri || !protocol) return fail({ kind: 'contract', code: 'empty_config' });
+    const format = typeof cfg.format === 'string' ? cfg.format : '';
+    const profile = cfg.profile && typeof cfg.profile === 'object' && !Array.isArray(cfg.profile) ? cfg.profile : null;
     const scheme = URI_SCHEME.exec(uri);
-    if(!scheme) return fail({ kind: 'contract', code: 'bad_uri' });
+    if(!scheme && NON_URI_FORMATS.indexOf(format) < 0) return fail({ kind: 'contract', code: 'bad_uri' });
+    if(format === 'ssh-command' && !profile) return fail({ kind: 'contract', code: 'empty_config' });   // une commande seule ne suffit pas
 
     const health = typeof data.service_health === 'string' && data.service_health ? data.service_health.toLowerCase() : 'unknown';
     if(HEALTH_OK.indexOf(health) < 0) return fail({ kind: 'contract', code: 'service_unhealthy', key: ERROR_CODES.service_unhealthy });
@@ -122,7 +128,7 @@ const ConnectContract = (function(){
       hostedProfileId: typeof data.hosted_profile_id === 'number' && isFinite(data.hosted_profile_id) ? data.hosted_profile_id : null,
       health: health,                                   // available | unknown
       access: { state: accState || 'active', expiresAt: isFinite(expMs) ? expMs : null },   // null = pas d'expiration technique
-      config: { uri: uri, protocol: protocol, scheme: scheme[1].toLowerCase(), format: typeof cfg.format === 'string' ? cfg.format : '', remark: typeof cfg.remark === 'string' ? cfg.remark : '' },
+      config: { uri: uri, protocol: protocol, scheme: scheme ? scheme[1].toLowerCase() : format, format: format, remark: typeof cfg.remark === 'string' ? cfg.remark : '', profile: profile },
       trialLimitMinutes: num(data.trial_limit_minutes),
       trialQuotaMb: num(data.trial_quota_mb),
     };

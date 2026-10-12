@@ -200,3 +200,13 @@ func socksConnect(t *testing.T, socksPort, target int) net.Conn {
 	}
 	return c
 }
+
+// Une configuration inutilisable est signalée comme telle (l'application affiche « configuration invalide »).
+func TestConfigErrorsAreLabelled(t *testing.T) {
+	for _, raw := range []string{`{"uri":"x"}`, `{"proto":"tuic","uri":"tuic://pas-un-uuid:pw@h:1"}`, `{"proto":"dnstt","uri":"dnstt://u@h"}`} {
+		err := start(raw, map[string]any{"tag": inboundTag, "protocol": "socks", "listen": "127.0.0.1", "port": 0})
+		if err == nil || !strings.HasPrefix(err.Error(), ErrInvalidConfig) {
+			t.Errorf("%s : %v", raw, err)
+		}
+	}
+}

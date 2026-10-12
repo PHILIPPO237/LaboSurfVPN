@@ -22,8 +22,8 @@ android {
         applicationId = "com.philippo237.labosurf"
         minSdk = 24        // Android 7.0+ (couvre la grande majorite des telephones au Cameroun)
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.2.6"
+        versionCode = 10
+        versionName = "1.3.0"
         buildConfigField("String", "PANEL_BASE_URL", "\"$panelBaseUrl\"")
         // App Link (https://<hôte du panel>/app/open) : vérifié par Android grâce à /.well-known/assetlinks.json servi par le panel
         manifestPlaceholders["panelHost"] = URI(panelBaseUrl).host
@@ -76,6 +76,9 @@ dependencies {
     // Tests unitaires JVM du moteur UDP (app/src/test) : `gradle testDebugUnitTest`
     testImplementation("junit:junit:4.13.2")
 
-    // Moteur VPN : UDP LABOSURF PRO, implémenté en Kotlin pur (app/src/main/java/.../udp) — aucune bibliothèque externe.
-    // Les autres moteurs (Xray, Hysteria, TUIC, WireGuard...) ne sont PAS intégrés : voir docs/LABOSURFVPN_REAL_FUNCTIONALITY.md.
+    // Moteur VPN UDP LABOSURF PRO : Kotlin pur (app/src/main/java/.../udp).
+    // Autres moteurs (Xray, Hysteria2, WireGuard, TUIC, SSH, SSH-SSL, SSH-HTTP) : coeur Go core/, compilé en
+    // app/libs/labocore.aar par la CI (gomobile, voir .github/workflows/build-apk.yml). Jamais dans Git (fichier produit).
+    // Voir docs/ARCHITECTURE_MULTI_MOTEURS.md.
+    implementation(files("libs/labocore.aar"))
 }

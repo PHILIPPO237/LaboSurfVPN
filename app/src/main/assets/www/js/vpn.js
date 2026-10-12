@@ -359,7 +359,8 @@ async function connectVpn(){
       if(VPN.state === 'connecting') failConnect(name, { key: 'err.timeout' });
     }, CONNECT_WATCHDOG_MS);
     try{
-      window.LaboSurfNative.startVpn(JSON.stringify({ name: profile ? name : target.name, proto: parsed.config.protocol, uri: parsed.config.uri, format: parsed.config.format }));
+      // profil structuré (moteurs SSH : clé, hôte, empreintes) transmis tel quel au natif, jamais affiché ni journalisé
+      window.LaboSurfNative.startVpn(JSON.stringify({ name: profile ? name : target.name, proto: parsed.config.protocol, uri: parsed.config.uri, format: parsed.config.format, profile: parsed.config.profile || null }));
     }catch(e){
       failConnect(name, { key: 'err.connect' });
     }

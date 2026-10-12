@@ -113,7 +113,7 @@ func stopLocked() {
 func start(configJSON string, inbound map[string]any) error {
 	cfg, err := parseClientConfig(configJSON)
 	if err != nil {
-		return err
+		return invalidConfig(err)
 	}
 	mu.Lock()
 	defer mu.Unlock()
@@ -121,10 +121,8 @@ func start(configJSON string, inbound map[string]any) error {
 
 	out, err := buildOutbound(cfg)
 	if err != nil {
-		for _, c := range out.closers {
-			_ = c.Close()
-		}
-		return err
+		closeAll(out.closers)
+		return invalidConfig(err)
 	}
 	raw, err := json.Marshal(xrayConfig(inbound, out))
 	if err != nil {
@@ -133,7 +131,7 @@ func start(configJSON string, inbound map[string]any) error {
 	xc, err := serial.LoadJSONConfig(bytes.NewReader(raw))
 	if err != nil {
 		closeAll(out.closers)
-		return fmt.Errorf("configuration du moteur refusée : %w", err)
+		return invalidConfig(fmt.Errorf("refusée par le moteur : %w", err))
 	}
 	inst, err := core.New(xc)
 	if err != nil {
@@ -148,6 +146,14 @@ func start(configJSON string, inbound map[string]any) error {
 	instance, closers = inst, out.closers
 	return nil
 }
+
+// ErrInvalidConfig préfixe toute erreur due à la configuration reçue (et non au réseau) : l'application
+// affiche alors « configuration invalide » au lieu de « connexion impossible ». Les adaptateurs ne
+// joignent leur serveur qu'à la première connexion : une erreur de construction est donc toujours de
+// configuration.
+const ErrInvalidConfig = "configuration invalide"
+
+func invalidConfig(err error) error { return fmt.Errorf("%s : %w", ErrInvalidConfig, err) }
 
 func closeAll(cs []io.Closer) {
 	for _, c := range cs {

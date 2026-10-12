@@ -4,7 +4,9 @@
 #   - le moteur UDP natif refuse proprement (protocole non supporte, lien invalide, mot de passe refuse) ;
 #   - connexion a un FAUX serveur UDP LABOSURF local (tests/udp/mock_server.py, joignable depuis l'emulateur en 10.0.2.2) :
 #     handshake, ClientID annonce (l'emulateur est derriere un NAT), verification du chemin, VpnService + TUN reels, etat « on » ;
-#   - un ping depuis l'emulateur traverse le TUN puis le tunnel ; deconnexion propre.
+#   - un ping depuis l'emulateur traverse le TUN puis le tunnel ; deconnexion propre ;
+#   - coeur multi-moteurs : connexion VLESS (moteur xray) a un VRAI serveur Xray officiel sur l'hote (xray-bin/xray),
+#     verification par une vraie requete DNS (1.1.1.1) qui sort sur Internet, etat « on », deconnexion propre.
 # Le faux serveur ne transporte RIEN vers Internet : ce test valide le CLIENT Android, pas un VPN de bout en bout.
 # Usage : bash tests/android/emulator_test.sh <chemin-apk>
 # Ecrit emulator-report.txt (une ligne par verification) et emulator-screen.png dans le dossier courant.
@@ -13,6 +15,10 @@ APK="${1:-app/build/outputs/apk/debug/app-debug.apk}"
 PKG=com.philippo237.labosurf
 REPORT=emulator-report.txt
 MOCKLOG=mock-server.log
+XRAY="${XRAY_BIN:-xray-bin/xray}"
+XRAYLOG=xray-server.log
+XRAYPORT=10443
+XRAYID="$(cat /proc/sys/kernel/random/uuid)"
 MOCKPW="pw-$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 : > "$REPORT"; : > "$MOCKLOG"
 FAIL=0
@@ -74,6 +80,32 @@ if [ -n "$SOCK" ]; then
   smoke disconnect
   sleep 2
   if A shell dumpsys activity services "$PKG" | grep -q "LaboVpnService"; then ko "LaboVpnService toujours actif apres deconnexion"; else ok "LaboVpnService arrete apres deconnexion"; fi
+
+  # Coeur multi-moteurs : VLESS vers un vrai serveur Xray (sortie libre vers Internet) sur l'hote
+  if [ -x "$XRAY" ]; then
+    cat > xray-server.json <<JSON
+{"log":{"loglevel":"info","access":"$PWD/$XRAYLOG","error":"$PWD/$XRAYLOG"},
+ "inbounds":[{"listen":"0.0.0.0","port":$XRAYPORT,"protocol":"vless","settings":{"clients":[{"id":"$XRAYID"}],"decryption":"none"},
+   "streamSettings":{"network":"tcp","security":"none"}}],
+ "outbounds":[{"protocol":"freedom"}]}
+JSON
+    "$XRAY" run -c xray-server.json > /dev/null 2>&1 &
+    XRAYPID=$!
+    sleep 2
+    if kill -0 "$XRAYPID" 2>/dev/null; then ok "vrai serveur Xray demarre sur l'hote (port $XRAYPORT)"; else ko "serveur Xray non demarre"; fi
+    smoke core 10.0.2.2 "$XRAYPORT" "$XRAYID"
+    RES="$(timeout 30 adb shell "ping -c 1 -W 5 one.one.one.one" 2>&1 | head -1 | tr -d '\r')"
+    say "INFO  resolution DNS du telephone par le tunnel : ${RES:-aucune reponse}"
+    sleep 1
+    grep -q "1.1.1.1:53" "$XRAYLOG" && ok "le serveur Xray a relaye la requete DNS de verification vers Internet" || ko "le serveur Xray n'a relaye aucune requete de l'application"
+    if A shell dumpsys connectivity | tr -d '\r' | grep -qiE "type: VPN|VPN\[|VpnTransportInfo|transports: \[ VPN \]"; then ok "Android connait un reseau VPN actif (moteur xray)"; else ko "aucun reseau VPN actif cote systeme (moteur xray)"; fi
+    smoke disconnect
+    sleep 2
+    if A shell dumpsys activity services "$PKG" | grep -q "LaboVpnService"; then ko "LaboVpnService toujours actif apres deconnexion (xray)"; else ok "LaboVpnService arrete apres deconnexion (xray)"; fi
+    kill "$XRAYPID" 2>/dev/null; wait "$XRAYPID" 2>/dev/null
+  else
+    ko "binaire Xray de test absent ($XRAY) : moteur multi-moteurs non verifie"
+  fi
 else
   ko "WebView non inspectable (socket devtools introuvable)"
 fi

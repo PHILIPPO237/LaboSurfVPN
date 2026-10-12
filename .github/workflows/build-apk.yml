@@ -4,11 +4,32 @@ name: Build APK Labo Surf
 # Actions du site GitHub (utilisable depuis le telephone). Produit une APK DEBUG (jamais une release signee).
 on:
   push:
-    branches: [ main, phase5-vpn-client-integration, phase6-ui-palette, phase7-udp-real ]
+    branches: [ main, phase5-vpn-client-integration, phase6-ui-palette, phase7-udp-real, feature/multi-moteurs ]
   workflow_dispatch:
 
 jobs:
+  # Coeur reseau Go (core/) : tests unitaires + bout en bout contre les VRAIS serveurs officiels
+  # (Xray-core, Hysteria2, TUIC ; binaires verifies par SHA-256) et serveurs SSH/WireGuard en processus,
+  # avec une vraie requete DNS (1.1.1.1) a travers chaque moteur.
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: core/go.sum
+      - name: Tests du coeur (tous les moteurs, serveurs reels)
+        working-directory: core
+        run: |
+          go vet ./...
+          LABOSURF_TEST_REAL=1 go test -count=1 -v ./... 2>&1 | tee core-test.log
+          test "${PIPESTATUS[0]}" -eq 0
+          if grep -q -- "--- SKIP" core-test.log; then echo "::error::test du coeur ignore en CI"; grep -- "--- SKIP" core-test.log; exit 1; fi
+
   build:
+    needs: core
     runs-on: ubuntu-latest
     steps:
       - name: Recuperer le code
@@ -32,7 +53,23 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           # v3 echoue depuis que Google a retire un paquet du SDK (corrige dans la v4) ; versions fixees = build reproductible
-          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 ndk;27.2.12479018'
+
+      - name: Installer Go (coeur reseau multi-moteurs)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: core/go.sum
+
+      # Bibliotheque Android du coeur (Xray, Hysteria2, WireGuard, TUIC, SSH) : gomobile, version fixee = celle de core/go.mod
+      - name: Compiler le coeur en bibliotheque Android (labocore.aar)
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20261011034528-197770444867 golang.org/x/mobile/cmd/gobind@v0.0.0-20261011034528-197770444867
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+          mkdir -p app/libs
+          cd core && gomobile bind -v -target=android/arm,android/arm64,android/amd64 -androidapi 24 -trimpath -ldflags="-s -w -buildid=" -o ../app/libs/labocore.aar .
+          ls -l ../app/libs/
+          unzip -l ../app/libs/labocore.aar | grep -E "jni/(armeabi-v7a|arm64-v8a|x86_64)/libgojni.so" || { echo "::error::bibliotheque native absente de l'AAR"; exit 1; }
 
       - name: Preparer Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -80,13 +117,14 @@ jobs:
           grep -q "android.permission.BIND_VPN_SERVICE" manifest.txt
           echo "::notice title=Manifeste::MainActivity et LaboVpnService (BIND_VPN_SERVICE) presents"
           unzip -l "$APK" > contenu.txt
-          for f in assets/www/index.html assets/www/js/contract.js assets/www/js/vpn.js assets/www/js/api.js assets/www/js/lang/fr.js assets/www/js/lang/en.js classes.dex; do
+          for f in assets/www/index.html assets/www/js/contract.js assets/www/js/vpn.js assets/www/js/api.js assets/www/js/lang/fr.js assets/www/js/lang/en.js classes.dex lib/arm64-v8a/libgojni.so lib/armeabi-v7a/libgojni.so; do
             grep -q " $f\$" contenu.txt || { echo "::error::absent de l'APK : $f"; exit 1; }
           done
           if grep -q "assets/www/preview_" contenu.txt; then echo "::error::anciennes maquettes (faux serveurs/pings) embarquees"; exit 1; fi
           rm -rf dex && mkdir dex && unzip -q -o "$APK" 'classes*.dex' -d dex
           grep -a -q "labosurf/LaboVpnService;" dex/*.dex || { echo "::error::LaboVpnService absent du bytecode"; exit 1; }
           grep -a -q "labosurf/MainActivity;" dex/*.dex || { echo "::error::MainActivity absente du bytecode"; exit 1; }
+          grep -a -q "Llabocore/Labocore;" dex/*.dex || { echo "::error::pont du coeur multi-moteurs absent du bytecode"; exit 1; }
           echo "::notice title=Contenu::assets WebView (dont contract.js) et classes.dex presents ; aucune ancienne maquette"
           # Debug uniquement : signee avec la cle debug Android, jamais une release
           "$BT/apksigner" verify --print-certs "$APK" | head -3
@@ -115,13 +153,21 @@ jobs:
           name: labo-surf-vpn-debug
           path: apk
 
+      # Vrai serveur Xray officiel (binaire verifie par SHA-256) sur la machine hote : l'emulateur s'y connecte
+      # en VLESS par le coeur multi-moteurs, et le trafic sort reellement vers Internet.
+      - name: Serveur Xray officiel de test
+        run: |
+          curl -fsSL -o xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
+          echo "23cd9af937744d97776ee35ecad4972cf4b2109d1e0fe6be9930467608f7c8ae  xray.zip" | sha256sum -c -
+          mkdir -p xray-bin && unzip -o -q xray.zip xray -d xray-bin && chmod +x xray-bin/xray && xray-bin/xray version | head -1
+
       - name: Activer KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Test sur emulateur (installation, lancement, connexion UDP contre un faux serveur)
+      - name: Test sur emulateur (installation, lancement, UDP contre un faux serveur, Xray contre un vrai serveur)
         timeout-minutes: 15
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -143,6 +189,7 @@ jobs:
             emulator-screen.png
             logcat.txt
             mock-server.log
+            xray-server.log
           if-no-files-found: ignore
 
       - name: Remonter le resultat du test emulateur

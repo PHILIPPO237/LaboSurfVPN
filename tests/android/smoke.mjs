@@ -5,6 +5,7 @@
 //   base        moteur reel (UDP integre), refus des protocoles non supportes, serveur muet -> erreur, jamais « connecte »
 //   connect     <hote> <port> <mot de passe> : reponse « panel » simulee -> moteur UDP natif -> attend l'etat REEL « on »
 //   badauth     <hote> <port> : mot de passe refuse par le serveur -> erreur auth_failed, jamais « on »
+//   core        <hote> <port> <uuid> : moteur xray (coeur Go) vers un VRAI serveur Xray -> etat REEL « on »
 //   disconnect  coupe le tunnel et attend l'etat « off »
 //
 // Le « panel » est simule UNIQUEMENT ici (reponse de POST /api/user/connect au format reel du contrat) ; le moteur natif, le
@@ -34,7 +35,7 @@ const ev = (expression) => new Promise((res, rej) => {
 const waitFor = async (expr, ms, step = 250) => { const end = Date.now() + ms; while (Date.now() < end) { if (await ev(expr)) return true; await sleep(step); } return false; };
 
 // Prepare l'interface : compte « connecte », serveur choisi, et un « panel » simule qui repond au format REEL du contrat.
-async function prepare(uri) {
+async function prepare(uri, proto) {
   await ev(`(() => {
     window.__events = window.__events || []; window.__fetches = 0; window.__connectBodies = [];
     if (!window.__hooked) {
@@ -43,7 +44,7 @@ async function prepare(uri) {
       window.__hooked = true;
     }
     window.__uri = ${JSON.stringify(uri)};
-    window.__proto = ${JSON.stringify(uri.split(':')[0])};
+    window.__proto = ${JSON.stringify(proto || uri.split(':')[0])};
     apiFetch = async function(path, opts){
       window.__fetches++;
       if (path === '/api/user/connect') {
@@ -68,19 +69,29 @@ if (phase === 'base') {
   check('interface chargee (contract.js, vpn.js, api.js)', await ev('typeof ConnectContract === "object" && typeof connectVpn === "function" && typeof apiFetch === "function"'));
   check('traductions chargees', await ev('typeof t === "function" && t("err.native.auth_failed") !== "err.native.auth_failed"'));
   const info = JSON.parse(await ev('LaboSurfNative.getEngineInfo()'));
-  check('moteur : UDP integre, seul protocole supporte', info.integrated === true && JSON.stringify(info.protocols) === '["udp"]', info);
+  // UDP (Kotlin) + moteurs du coeur Go embarque : la bibliotheque native est chargee sur cet appareil
+  check('moteurs : UDP + coeur multi-moteurs (xray, hysteria2, wireguard, tuic, ssh, shssl, sshhttp)', info.integrated === true &&
+    JSON.stringify(info.protocols) === '["udp","xray","hysteria2","wireguard","tuic","ssh","shssl","sshhttp"]', info);
   const base = await ev('LaboSurfNative.getApiBase()');
   check('adresse API compilee en HTTPS', /^https:\/\//.test(base), base);
   check('version de l\'application lue du natif', (await ev('LaboSurfNative.getAppVersion()')) === EXPECTED_VERSION);   // = versionName de app/build.gradle.kts (lu, jamais recopie)
   check('identifiant d\'appareil fourni', (await ev('LaboSurfNative.getDeviceId().length')) > 0);
   check('origine locale (assets)', /^file:\/\/\/android_asset\//.test(await ev('location.href')));
 
-  // Protocole non supporte (tuic) : refuse, jamais « connecte », aucun tunnel
-  await prepare('tuic://u:p@192.0.2.1:443?allow_insecure=1');
+  // Protocole sans moteur (dnstt) : refuse, jamais « connecte », aucun tunnel
+  await prepare('dnstt://u@192.0.2.1?key=x');
   await ev('connectVpn()');
   await waitFor('VPN.state === "error"', 8000);
-  check('protocole tuic refuse (non integre) : etat « error »', (await ev('VPN.state')) === 'error');
+  check('protocole dnstt refuse (aucun moteur) : etat « error »', (await ev('VPN.state')) === 'error');
   check('  ... jamais « on », aucune session', (await ev('VPN.session === null || VPN.session === undefined')) === true);
+
+  // Moteur du coeur avec un lien inutilisable (tuic sans empreinte de certificat) : refus natif invalid_config
+  await prepare('tuic://11111111-2222-3333-4444-555555555555:pw@192.0.2.1:443?alpn=h3&sni=x#t');
+  await ev('connectVpn()');
+  await waitFor('VPN.state === "error"', 15000);
+  const evt = await ev('window.__events');
+  check('lien tuic sans empreinte : erreur native invalid_config (coeur Go)', evt.some((e) => e[0] === 'error' && e[1] === 'invalid_config'), evt);
+  check('  ... jamais « connected »', !evt.some((e) => e[0] === 'connected'));
 
   // Configuration invalide pour le moteur UDP : refus natif
   await prepare('udp://sans-mot-de-passe@10.0.2.2:5667');
@@ -102,6 +113,17 @@ if (phase === 'connect') {
   check('  ... une session (chronometre) existe', (await ev('!!VPN.session')) === true);
   check('  ... ecran d accueil en etat « on »', (await ev("document.getElementById('home').dataset.state")) === 'on');
   check('  ... le panel simule a ete appele une fois (POST /api/user/connect)', (await ev('window.__fetches')) === 1);
+}
+
+if (phase === 'core') {
+  const [host, prt, uuid] = args;
+  await prepare(`vless://${uuid}@${host}:${prt}?encryption=none&security=none&type=tcp&headerType=none#test`, 'xray');
+  await ev('connectVpn()');
+  const on = await waitFor('VPN.state === "on"', 60000, 500);
+  const events = await ev('window.__events');
+  check('moteur xray (coeur Go) : CONNECTE apres une vraie requete DNS a travers le serveur Xray', on, events);
+  check('  ... « connected » emis par le natif, apres « connecting »', events.some((e) => e[0] === 'connected') && events.findIndex((e) => e[0] === 'connected') > events.findIndex((e) => e[0] === 'connecting'), events);
+  check('  ... aucune erreur native', !events.some((e) => e[0] === 'error'), events);
 }
 
 if (phase === 'badauth') {

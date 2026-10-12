@@ -9,6 +9,9 @@ local.properties
 *.jks
 captures/
 .cxx/
+# bibliotheque du coeur Go produite par gomobile (CI)
+app/libs/labocore.aar
+app/libs/labocore-sources.jar
 
 # IDE
 .idea/

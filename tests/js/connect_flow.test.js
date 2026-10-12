@@ -330,3 +330,16 @@ test('les autres erreurs du natif ne sont jamais relancées automatiquement', as
   assert.equal(a.ev('VPN.mcRetries'), 0);
   assert.equal(a.timers.filter((x) => x.ms === 9000).length, 0);
 });
+
+test('moteur SSH : la commande ET le profil structuré émis par PRO sont remis tels quels au natif', async () => {
+  const profile = { host: '203.0.113.10', port: 2222, username: 'fs-u7', private_key_openssh: 'CLE-DE-TEST', host_key: 'ssh-ed25519 AAAA' };
+  const a = app({ engine: { integrated: true, protocols: ['udp', 'ssh'] }, apiBase: 'https://panel.example.tld' },
+    () => okResponse({ configs: [{ protocol: 'ssh', remark: 'VIP - ssh', uri: 'ssh -p 2222 fs-u7@203.0.113.10', format: 'ssh-command', profile }] }));
+  await connect(a);
+  assert.equal(a.calls.native.startVpn.length, 1);
+  const sent = JSON.parse(a.calls.native.startVpn[0]);
+  assert.equal(sent.proto, 'ssh');
+  assert.equal(sent.format, 'ssh-command');
+  assert.deepEqual(sent.profile, profile);
+  assert.equal(a.state(), 'connecting', 'jamais « connecté » avant la réponse du natif');
+});

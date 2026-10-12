@@ -151,3 +151,30 @@ test("connect : aucun secret dans les résultats d'erreur", () => {
     ConnectContract.parse(ok(success({ access: { state: 'expired' } })))];
   for(const r of all) assert.doesNotMatch(JSON.stringify(r), /secret|mot-de-passe/);
 });
+
+// ─── Moteurs du cœur Go : formats non-URI émis par LABOSURF PRO ───
+test('connect : SSH (commande + profil structuré) accepté, profil transmis tel quel', () => {
+  const profile = { type: 'ssh', host: '203.0.113.10', port: 2222, username: 'fs-u1', auth: 'publickey', private_key_openssh: 'CLE-DE-TEST', host_key: 'ssh-ed25519 AAAATEST' };
+  const r = ConnectContract.parse(ok(success({ configs: [{ protocol: 'ssh', uri: 'ssh fs-u1@203.0.113.10 -p 2222', format: 'ssh-command', profile }] })));
+  assert.equal(r.ok, true);
+  assert.equal(r.config.protocol, 'ssh');
+  assert.equal(r.config.scheme, 'ssh-command');
+  assert.deepEqual(r.config.profile, profile);
+});
+
+test('connect : commande SSH SANS profil refusée (une commande seule ne suffit pas)', () => {
+  const r = ConnectContract.parse(ok(success({ configs: [{ protocol: 'ssh', uri: 'ssh fs-u1@203.0.113.10 -p 2222', format: 'ssh-command' }] })));
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 'empty_config');
+});
+
+test('connect : WireGuard (fichier wg-quick) accepté ; texte inconnu sans format reconnu refusé', () => {
+  const conf = '[Interface]\nPrivateKey = TEST\nAddress = 10.66.0.2/32\n\n[Peer]\nPublicKey = TEST\nEndpoint = 203.0.113.10:51820\n';
+  const r = ConnectContract.parse(ok(success({ configs: [{ protocol: 'wireguard', uri: conf, format: 'wireguard-conf' }] })));
+  assert.equal(r.ok, true);
+  assert.equal(r.config.uri, conf);
+  assert.equal(r.config.profile, null);
+  const bad = ConnectContract.parse(ok(success({ configs: [{ protocol: 'x', uri: 'pas une uri', format: 'inconnu' }] })));
+  assert.equal(bad.ok, false);
+  assert.equal(bad.code, 'bad_uri');
+});
