@@ -172,7 +172,7 @@ test('connect : WireGuard (fichier wg-quick) accepté ; texte inconnu sans forma
   const conf = '[Interface]\nPrivateKey = TEST\nAddress = 10.66.0.2/32\n\n[Peer]\nPublicKey = TEST\nEndpoint = 203.0.113.10:51820\n';
   const r = ConnectContract.parse(ok(success({ configs: [{ protocol: 'wireguard', uri: conf, format: 'wireguard-conf' }] })));
   assert.equal(r.ok, true);
-  assert.equal(r.config.uri, conf);
+  assert.equal(r.config.uri, conf.trim(), "contenu transmis tel quel (espaces de bord retirés, sans effet pour wg-quick)");
   assert.equal(r.config.profile, null);
   const bad = ConnectContract.parse(ok(success({ configs: [{ protocol: 'x', uri: 'pas une uri', format: 'inconnu' }] })));
   assert.equal(bad.ok, false);
