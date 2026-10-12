@@ -100,6 +100,7 @@ func Stats() string {
 
 func stopLocked() {
 	if instance != nil {
+		_ = closeTunStack(instance) // la pile TUN d'Xray n'est pas fermée par instance.Close (voir tunstop.go)
 		_ = instance.Close()
 		instance = nil
 	}
