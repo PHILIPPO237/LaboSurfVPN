@@ -212,3 +212,68 @@ test('déconnexion du compte : jeton et durée de session effacés, tunnel coup�
   assert.equal(a.ev('authExpiresAt'), null);
   assert.equal(a.calls.native.stopVpn.length, 1, 'un tunnel ne reste jamais actif sans compte');
 });
+
+// ─── Relecture automatique du compte affiché (constat du test réel 1.2.5) ───
+// La consommation restait figée sur la lecture faite à la connexion, alors que PRO continue de mesurer.
+// Tant que l'écran Profil est ouvert, chaque cycle de sondage reprend la VALEUR RÉELLE du panel
+// (/api/user/me) ; une donnée absente reste « indisponible », une erreur n'efface jamais la valeur connue.
+const settle = async () => { for(let i = 0; i < 4; i++) await new Promise((r) => setImmediate(r)); };
+function pollingApp(state){
+  return loadApp({
+    native: { engine: { integrated: false, protocols: [] }, apiBase: 'https://panel.example.tld' },
+    respond: (p) => {
+      if(p === '/api/user/me'){
+        return state.fail
+          ? { ok: false, status: 500, data: null }
+          : { ok: true, status: 200, data: Object.assign({ type: 'VIP', username: 'alice' }, state.me) };
+      }
+      return { ok: true, status: 200, data: {} };   // abonnement, messages, annonces : sans objet ici
+    },
+  });
+}
+const meCalls = (a) => a.calls.apiFetch.filter((c) => c.path === '/api/user/me').length;
+
+test('profil ouvert : consommation relue à chaque cycle de sondage (jamais figée sur la connexion)', async () => {
+  const state = { me: { usage_available: true, quota_used_gb: 0.05, usage_quota_gb: null } };
+  const a = pollingApp(state);
+  a.signIn();
+  a.ev("currentScreen = 'account'");
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(txt(a, 'passQVal'), a.ev('fmtUsage(0.05)'), 'valeur du panel à l\'ouverture du Profil');
+  state.me = { usage_available: true, quota_used_gb: 1.5, usage_quota_gb: null };   // le tunnel a tourné entre-temps
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(txt(a, 'passQVal'), a.ev('fmtUsage(1.5)'), 'la valeur suit la mesure : elle n\'est pas figée');
+  assert.equal(meCalls(a), 2, 'exactement une relecture par cycle');
+});
+
+test('profil ouvert : mesure retirée = « Indisponible », panneau injoignable = valeur conservée (jamais 0)', async () => {
+  const state = { me: { usage_available: true, quota_used_gb: 0.5, usage_quota_gb: null } };
+  const a = pollingApp(state);
+  a.signIn();
+  a.ev("currentScreen = 'account'");
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(txt(a, 'passQVal'), a.ev('fmtUsage(0.5)'));
+  state.me = { usage_available: false, usage_reason: 'engine_not_metered', quota_used_gb: 0, usage_quota_gb: null };
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(txt(a, 'passQVal'), 'Indisponible', 'des chiffres à l\'appui ne valent jamais « 0 »');
+  state.me = { usage_available: true, quota_used_gb: 0.5, usage_quota_gb: null };
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(txt(a, 'passQVal'), a.ev('fmtUsage(0.5)'));
+  state.fail = true;
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(txt(a, 'passQVal'), a.ev('fmtUsage(0.5)'), 'un échec n\'efface ni ne remplace la valeur connue');
+  assert.equal(txt(a, 'accSyncTime'), a.ev("t('acc.syncFailed')"), 'l\'échec est signalé, pas masqué');
+});
+
+test('hors écran Profil (ou sans session) : le sondage ne re-pollle pas le compte', async () => {
+  const state = { me: { usage_available: true, quota_used_gb: 0.05, usage_quota_gb: null } };
+  const a = pollingApp(state);
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(meCalls(a), 0, 'aucune requête de compte sans session');
+  a.signIn();
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(meCalls(a), 0, 'compte non affiché : pas de relecture inutile');
+  a.ev("currentScreen = 'account'");
+  a.ev('pollAccountSignals()'); await settle();
+  assert.equal(meCalls(a), 1, 'relecture déclenchée à l\'ouverture du Profil');
+});

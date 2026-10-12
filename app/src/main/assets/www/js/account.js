@@ -278,6 +278,19 @@ async function loadAndShowAccount(fallbackName){
   loadServices();
 }
 
+// Relecture du compte réel (me + abonnement) : SEULE source de la consommation affichée (contrat du panel, aucune
+// valeur calculée ici). En cas d'échec, la dernière valeur connue est conservée — inconnu = indisponible, jamais 0.
+async function reloadAccountCard(){
+  try{
+    const [meRes, subRes] = await Promise.all([apiFetch('/api/user/me'), apiFetch('/api/user/subscription')]);
+    if(!meRes.ok){ setSyncState('failed'); return; }
+    renderAccountCard(accountFromApi(meRes.data || {}, subRes.ok ? subRes.data || {} : {}, $('accNameTxt').textContent));
+    setSyncState('now');
+  }catch(e){
+    setSyncState('down');   // panneau injoignable : on n'efface pas la valeur affichée
+  }
+}
+
 async function afterAuth(username){
   await loadAndShowAccount(username);
   if(!authToken) return;
@@ -660,12 +673,7 @@ Actions.syncAccount = async () => {
   setBusy(btn, true);
   setSyncState('syncing');
   try{
-    const [meRes, subRes] = await Promise.all([apiFetch('/api/user/me'), apiFetch('/api/user/subscription')]);
-    if(!meRes.ok){ setSyncState('failed'); return; }
-    renderAccountCard(accountFromApi(meRes.data || {}, subRes.ok ? subRes.data || {} : {}, $('accNameTxt').textContent));
-    setSyncState('now');
-  }catch(e){
-    setSyncState('down');
+    await reloadAccountCard();
   }finally{
     setBusy(btn, false);
   }
@@ -925,7 +933,13 @@ function updateAccountBadge(){
   rowBadge.textContent = cnt(total);
 }
 
-function pollAccountSignals(){ pollUnreadMessages(); loadAnnouncements(false); }
+// Pastilles (messages + annonces) et, si le Profil est à l'écran, consommation/abonnement : sans cette
+// relecture, la consommation restait figée sur la lecture faite à la connexion alors que PRO continue de mesurer.
+function pollAccountSignals(){
+  pollUnreadMessages();
+  loadAnnouncements(false);
+  if(currentScreen === 'account' && authToken) reloadAccountCard();   // écran Profil ouvert (aussi à son ouverture)
+}
 
 document.addEventListener('langchange', () => {
   if(Account.last) renderAccountCard(Account.last);

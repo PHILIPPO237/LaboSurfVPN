@@ -56,6 +56,18 @@ test('une session déjà ouverte n\'est jamais remplacée par un lien', async ()
   assert.equal(a.ev('authToken'), 'jeton-existant');
 });
 
+// Scénario du test 7 du protocole téléphonique 1.2.5 : l'application est ouverte sur le compte A, le panel
+// est ouvert sur le compte B et crée un code d'échange. Le lien qui arrive ne doit RIEN remplacer.
+test('séance A/B : un code d\'un autre compte n\'écrase ni le jeton ni le compte affiché', async () => {
+  const a = app({ exchangeCode: CODE });
+  a.ev("authToken = 'jeton-A'; authExpiresAt = null; Account.last = { username: 'A', plan: 'vip' };");
+  a.ev('window.LaboOnExchange()'); await flush();
+  assert.equal(a.calls.apiFetch.length, 0, 'aucun redeem : le panel n\'est même pas interrogé');
+  assert.equal(a.ev('authToken'), 'jeton-A', 'session A intacte');
+  assert.equal(a.ev('Account.last.username'), 'A', 'compte affiché inchangé');
+  assert.equal(a.calls.native.exchangeConsumed, 1, 'le code est retiré du pont natif : usage unique avorté');
+});
+
 test('code refusé par le panel (expiré, déjà utilisé) : message, aucune session', async () => {
   const a = app({ exchangeCode: CODE }, () => ({ ok: false, status: 400, data: { status: 'error', code: 'invalid_code', message: 'Lien de connexion invalide ou expiré.' } }));
   a.ev('window.LaboOnExchange()'); await flush();
