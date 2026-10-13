@@ -86,8 +86,7 @@ function loadApp(opts){
     }
     // « Rester connecté » (MainActivity.NativeBridge -> SessionVault) : présent seulement si n.vault est fourni
     if(n.vault){
-      sandbox.LaboSurfNative.sessionSave = (token, exp) => { n.vault.stored = token + '
-' + Math.floor(exp); n.vault.saves = (n.vault.saves || 0) + 1; return true; };
+      sandbox.LaboSurfNative.sessionSave = (token, exp) => { n.vault.stored = token + String.fromCharCode(10) + Math.floor(exp); n.vault.saves = (n.vault.saves || 0) + 1; return true; };
       sandbox.LaboSurfNative.sessionLoad = () => n.vault.stored || '';
       sandbox.LaboSurfNative.sessionClear = () => { n.vault.stored = ''; n.vault.clears = (n.vault.clears || 0) + 1; };
     }
