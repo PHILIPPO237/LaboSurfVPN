@@ -29,8 +29,6 @@ import (
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/features/stats"
 	"github.com/xtls/xray-core/infra/conf/serial"
-
-	_ "github.com/xtls/xray-core/main/distro/all" // enregistre tous les protocoles et transports d'Xray
 )
 
 // Version du cœur (affichée par l'application).

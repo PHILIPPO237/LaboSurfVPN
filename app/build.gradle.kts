@@ -66,6 +66,15 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // Une seule APK universelle (armeabi-v7a, arm64-v8a, x86_64). Les bibliothèques natives du cœur Go (~33 Mo
+    // par architecture) sont stockées COMPRESSÉES dans l'APK (≈ 3 fois plus petites à télécharger) ; Android
+    // n'extrait à l'installation que celle de l'appareil.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {

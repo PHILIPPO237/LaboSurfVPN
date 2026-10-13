@@ -120,6 +120,10 @@ jobs:
           for f in assets/www/index.html assets/www/js/contract.js assets/www/js/vpn.js assets/www/js/api.js assets/www/js/lang/fr.js assets/www/js/lang/en.js classes.dex lib/arm64-v8a/libgojni.so lib/armeabi-v7a/libgojni.so; do
             grep -q " $f\$" contenu.txt || { echo "::error::absent de l'APK : $f"; exit 1; }
           done
+          # Bibliotheques natives compressees (APK universelle de taille raisonnable)
+          unzip -v "$APK" | grep "libgojni.so" | tee natives.txt
+          if grep "libgojni.so" natives.txt | grep -q " Stored "; then echo "::error::bibliotheque native non compressee dans l'APK"; exit 1; fi
+          SIZE=$(stat -c %s "$APK"); [ "$SIZE" -lt 60000000 ] || { echo "::error::APK trop lourde : $SIZE octets"; exit 1; }
           if grep -q "assets/www/preview_" contenu.txt; then echo "::error::anciennes maquettes (faux serveurs/pings) embarquees"; exit 1; fi
           rm -rf dex && mkdir dex && unzip -q -o "$APK" 'classes*.dex' -d dex
           grep -a -q "labosurf/LaboVpnService;" dex/*.dex || { echo "::error::LaboVpnService absent du bytecode"; exit 1; }
