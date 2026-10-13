@@ -31,10 +31,10 @@ test('couleur : seul « #rrggbb » est accepté', () => {
 
 test('priorité : profil du Panel, puis offre premium, puis identité LABOSURF', () => {
   const { PT } = load();
-  assert.deepEqual(PT.resolve({ accent: '#4fd1ff' }, 'vip'), { hex: '#4fd1ff', source: 'profile' });
-  assert.deepEqual(PT.resolve({ accent: '' }, 'vip'), { hex: '#d8b45a', source: 'plan' });
-  assert.deepEqual(PT.resolve({ accent: 'invalide' }, 'gratuit'), { hex: '', source: 'default' });
-  assert.deepEqual(PT.resolve(null, ''), { hex: '', source: 'default' });
+  assert.deepEqual({ ...PT.resolve({ accent: '#4fd1ff' }, 'vip') }, { hex: '#4fd1ff', source: 'profile' });
+  assert.deepEqual({ ...PT.resolve({ accent: '' }, 'vip') }, { hex: '#d8b45a', source: 'plan' });
+  assert.deepEqual({ ...PT.resolve({ accent: 'invalide' }, 'gratuit') }, { hex: '', source: 'default' });
+  assert.deepEqual({ ...PT.resolve(null, '') }, { hex: '', source: 'default' });
 });
 
 test('lisibilité : contraste >= 3:1 sur le fond des deux thèmes, texte noir ou blanc selon le meilleur contraste', () => {
