@@ -508,5 +508,3 @@
 .pc-go{ width:16px; height:16px; flex:none; color:var(--text-faint); }
 .tile-k .ic{ color:var(--accent); }
 
-/* Barre basse (téléphone en portrait, components.css) : plus de rail à longer, la bannière reprend la largeur normale */
-@media (max-width:599px) and (min-height:560px) and (orientation:portrait){ .home-foot, .home-foot.is-inset{ margin-left:0; } }

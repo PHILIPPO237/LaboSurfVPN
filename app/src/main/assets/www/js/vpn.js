@@ -185,10 +185,7 @@ function fitHomeScreen(){
   }
   // Le rail n'occupe que la partie haute ; si l'écran est trop court pour qu'il ne touche pas la bannière, elle reste à côté de lui
   const rail = $('rail');
-  // barre basse (téléphone en portrait, components.css) : le rail ne longe plus la bannière, rien à décaler
-  const railIsBar = rail && getComputedStyle(rail).flexDirection === 'row';
-  if(foot && railIsBar) foot.classList.remove('is-inset');
-  if(foot && banner && rail && !railIsBar){
+  if(foot && banner && rail){
     const app = getComputedStyle($('app')), num = (v, d) => parseFloat(app.getPropertyValue(v)) || d;
     const n = num('--rail-n', 4), btn = num('--rail-btn', 48), gap = num('--rail-gap', 8);
     const railBottom = rail.getBoundingClientRect().top + 5 + n * btn + (n - 1) * gap + 6;   // rail replié
