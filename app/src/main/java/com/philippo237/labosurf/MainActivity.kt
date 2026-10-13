@@ -387,6 +387,16 @@ class MainActivity : AppCompatActivity() {
             return label.trim().take(60)
         }
 
+        /** « Rester connecté » : session du compte gardée chiffrée (Keystore), jamais le mot de passe. Voir SessionVault. */
+        @JavascriptInterface
+        fun sessionSave(token: String, expiresAtMs: Double): Boolean = SessionVault.save(applicationContext, token, expiresAtMs)
+
+        @JavascriptInterface
+        fun sessionLoad(): String = SessionVault.load(applicationContext)
+
+        @JavascriptInterface
+        fun sessionClear() = SessionVault.clear(applicationContext)
+
         @JavascriptInterface
         fun getDeviceId(): String {
             // Identifiant d'appareil stable (survit a la desinstallation/reinstallation

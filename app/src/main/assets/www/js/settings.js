@@ -6,6 +6,9 @@ function renderSettings(){
   document.querySelectorAll('#segLang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === I18N.lang)));
   document.querySelectorAll('#segTheme button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === Theme.get())));
   $('swExpiry').setAttribute('aria-checked', String(store.get('expiryReminders', true)));
+  // « Rester connecté » : seulement dans l'application native dont le pont sait garder la session chiffrée
+  $('setRemember').hidden = !RememberMe.supported();
+  $('swRemember').setAttribute('aria-checked', String(store.get('rememberMe', true) !== false));
 
   // Réglages VPN Android : seulement dans l'app native, et si le pont l'expose
   $('setConnection').hidden = !(isNativeApp() && typeof window.LaboSurfNative.openVpnSettings === 'function');

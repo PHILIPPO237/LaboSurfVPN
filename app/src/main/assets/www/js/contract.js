@@ -178,6 +178,9 @@ const ProfileOptions = (function(){
         country: str(o.country),
         city: str(o.city),
         health: health === 'available' ? 'available' : 'unknown',   // le panel n'envoie que available | unknown
+        // thème du profil défini dans le Panel : « #rrggbb » seulement, sinon vide (identité LABOSURF par défaut)
+        accent: o.theme && typeof o.theme === 'object' && typeof o.theme.accent === 'string' && /^#[0-9a-f]{6}$/i.test(o.theme.accent.trim())
+          ? o.theme.accent.trim().toLowerCase() : '',
       });
     }
     return { state: 'ready', options: options };

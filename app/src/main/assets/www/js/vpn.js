@@ -90,6 +90,24 @@ function renderHomeAction(ready){
   $('homeCtaGuide').hidden = !cfg.guide;
 }
 
+// Puce « ce qui sera utilisé » sous l'état : profil choisi (avec son accent) ou serveur retenu, tels que fournis par le panel.
+// Masquée sans compte, pendant le chargement, et une fois connecté (la carte de session prend le relais).
+function renderHomeProfile(st, ready){
+  const chip = $('homeProfile');
+  if(!chip) return;
+  const profile = typeof getSelectedProfile === 'function' ? getSelectedProfile() : null;
+  const server = !profile && typeof getSelectedServer === 'function' && Servers.state === 'ready' ? getSelectedServer() : null;
+  const show = !!authToken && (st === 'off' || st === 'error') && ready !== 'login' && ready !== 'loading' && !!(profile || server);
+  chip.hidden = !show;
+  if(!show) return;
+  chip.dataset.kind = profile ? 'profile' : 'server';
+  $('homeProfileKind').textContent = t(profile ? 'home.chip.profile' : 'home.chip.server');
+  $('homeProfileName').textContent = profile
+    ? [profileDisplayName(profile), profile.serverName].filter(Boolean).join(' · ')
+    : serverDisplayName(server);
+  chip.setAttribute('aria-label', $('homeProfileKind').textContent + ' : ' + $('homeProfileName').textContent + '. ' + t('home.chip.change'));
+}
+
 let lastStatusKey = '';
 function renderHome(){
   const st = VPN.state;
@@ -99,7 +117,9 @@ function renderHome(){
   $('home').dataset.ready = ready;
   const statusKey = st === 'off' ? 'home.ready.' + ready : 'home.state.' + st;
   $('statusTitle').textContent = t(statusKey + '.title');
-  $('statusSub').textContent = st === 'error' ? '' : t(st === 'connecting' && VPN.mcRetries > 0 ? 'home.state.connecting.waitOld' : statusKey + '.sub');
+  // sous-titre « connecté » : la mention « non chiffré » ne vaut que pour le moteur UDP LABOSURF (les autres moteurs dépendent de leur variante)
+  const onSub = st === 'on' && VPN.session && VPN.session.protocol === 'udp' ? 'home.state.on.subUdp' : statusKey + '.sub';
+  $('statusSub').textContent = st === 'error' ? '' : t(st === 'connecting' && VPN.mcRetries > 0 ? 'home.state.connecting.waitOld' : onSub);
   if(statusKey !== lastStatusKey){   // petit fondu à chaque vrai changement d'état (jamais à un simple redessin)
     lastStatusKey = statusKey;
     const box = $('statusTitle').parentNode;
@@ -110,6 +130,7 @@ function renderHome(){
   const live = (st === 'on' || st === 'disconnecting') && !!VPN.session;
   $('connMeta').hidden = !live;
   if(live) $('connServer').textContent = VPN.session.server;
+  renderHomeProfile(st, ready);
   $('homeError').hidden = st !== 'error';
   $('homeErrorText').textContent = VPN.errorSpec ? errorText(VPN.errorSpec) : '';
 
@@ -164,7 +185,10 @@ function fitHomeScreen(){
   }
   // Le rail n'occupe que la partie haute ; si l'écran est trop court pour qu'il ne touche pas la bannière, elle reste à côté de lui
   const rail = $('rail');
-  if(foot && banner && rail){
+  // barre basse (téléphone en portrait, components.css) : le rail ne longe plus la bannière, rien à décaler
+  const railIsBar = rail && getComputedStyle(rail).flexDirection === 'row';
+  if(foot && railIsBar) foot.classList.remove('is-inset');
+  if(foot && banner && rail && !railIsBar){
     const app = getComputedStyle($('app')), num = (v, d) => parseFloat(app.getPropertyValue(v)) || d;
     const n = num('--rail-n', 4), btn = num('--rail-btn', 48), gap = num('--rail-gap', 8);
     const railBottom = rail.getBoundingClientRect().top + 5 + n * btn + (n - 1) * gap + 6;   // rail replié
@@ -235,7 +259,7 @@ function stopClock(){ clearInterval(VPN.clock); VPN.clock = null; }
 // ─── Transitions ───
 function markConnected(){
   clearTimeout(VPN.watchdog);
-  VPN.session = { server: VPN.target, startedAt: Date.now() };
+  VPN.session = { server: VPN.target, startedAt: Date.now(), protocol: VPN.protocol || null };
   resetStats(); armStatsTimer(STATS_FIRST_WAIT_MS);
   setVpnState('on');
   startClock();
@@ -346,6 +370,7 @@ async function connectVpn(){
   VPN.accessExpiresAt = parsed.access.expiresAt;
   VPN.serverId = parsed.serverId;
   VPN.health = parsed.health;
+  VPN.protocol = parsed.config.protocol;   // moteur réellement utilisé (textes d'état seulement ; jamais affiché comme nom de protocole)
   if(parsed.health === 'unknown') logEvent('info', 'log.healthUnknown');   // la santé du service n'a pas pu être vérifiée : dit tel quel
 
   if(isNativeApp()){

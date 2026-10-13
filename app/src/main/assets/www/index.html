@@ -19,6 +19,8 @@
 <link rel="stylesheet" href="css/screens.css">
 <!-- Appliqué avant le premier rendu pour éviter tout flash de thème -->
 <script src="js/theme.js"></script>
+<!-- Accent du profil (couche secondaire de l'identité LABOSURF) : posé avant le premier rendu, voir js/profile-theme.js -->
+<script src="js/profile-theme.js"></script>
 </head>
 <body>
 
@@ -154,6 +156,13 @@
             <div class="conn-since"><span data-i18n="home.since"></span> <span class="timer" id="timer">00:00:00</span></div>
             <div class="conn-server"><span data-i18n="home.serverLbl"></span> <b id="connServer"></b></div>
           </div>
+          <!-- Profil / serveur qui sera utilisé : uniquement la sélection réelle (liste du panel), jamais un nom inventé.
+               Couleur : accent du profil (js/profile-theme.js), sinon identité LABOSURF. -->
+          <button class="profile-chip" id="homeProfile" type="button" data-action="nav" data-screen="servers" hidden>
+            <span class="pc-dot" aria-hidden="true"></span>
+            <span class="pc-main"><span class="pc-k" id="homeProfileKind"></span><b id="homeProfileName"></b></span>
+            <svg class="pc-go" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
         </div>
         <div class="alert alert-danger" id="homeError" role="alert" hidden>
           <svg class="ic" aria-hidden="true"><use href="#i-alert-circle"/></svg>
@@ -214,8 +223,9 @@
                   <li><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span data-i18n="banner.perk.community"></span></li>
                 </ul>
                 <div class="bd-actions">
-                  <a class="btn btn-primary btn-sm" href="https://t.me/laboratoire_du_free_surf" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-telegram"/></svg><span data-i18n="banner.channel"></span></a>
-                  <a class="btn btn-secondary btn-sm" href="https://t.me/laboratoire_du_free_surf_chat" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span data-i18n="banner.group"></span></a>
+                  <!-- Communauté LABOSURF = Live Chat du Laboratoire (salons officiel / communauté), plus Telegram -->
+                  <button class="btn btn-primary btn-sm" type="button" data-action="openCommunity"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span data-i18n="banner.community"></span></button>
+                  <button class="btn btn-secondary btn-sm" type="button" data-action="openGuide" data-topic="start"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span data-i18n="banner.help"></span></button>
                 </div>
               </div>
               <div id="homeBannerAd" hidden>
@@ -531,8 +541,8 @@
         <p class="hint" style="margin-bottom:0" data-i18n="set.joinText"></p>
       </div>
       <div class="list">
-        <a class="row" href="https://t.me/laboratoire_du_free_surf_chat" target="_blank" rel="noopener"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-users"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.group"></div><div class="row-sub" data-i18n="set.groupSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
-        <a class="row" href="https://t.me/laboratoire_du_free_surf" target="_blank" rel="noopener"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-megaphone"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.channel"></div><div class="row-sub" data-i18n="set.channelSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+        <button class="row row-primary" type="button" data-action="openCommunity"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-users"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.labCommunity"></div><div class="row-sub" data-i18n="set.labCommunitySub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+        <button class="row" type="button" data-action="openSupport"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-message"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.support"></div><div class="row-sub" data-i18n="set.supportSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <a class="row" href="https://t.me/Philippo237" target="_blank" rel="noopener"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-user"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.developer"></div><div class="row-sub" data-i18n="set.developerSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
       </div>
     </section>
@@ -684,6 +694,17 @@
           <span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-bell"/></svg></span>
           <div class="row-main"><div class="row-title" data-i18n="set.notifExpiry"></div><div class="row-sub" data-i18n="set.notifExpirySub"></div></div>
           <button class="switch" id="swExpiry" type="button" role="switch" aria-checked="true" data-action="toggleExpiryReminders" data-i18n-attr="aria-label:set.notifExpiry"></button>
+        </div>
+      </div>
+
+      <div id="setRemember" hidden>
+        <div class="section-title" data-i18n="set.accountSection"></div>
+        <div class="list">
+          <div class="row">
+            <span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-user"/></svg></span>
+            <div class="row-main"><div class="row-title" data-i18n="set.remember"></div><div class="row-sub" data-i18n="set.rememberSub"></div></div>
+            <button class="switch" id="swRemember" type="button" role="switch" aria-checked="true" data-action="toggleRemember" data-i18n-attr="aria-label:set.remember"></button>
+          </div>
         </div>
       </div>
 

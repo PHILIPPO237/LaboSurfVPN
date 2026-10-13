@@ -14,7 +14,7 @@
     'acc.menu.prefs': '⚙️', 'acc.menu.panel': '🌐', 'acc.menu.help': '💡', 'acc.menu.reseller': '🤝',
     'set.help': '💡', 'assistant.title': '🤖', 'set.replayIntro': '🎬',
     'set.language': '🌐', 'set.theme': '🎨', 'set.notifExpiry': '⏰', 'set.vpnSystem': '🛡️',
-    'set.group': '👥', 'set.channel': '📢', 'set.developer': '💻',
+    'set.group': '👥', 'set.channel': '📢', 'set.developer': '💻', 'set.labCommunity': '🌍', 'set.remember': '🔑', 'set.support': '💬',
     'set.version': '🏷️', 'set.terms': '📄', 'set.privacy': '🔒',
     'assistant.cat.connect': '🔌', 'assistant.cat.access': '🎫', 'assistant.cat.trouble': '🛠️',
     'assistant.cat.server': '🖥️', 'assistant.cat.app': '📱',

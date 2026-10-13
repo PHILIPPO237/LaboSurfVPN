@@ -16,12 +16,14 @@ I18N.register('fr', {
   // Accueil
   'home.retry': 'Réessayer', 'home.btn.login': "S'IDENTIFIER", 'home.btn.start': 'START', 'home.btn.stop': 'STOP', 'home.btn.busy': '…',
   'home.btn.on': 'CONNECTÉ', 'home.btn.connecting': 'CONNEXION…', 'home.btn.disconnecting': 'DÉCONNEXION…',
-  'home.since': 'Connecté depuis', 'home.serverLbl': 'Serveur :', 'banner.sub': "Rejoins-nous sur Telegram.",
+  'home.since': 'Connecté depuis', 'home.serverLbl': 'Serveur :', 'banner.sub': "Rejoins la communauté LABOSURF.",
 
   'home.stats.loading': 'Statistiques en cours de chargement…', 'home.stats.unavailable': 'Statistiques indisponibles pour le moment', 'home.server': 'Serveur', 'home.received': 'Reçu', 'home.sent': 'Envoyé',
   'home.state.off.title': 'Déconnecté', 'home.state.off.sub': 'Appuie sur le bouton pour te connecter au serveur',
   'home.state.connecting.title': 'Connexion en cours…', 'home.state.connecting.sub': 'Établissement du tunnel',
-  'home.state.on.title': 'Connecté', 'home.state.on.sub': 'Ton trafic passe par le serveur (tunnel non chiffré)',
+  'home.state.on.title': 'Connecté', 'home.state.on.sub': 'Ton trafic passe par le serveur choisi',
+  'home.state.on.subUdp': 'Ton trafic passe par le serveur (tunnel UDP non chiffré)',
+  'home.chip.profile': 'Profil', 'home.chip.server': 'Serveur', 'home.chip.change': 'Toucher pour changer',
   'home.state.disconnecting.title': 'Déconnexion…', 'home.state.disconnecting.sub': 'Fermeture du tunnel',
   'home.state.error.title': 'Échec de la connexion', 'home.state.error.sub': '',
   'home.power.connect': 'Se connecter', 'home.power.disconnect': 'Se déconnecter', 'home.power.wait': 'Veuillez patienter',
@@ -31,7 +33,7 @@ I18N.register('fr', {
   'home.server.error': 'Serveurs indisponibles', 'home.server.errorSub': 'Impossible de charger la liste',
   'banner.tagline': 'Fournisseur officiel du Free-Surf', 'banner.official': 'Officiel', 'banner.channel': 'Canal',
   'banner.perk.news': 'Annonces', 'banner.perk.help': 'Aide', 'banner.perk.community': 'Communauté',
-  'banner.group': 'Groupe', 'banner.more': 'En savoir plus',
+  'banner.group': 'Groupe', 'banner.more': 'En savoir plus', 'banner.community': 'Communauté', 'banner.help': 'Aide',
 
   // Serveurs
   'srv.title': 'Serveurs', 'srv.refresh': 'Actualiser la liste',
@@ -128,7 +130,7 @@ I18N.register('fr', {
   'legal.terms.mod.t': "Modifications",
   'legal.terms.mod.p': "Ces conditions peuvent évoluer avec l'application. La version affichée ici est celle en vigueur.",
   'legal.terms.contact.t': "Contact",
-  'legal.terms.contact.p': "Pour toute question, écris à ton revendeur ou à l'administrateur depuis Mon profil → Messages, ou rejoins la communauté officielle sur Telegram (Réglages → Communauté).",
+  'legal.terms.contact.p': "Pour toute question, écris à ton revendeur ou à l'administrateur depuis Mon profil → Messages, ou rejoins la communauté LABOSURF (Réglages → Communauté).",
   'legal.privacy.title': "Politique de confidentialité",
   'legal.privacy.intro': "Cette politique explique quelles informations Labo Surf utilise, pourquoi, et où elles sont stockées.",
   'legal.privacy.who.t': "Qui est responsable",
@@ -299,6 +301,10 @@ I18N.register('fr', {
   // Rail & historique
   'nav.community': 'Communauté', 'nav.shortcuts': 'Raccourcis', 'nav.shortcutsShow': 'Afficher les raccourcis', 'nav.shortcutsHide': 'Masquer les raccourcis',
   'set.joinTitle': 'Rejoins la communauté', 'set.joinText': "Astuces, nouveaux serveurs et retours d'expérience entre membres.",
+  'set.accountSection': 'Compte', 'set.remember': 'Rester connecté',
+  'set.rememberSub': "Plus besoin de ressaisir tes identifiants : ta session (jamais ton mot de passe) est gardée chiffrée sur ce téléphone, 30 jours au plus. « Se déconnecter » l'efface.",
+  'set.labCommunity': 'Communauté LABOSURF', 'set.labCommunitySub': "Salons officiel et communauté, en direct sur le Laboratoire",
+  'set.support': 'Messages et support', 'set.supportSub': "Écrire à ton revendeur ou à l'administrateur",
   'act.connState': 'État de la connexion', 'act.connInfo': 'Informations de connexion', 'act.duration': 'Durée',
   'pill.off': 'Hors tunnel', 'pill.connecting': 'Connexion…', 'pill.on': 'Tunnel actif', 'pill.disconnecting': 'Déconnexion…', 'pill.error': 'Hors tunnel',
 
@@ -442,7 +448,7 @@ I18N.register('fr', {
   'set.helpSection': "Aide", 'set.assistantSub': "Réponses aux questions courantes",
   'set.replayIntro': "Revoir la présentation", 'set.replayIntroSub': "Les 4 écrans de bienvenue",
   'set.notifications': "Notifications", 'set.communitySection': "Communauté",
-  'set.communitySub': "Telegram : groupe, canal, développeur", 'guide.tabGuide': "Guide",
+  'set.communitySub': "Live Chat LABOSURF, support, développeur", 'guide.tabGuide': "Guide",
   'guide.tabAssistant': "Assistant", 'guide.flow.1': "Se connecter",
   'guide.flow.2': "Choisir", 'guide.flow.3': "START",
   'guide.flow.4': "Voir l'état", 'guide.service.title': "Choisir un service",

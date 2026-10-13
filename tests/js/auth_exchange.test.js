@@ -26,7 +26,7 @@ test('un code reçu par lien du panel ouvre la session de l\'application, sans m
   a.ev('window.LaboOnExchange()'); await flush(); await flush();
   const call = a.calls.apiFetch.find((c) => c.path === '/api/auth/exchange/redeem');
   assert.ok(call, 'échange demandé au panel');
-  assert.deepEqual(JSON.parse(call.options.body), { code: CODE, target: 'app' });
+  assert.deepEqual(JSON.parse(call.options.body), { code: CODE, target: 'app', remember: false });   // pont sans coffre de session : rien demandé
   assert.equal(call.options.device, true, 'identifiant d\'installation envoyé : la session apparaît dans « Mes appareils »');
   assert.equal(a.ev('authToken'), 'jeton-app');
   assert.deepEqual(a.auth, ['vera']);

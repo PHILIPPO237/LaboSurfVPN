@@ -440,3 +440,73 @@
 :root:not([data-screen="home"]) .bn-op{ animation-play-state:paused; }
 .banner-card:not(.banner-style-default) .bn-op{ display:none; }   /* seulement dans la bannière par défaut */
 @media (prefers-reduced-motion: reduce){ .bn-op{ display:none; } }
+
+/* ==========================================================================================================
+   Accueil — lisibilité de l'état et identité du profil (UX 2026-10)
+   L'état se lit sans lire : icône + couleur + libellé, tous issus de l'état RÉEL (VPN.state, js/vpn.js).
+   ========================================================================================================== */
+.status-title{
+  --st-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M12 3v8'/%3E%3Cpath d='M6.4 6.6a8 8 0 1 0 11.2 0'/%3E%3C/svg%3E");
+  padding:6px 14px 6px 11px; border-radius:var(--r-pill); background:var(--surface-2); border:1px solid var(--border);
+  font-size:var(--fs-md); letter-spacing:.01em; transition:color .3s, background .3s, border-color .3s;
+}
+.status-title::before{
+  width:16px; height:16px; border-radius:0; box-shadow:none; background:currentColor; animation:none;
+  -webkit-mask:var(--st-ico) center/contain no-repeat; mask:var(--st-ico) center/contain no-repeat;
+}
+.home[data-state="on"] .status-title{
+  --st-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z'/%3E%3Cpath d='m8.8 12 2.2 2.2 4.4-4.6'/%3E%3C/svg%3E");
+  background:var(--brand-soft); border-color:var(--brand-line); box-shadow:0 0 18px var(--brand-soft);
+}
+.home[data-state="on"] .status-title::before{ background:currentColor; box-shadow:none; }
+.home[data-state="connecting"] .status-title, .home[data-state="disconnecting"] .status-title{
+  --st-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M12 3a9 9 0 1 1-9 9'/%3E%3C/svg%3E");
+  background:var(--warning-soft); border-color:var(--warning-line);
+}
+.home[data-state="connecting"] .status-title::before, .home[data-state="disconnecting"] .status-title::before{ background:currentColor; animation:stSpin 1s linear infinite; }
+@keyframes stSpin{ to{ transform:rotate(360deg); } }
+.home[data-state="error"] .status-title,
+.home[data-state="off"][data-ready="expired"] .status-title, .home[data-state="off"][data-ready="noServer"] .status-title,
+.home[data-state="off"][data-ready="srvError"] .status-title, .home[data-state="off"][data-ready="srvDown"] .status-title{
+  --st-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 2.5 20h19z'/%3E%3Cpath d='M12 10v4'/%3E%3Cpath d='M12 17.2v.1'/%3E%3C/svg%3E");
+}
+.home[data-state="error"] .status-title{ background:var(--danger-soft); border-color:var(--danger-line); }
+.home[data-state="error"] .status-title::before{ background:currentColor; }
+.home[data-state="off"][data-ready="expired"] .status-title, .home[data-state="off"][data-ready="noServer"] .status-title,
+.home[data-state="off"][data-ready="srvError"] .status-title, .home[data-state="off"][data-ready="srvDown"] .status-title{ background:var(--warning-soft); border-color:var(--warning-line); }
+.home[data-state="off"][data-ready="login"] .status-title{
+  --st-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c1.5-4 4.4-6 8-6s6.5 2 8 6'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-motion: reduce){ .home .status-title::before{ animation:none !important; } }
+
+/* Carte de session (durée + serveur réels) : porte l'accent du profil (identité secondaire, js/profile-theme.js) */
+.conn-meta{
+  margin-top:10px; flex-direction:row; align-items:stretch; justify-content:center; gap:0; padding:8px 4px; max-width:100%;
+  border-radius:var(--r-md); background:linear-gradient(135deg, var(--accent-soft), transparent 78%), var(--surface);
+  border:1px solid var(--accent-line); box-shadow:0 0 22px var(--accent-soft);
+}
+.conn-meta[hidden]{ display:none; }
+.conn-since, .conn-server{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0 14px; min-width:0; font-size:var(--fs-xs); color:var(--text-faint); }
+.conn-server{ border-left:1px solid var(--border); }
+.conn-since .timer{ font:700 var(--fs-lg)/1.15 var(--font-mono); color:var(--text); letter-spacing:.02em; }
+.conn-server b{ font-size:var(--fs-sm); max-width:44vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Puce « profil / serveur choisi » : sélection réelle du panel, accent du profil, touche = écran Serveurs */
+.profile-chip{
+  margin:10px auto 0; display:flex; align-items:center; gap:10px; max-width:100%; min-height:var(--tap); padding:6px 10px 6px 12px;
+  border-radius:var(--r-md); background:linear-gradient(135deg, var(--accent-soft), transparent 72%), var(--surface);
+  border:1px solid var(--accent-line); color:var(--text); cursor:pointer; text-align:left; box-shadow:0 0 18px var(--accent-soft);
+  transition:transform var(--dur-fast) var(--ease), border-color var(--dur), box-shadow var(--dur);
+}
+.profile-chip[hidden]{ display:none; }
+.profile-chip:active{ transform:scale(.97); }
+.profile-chip:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+.pc-dot{ width:10px; height:10px; border-radius:50%; flex:none; background:var(--accent); box-shadow:0 0 10px var(--accent-glow); }
+.pc-main{ display:flex; flex-direction:column; min-width:0; }
+.pc-k{ font:600 10px/1.25 var(--font-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--text-faint); }
+.pc-main b{ font-size:var(--fs-sm); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:58vw; }
+.pc-go{ width:16px; height:16px; flex:none; color:var(--text-faint); }
+.tile-k .ic{ color:var(--accent); }
+
+/* Barre basse (téléphone en portrait, components.css) : plus de rail à longer, la bannière reprend la largeur normale */
+@media (max-width:599px) and (min-height:560px) and (orientation:portrait){ .home-foot, .home-foot.is-inset{ margin-left:0; } }

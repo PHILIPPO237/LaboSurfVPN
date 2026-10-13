@@ -673,3 +673,23 @@ label.btn:focus-within{ outline:2px solid var(--brand); outline-offset:2px; }
 .chat-send{ width:44px; height:44px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; border:0; color:var(--on-brand); background:var(--btn-fill); box-shadow:0 0 14px var(--brand-glow); transition:transform .12s; }
 .chat-send:active{ transform:scale(.9); } .chat-send .ic{ width:19px; height:19px; }
 @media (prefers-reduced-motion: reduce){ .chat-announce-head .chev, .chat-send{ transition:none; } }
+
+/* ---------- Téléphone en portrait : le rail devient une BARRE BASSE, à portée de pouce ----------
+   Mêmes boutons, même style néon, même ordre (aucun retiré) ; seuls les raccourcis thème/langue du chevron sont
+   masqués ici (ils restent dans Réglages). Écrans larges, tablettes et paysage : rail latéral inchangé. */
+@media (max-width:599px) and (min-height:560px) and (orientation:portrait){
+  .app{ --nav-h:66px; padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom)); }
+  .rail{
+    position:fixed; left:0; right:0; top:auto; bottom:0; max-height:none; margin:0;
+    flex-direction:row; justify-content:space-around; align-items:center; gap:0;
+    padding:8px max(10px, env(safe-area-inset-left)) calc(9px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+    background:var(--nav-bg); border-top:1px solid var(--rail-line);
+    -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%);
+    box-shadow:0 -12px 32px rgba(0,0,0,.38);
+  }
+  .rail-btn{ width:48px; height:48px; border-radius:16px; box-shadow:none; }
+  .rail-btn.active{ box-shadow:0 0 0 2px var(--brand-soft), 0 0 16px var(--brand-glow); }
+  .rail-group{ flex-direction:row; }
+  .rail-caret, .rail-expand{ display:none; }
+  .screen{ padding-left:var(--sp-4); padding-right:var(--sp-4); }
+}

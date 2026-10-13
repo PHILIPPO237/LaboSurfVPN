@@ -140,6 +140,7 @@ function serverLegendHtml(){
 }
 
 function renderServers(){
+  if(typeof ProfileTheme !== 'undefined') ProfileTheme.refresh();   // accent du profil choisi (ou de l'offre), sinon identité LABOSURF
   const host = $('srvList');
   const searchWrap = $('srvSearchWrap');
   $('srvLegend').innerHTML = Servers.state === 'loading' ? '' : serverLegendHtml();   // légende des statuts (texte fixe)

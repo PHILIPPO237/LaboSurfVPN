@@ -110,6 +110,7 @@ renderRailMinis();
 if(PREVIEW && !isNativeApp()) $('previewRibbon').hidden = false;
 loadHomeBanner();
 setInterval(loadHomeBanner, 5 * 60 * 1000);   // rafraîchi toutes les 5 min
+restoreRememberedSession();                   // « rester connecté » : compte rouvert sans ressaisir les identifiants
 setTimeout(fitHomeScreen, 300);               // filet de sécurité : polices / images finissent de charger
 Splash.whenDone(() => Onboarding.maybeStart());
 Splash.whenDone(() => {   // retour d'un « Vider le cache » (rechargement) : on le confirme

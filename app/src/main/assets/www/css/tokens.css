@@ -168,4 +168,28 @@
 
   /* Couches (z-index) : ne jamais inventer de valeur ailleurs */
   --z-nav:20; --z-help:25; --z-toast:300; --z-sheet:350; --z-dialog:400; --z-splash:1000;
+
+  /* ---------- Accent : couche SECONDAIRE de l'identité (thème du profil, voir js/profile-theme.js) ----------
+     Par défaut = l'identité LABOSURF. js/profile-theme.js pose ces propriétés sur <html> UNIQUEMENT quand le profil choisi
+     (couleur définie dans le Panel) ou l'offre du compte (VIP -> or) en donne une valide ; sinon elles restent celles-ci.
+     L'accent colore le profil (carte, pastille), le halo de session et les indicateurs ; jamais le logo, le bouton START,
+     la navigation ni l'état « connecté », qui gardent le vert LABOSURF. */
+  --accent:var(--brand);
+  --accent-soft:var(--brand-soft);
+  --accent-line:var(--brand-line);
+  --accent-glow:var(--brand-glow);
+  --on-accent:var(--on-brand);
+
+  /* ---------- Noms sémantiques communs à l'écosystème (Panel <-> VPN) : alias des jetons ci-dessus ----------
+     Un composant nouveau utilise ces noms ; les anciens jetons restent valides. */
+  --primary:var(--brand);
+  --primary-glow:var(--brand-glow);
+  --secondary:var(--mix-mint);
+  --background:var(--bg);
+  --surface-elevated:var(--surface-2);
+  --text-primary:var(--text);
+  --text-secondary:var(--text-muted);
+  --success:var(--brand);
+  --error:var(--danger);
+  /* --warning et --border existent déjà sous ces noms */
 }

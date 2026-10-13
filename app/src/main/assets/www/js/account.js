@@ -131,6 +131,7 @@ function updateChatRail(acc){
 
 function renderAccountCard(acc){
   Account.last = acc;
+  if(typeof ProfileTheme !== 'undefined') ProfileTheme.refresh();   // l'offre (VIP…) peut donner l'accent premium
   $('accNameTxt').textContent = acc.username;
   // Photo de profil si elle a été renseignée, sinon avatar par défaut (aussi en cas d'image introuvable)
   const img = $('accAvatarImg'), fallback = $('accAvatarDefault');
@@ -194,12 +195,21 @@ Actions.openPanel = async (next) => {
   openExternal(API.state.base + '/');
 };
 
+// Communauté LABOSURF : le Live Chat du Laboratoire (salons officiel, communauté). Ouvert sur le site avec la session de
+// l'application (code d'échange, voir openPanel) : pas de mot de passe redemandé. Sans compte : page de connexion du site.
+Actions.openCommunity = () => Actions.openPanel('/tchatch');
+// Support : messages avec le revendeur ou l'administrateur (dans l'application si le compte y a accès, sinon sur le site)
+Actions.openSupport = () => {
+  if(authToken && !$('railBtn-chat').hidden){ showScreen('chat'); return; }
+  Actions.openPanel('/mes-messages');
+};
+
 // Panel -> application : un code d'échange reçu par lien (App Link /app/open ou bouton « Ouvrir l'app » du panel) ouvre la session
 // de l'application sans mot de passe. Ignoré si une session est déjà ouverte (on ne remplace jamais un compte connecté).
 async function redeemExchange(code){
   if(sessionStillValid()) return;
   try{
-    const res = await apiFetch('/api/auth/exchange/redeem', { method: 'POST', device: true, body: JSON.stringify({ code: code, target: 'app' }) });
+    const res = await apiFetch('/api/auth/exchange/redeem', { method: 'POST', device: true, body: JSON.stringify({ code: code, target: 'app', remember: RememberMe.wanted() }) });
     if(!res.ok || !res.data || res.data.status !== 'ok' || !res.data.token){ toast(apiMessage(res, 'acc.exchangeFailed'), 'error', 4500); return; }
     authToken = res.data.token;
     authExpiresAt = sessionExpiryFrom(res.data);
@@ -292,6 +302,7 @@ async function reloadAccountCard(){
 }
 
 async function afterAuth(username){
+  RememberMe.save();   // « rester connecté » : la session (jamais le mot de passe) est gardée chiffrée sur le téléphone
   await loadAndShowAccount(username);
   if(!authToken) return;
   loadHomeBanner(); // le panel peut renvoyer la bannière du revendeur maintenant que le jeton existe
@@ -308,6 +319,51 @@ function sessionExpiryFrom(data){
 // Le jeton est encore valable d'après le panel ? (le panel reste juge : un 401 déconnecte de toute façon)
 const sessionStillValid = () => !!authToken && (authExpiresAt === null || Date.now() < authExpiresAt);
 
+// ─── « Rester connecté » ───
+// Le Panel ouvre une session d'appareil de confiance (30 j par défaut) quand l'application la demande (remember) en
+// s'identifiant (X-Device-Id). Seul son JETON est gardé, chiffré par le Keystore Android (MainActivity -> SessionVault) :
+// jamais le mot de passe, jamais dans localStorage. Effacé à la déconnexion, à l'expiration, ou si l'option est coupée.
+// Le Panel reste juge : session révoquée (« Mes appareils », mot de passe changé…) = 401 = déconnexion propre.
+const RememberMe = {
+  supported(){
+    return isNativeApp() && ['sessionSave', 'sessionLoad', 'sessionClear'].every((m) => typeof window.LaboSurfNative[m] === 'function');
+  },
+  wanted(){ return this.supported() && store.get('rememberMe', true) !== false; },
+  save(){
+    if(!this.wanted() || !authToken || !authExpiresAt) return;   // durée inconnue : rien n'est gardé
+    try{ window.LaboSurfNative.sessionSave(String(authToken), Number(authExpiresAt)); }catch(e){}
+  },
+  clear(){ if(this.supported()){ try{ window.LaboSurfNative.sessionClear(); }catch(e){} } },
+  // { token, expiresAt } si une session encore valable (plus d'une minute) est gardée, sinon null
+  load(){
+    if(!this.wanted()) return null;
+    let raw = '';
+    try{ raw = String(window.LaboSurfNative.sessionLoad() || ''); }catch(e){ return null; }
+    const parts = raw.split('\n');
+    const exp = parts.length === 2 ? Number(parts[1]) : NaN;
+    if(!/^[A-Za-z0-9_-]{20,200}$/.test(parts[0] || '') || !isFinite(exp) || exp < Date.now() + 60000){ this.clear(); return null; }
+    return { token: parts[0], expiresAt: exp };
+  },
+};
+
+// Au démarrage : session gardée -> compte rouvert sans ressaisir les identifiants (le panel la revalide aussitôt).
+async function restoreRememberedSession(attempt){
+  if(authToken) return;
+  if(!API.state.ok){ if((attempt || 0) < 20) setTimeout(() => restoreRememberedSession((attempt || 0) + 1), 500); return; }
+  const s = RememberMe.load();
+  if(!s) return;
+  authToken = s.token;
+  authExpiresAt = s.expiresAt;
+  try{ await afterAuth(''); }catch(e){ /* hors ligne : le compte reste ouvert, les données se rechargeront */ }
+}
+
+Actions.toggleRemember = () => {
+  const on = !(store.get('rememberMe', true) !== false);
+  store.set('rememberMe', on);
+  if(on) RememberMe.save(); else RememberMe.clear();   // couper l'option efface la session gardée (la session en cours continue)
+  if(typeof renderSettings === 'function') renderSettings();
+};
+
 // ─── Connexion / inscription ───
 Actions.togglePw = (btn) => {
   const input = $(btn.dataset.target);
@@ -323,7 +379,7 @@ Actions.login = async () => {
   if(isBusy(btn)) return;
   setBusy(btn, true, 'acc.signingIn');
   try{
-    const login = await apiFetch('/api/auth/login', { method: 'POST', device: true, body: JSON.stringify({ username: u, password: p }) });
+    const login = await apiFetch('/api/auth/login', { method: 'POST', device: true, body: JSON.stringify({ username: u, password: p, remember: RememberMe.wanted() }) });
     if(!login.ok || !login.data || login.data.status !== 'ok'){
       showFormError('accError', apiMessage(login, 'acc.errBadCredentials'));
       return;
@@ -350,7 +406,7 @@ Actions.register = async () => {
   setBusy(btn, true, 'acc.creating');
   try{
     const reg = await apiFetch('/api/auth/register', { method: 'POST', device: true,
-      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, password: p, confirm_password: p2 }) });
+      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, password: p, confirm_password: p2, remember: RememberMe.wanted() }) });
     if(!reg.ok || !reg.data || reg.data.status !== 'ok'){
       showFormError('regError', apiMessage(reg, 'acc.errRegister'));
       return;
@@ -623,7 +679,9 @@ function resetToLoggedOut(){
   $('railBtn-chat').hidden = true;
   if(currentScreen === 'chat') showScreen('account');
   authExpiresAt = null;
+  RememberMe.clear();   // déconnexion ou session expirée : plus rien n'est gardé sur le téléphone
   Account.last = null;
+  if(typeof ProfileTheme !== 'undefined') ProfileTheme.refresh();   // plus de compte : identité LABOSURF par défaut
   clearInterval(Account.pollTimer);
   Account.unreadMessages = 0; Account.unreadAnnouncements = 0;
   updateAccountBadge();
