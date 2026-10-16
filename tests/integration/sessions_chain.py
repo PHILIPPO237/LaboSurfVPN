@@ -235,9 +235,10 @@ def main() -> int:
 
         # CORS : l'application Android appelle le panel depuis une autre origine -> l'en-tête X-Device-Id doit être autorisé
         pre = http.request("OPTIONS", "/api/auth/login", headers={"Origin": "https://appassets.androidplatform.net",
-                           "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization,content-type,x-device-id,x-device-name"})
-        check("CORS : X-Device-Id / X-Device-Name autorisés par le panel",
-              pre.status_code == 200 and "x-device-id" in pre.headers.get("access-control-allow-headers", "").lower(), pre.status_code)
+                           "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization,content-type,x-device-id,x-device-name,x-ls-engines"})
+        check("CORS : X-Device-Id / X-Device-Name / X-LS-Engines autorisés par le panel",
+              pre.status_code == 200 and "x-device-id" in pre.headers.get("access-control-allow-headers", "").lower()
+              and "x-ls-engines" in pre.headers.get("access-control-allow-headers", "").lower(), pre.status_code)
 
         # 1. inscription depuis l'application (appareil A)
         reg = run("A", f"""

@@ -69,6 +69,29 @@ function deviceHeaders(){
   return h;
 }
 
+// ─── Capacités réelles du client (moteurs transportables) ───
+// Liste envoyée au panel (en-tête X-LS-Engines) sur les routes de connexion, pour que
+// GET /api/user/connect/options et POST /api/user/connect n'exposent que les profils
+// utilisables ICI : le panel ne filtre que ce que le client déclare pouvoir transporter,
+// jamais l'inverse (l'en-tête ne confère aucun droit). Source = le natif lui-même
+// (LaboSurfNative.getEngineInfo -> LaboVpnService.SUPPORTED_PROTOCOLS : udp + moteurs
+// réellement compilés du cœur Go) — jamais une liste codée en dur. Hors APK, shell sans
+// getEngineInfo, JSON illisible ou liste vide : l'en-tête n'est PAS envoyé, le panel
+// conserve alors exactement son comportement actuel (compatibilité anciennes versions).
+function clientEnginesHeader(){
+  try{
+    if(!isNativeApp() || typeof window.LaboSurfNative.getEngineInfo !== 'function') return '';
+    const info = JSON.parse(window.LaboSurfNative.getEngineInfo());
+    if(!info || info.integrated !== true || !Array.isArray(info.protocols)) return '';
+    const ids = [];
+    for(let i = 0; i < info.protocols.length; i++){
+      const id = String(info.protocols[i] || '').trim().toLowerCase();
+      if(/^[a-z0-9][a-z0-9_-]{0,31}$/.test(id) && ids.indexOf(id) < 0) ids.push(id);
+    }
+    return ids.join(',');
+  }catch(e){ return ''; }
+}
+
 // ─── Reprise réseau après l'arrêt du tunnel ───
 // Constat terrain (v1.2.1) : après un STOP, la WebView garde un état réseau hérité du VPN et chaque requête échoue AVANT
 // d'atteindre le panel (aucune trace côté serveur), jusqu'au redémarrage du processus. Reprise graduée :
@@ -174,6 +197,10 @@ async function apiFetch(path, options){
   if(authToken) headers['Authorization'] = 'Bearer ' + authToken;
   if(options.body && !(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';   // FormData : le navigateur fixe lui-même le type (multipart + boundary)
   headers['Accept-Language'] = I18N.lang; // permet au panel de répondre dans la langue de l'app s'il le supporte (ignoré sinon)
+  if(path.indexOf('/api/user/connect') === 0){
+    const engines = clientEnginesHeader();
+    if(engines) headers['X-LS-Engines'] = engines;   // capacités réelles : le panel n'expose que les profils utilisables ici
+  }
 
   // Délai maximum : sans lui, un panel qui ne répond pas laisserait l'interface en attente indéfiniment.
   const ctrl = new AbortController();
