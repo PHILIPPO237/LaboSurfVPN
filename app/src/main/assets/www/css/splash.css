@@ -32,6 +32,13 @@
 @keyframes spDraw{ to{ stroke-dashoffset:0; } }
 @keyframes spFill{ to{ fill-opacity:1; } }
 
+/* Emblème raster : version sans fond pour le thème sombre, version sur plaque sombre pour le thème clair */
+.sp-logo-light{ display:none; }
+:root[data-theme="light"] .sp-logo-dark{ display:none; }
+:root[data-theme="light"] .sp-logo-light{ display:block; border-radius:22%; }
+.sp-logo{ object-fit:contain; opacity:0; transform:scale(.6); animation:spEmblem .7s cubic-bezier(.2,1.2,.4,1) .15s forwards; }
+@keyframes spEmblem{ to{ opacity:1; transform:none; } }
+
 /* Clé : arrive en tournant, avec un léger rebond */
 .sp-key{ transform-box:fill-box; transform-origin:center; opacity:0; transform:scale(.4) rotate(-40deg); animation:spKey .6s cubic-bezier(.2,1.4,.4,1) .75s forwards; }
 .sp-key polygon, .sp-key path{ fill:none; stroke:var(--logo-line); stroke-width:8.5; stroke-linecap:round; stroke-linejoin:round; }
