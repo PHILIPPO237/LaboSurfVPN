@@ -22,8 +22,8 @@ android {
         applicationId = "com.philippo237.labosurf"
         minSdk = 24        // Android 7.0+ (couvre la grande majorite des telephones au Cameroun)
         targetSdk = 34
-        versionCode = 11
-        versionName = "1.4.0"
+        versionCode = 12
+        versionName = "1.4.1"
         buildConfigField("String", "PANEL_BASE_URL", "\"$panelBaseUrl\"")
         // App Link (https://<hôte du panel>/app/open) : vérifié par Android grâce à /.well-known/assetlinks.json servi par le panel
         manifestPlaceholders["panelHost"] = URI(panelBaseUrl).host
