@@ -72,8 +72,9 @@ func Stop() {
 	stopLocked()
 }
 
-// Stats retourne le trafic RÉELLEMENT passé par le tunnel : {"rx":octets reçus,"tx":octets envoyés}.
-// Sans session : {"rx":0,"tx":0,"running":false}.
+// Stats retourne le trafic RÉELLEMENT passé par le tunnel : {"rx":octets reçus,"tx":octets envoyés,"running":true}.
+// Sans session : {"rx":0,"tx":0,"running":false}. Si aucune source de mesure n'existe, « rx » et « tx » sont
+// OMIS (l'application affiche « indisponible » : jamais un faux 0).
 func Stats() string {
 	mu.Lock()
 	defer mu.Unlock()
@@ -82,18 +83,50 @@ func Stats() string {
 	}
 	m, ok := instance.GetFeature(stats.ManagerType()).(stats.Manager)
 	if !ok {
-		return `{"rx":0,"tx":0,"running":true}`
+		return `{"running":true}`
 	}
-	value := func(name string) int64 {
+	rx, tx, ok := trafficCounters(m)
+	if !ok {
+		return `{"running":true}`
+	}
+	return fmt.Sprintf(`{"rx":%d,"tx":%d,"running":true}`, rx, tx)
+}
+
+// counterSource : ce que trafficCounters lit dans le gestionnaire de statistiques d'Xray (testable sans moteur).
+type counterSource interface {
+	GetCounter(name string) stats.Counter
+}
+
+// trafficCounters choisit UNE source de mesure (jamais la somme de deux : ce serait compter le trafic deux fois) :
+//
+//  1. les compteurs de l'entrée (« inbound>>>tun ») s'ils ont mesuré du trafic — c'est le cas d'une entrée qui
+//     écoute (SOCKS des tests) ;
+//  2. sinon ceux de la sortie (« outbound>>>proxy ») : l'entrée TUN d'Xray n'écoute aucun port, ses compteurs
+//     d'entrée restent à 0 même quand le trafic passe ; la sortie, elle, mesure le trafic réellement relayé.
+//
+// ok=false : aucun des deux compteurs n'existe (mesure impossible, ce n'est pas « 0 »).
+func trafficCounters(m counterSource) (rx, tx int64, ok bool) {
+	value := func(name string) (int64, bool) {
 		if c := m.GetCounter(name); c != nil {
-			return c.Value()
+			return c.Value(), true
 		}
-		return 0
+		return 0, false
 	}
 	// uplink = du téléphone vers le serveur (envoyé) ; downlink = reçu.
-	tx := value("inbound>>>" + inboundTag + ">>>traffic>>>uplink")
-	rx := value("inbound>>>" + inboundTag + ">>>traffic>>>downlink")
-	return fmt.Sprintf(`{"rx":%d,"tx":%d,"running":true}`, rx, tx)
+	inTx, okInTx := value("inbound>>>" + inboundTag + ">>>traffic>>>uplink")
+	inRx, okInRx := value("inbound>>>" + inboundTag + ">>>traffic>>>downlink")
+	if okInTx && okInRx && inTx+inRx > 0 {
+		return inRx, inTx, true
+	}
+	outTx, okOutTx := value("outbound>>>" + proxyTag + ">>>traffic>>>uplink")
+	outRx, okOutRx := value("outbound>>>" + proxyTag + ">>>traffic>>>downlink")
+	if okOutTx && okOutRx {
+		return outRx, outTx, true
+	}
+	if okInTx && okInRx {
+		return inRx, inTx, true
+	}
+	return 0, 0, false
 }
 
 func stopLocked() {
@@ -176,7 +209,7 @@ func xrayConfig(inbound map[string]any, out outbound) map[string]any {
 	cfg := map[string]any{
 		"log":      map[string]any{"loglevel": "warning"},
 		"stats":    map[string]any{},
-		"policy":   map[string]any{"system": map[string]any{"statsInboundUplink": true, "statsInboundDownlink": true}},
+		"policy":   map[string]any{"system": map[string]any{"statsInboundUplink": true, "statsInboundDownlink": true, "statsOutboundUplink": true, "statsOutboundDownlink": true}},
 		"inbounds": []any{inbound},
 		"outbounds": []any{ob,
 			map[string]any{"tag": "dns-out", "protocol": "dns"},

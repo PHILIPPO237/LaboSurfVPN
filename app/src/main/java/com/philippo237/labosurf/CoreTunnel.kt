@@ -36,7 +36,7 @@ object CoreTunnel {
     /** (octets reçus, octets envoyés) réellement mesurés par le cœur ; null si indisponible. */
     fun stats(): Pair<Long, Long>? = try {
         val o = org.json.JSONObject(labocore.Labocore.stats())
-        if (o.optBoolean("running")) Pair(o.getLong("rx"), o.getLong("tx")) else null
+        if (o.optBoolean("running") && o.has("rx") && o.has("tx")) Pair(o.getLong("rx"), o.getLong("tx")) else null
     } catch (e: Throwable) {
         null
     }
