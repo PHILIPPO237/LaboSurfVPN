@@ -109,7 +109,7 @@ function loadApp(opts){
     function loadHomeBanner(){} function showScreen(){} function setAccView(){} function fitBannerDefault(){}
     function renderHome_stub(){} function updateAccountBadge(){} function renderLogs(){}
   `);
-  ['js/api.js', 'js/servers.js', 'js/services.js', 'js/vpn.js', 'js/account.js', 'js/activity.js'].forEach(run);
+  ['js/api.js', 'js/servers.js', 'js/services.js', 'js/vpn.js', 'js/account.js', 'js/activity.js', 'js/livechat.js'].forEach(run);
 
   // Observation : tout ce qui sort de l'application
   ev('function toast(m, type){ __calls.toasts.push({ m, type }); }');

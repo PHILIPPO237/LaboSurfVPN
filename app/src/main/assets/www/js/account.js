@@ -152,6 +152,7 @@ function renderAccountCard(acc){
   $('accPanelRow').hidden = !API.state.ok;   // point d'accès aux fonctions avancées (paiement, offres…) : le Laboratoire du Free-Surf
 
   renderPass(acc);
+  renderProfileView(acc.profileInfo);
   updateChatRail(acc);
 
   // Sous-titre du menu « Accès et abonnement » : jours restants réels, sinon l'offre
@@ -160,6 +161,98 @@ function renderAccountCard(acc){
   updateExpiryBanner();
   renderHome();   // l'accueil affiche « Accès expiré » dès que le panel l'indique
 }
+
+// ─── Dernier profil connu : gardé sur le téléphone pour rester consultable hors connexion ───
+// Contient seulement ce que /api/user/me a déjà renvoyé pour l'écran Profil (jamais de jeton ni de mot de passe). Effacé à la déconnexion.
+// Affiché UNIQUEMENT quand le panel est injoignable, toujours avec la date : jamais présenté comme une donnée à jour.
+const ProfileCache = {
+  KEY: 'profileCache',
+  save(me){ if(me && typeof me === 'object' && me.profile) store.set(this.KEY, { at: Date.now(), username: String(me.username || ''), profile: me.profile }); },
+  load(){ const v = store.get(this.KEY, null); return v && typeof v === 'object' && v.profile && typeof v.at === 'number' ? v : null; },
+  clear(){ store.remove(this.KEY); },
+};
+function profileFallback(failure){
+  const c = Account.profileReady ? null : ProfileCache.load();
+  if(c){
+    const info = ProfileContract.parse({ profile: c.profile });
+    if(info.state === 'ready'){ info.cachedAt = c.at; info.username = c.username; renderProfileView(info); return; }
+  }
+  renderProfileView(failure);
+}
+
+// ─── Mon profil : AFFICHAGE du profil structuré calculé par le panel (rien n'est déduit ni accordé ici) ───
+// États : loading · ready · absent (panel ancien) · invalid · network · down · unavailable. Une panne n'est jamais un statut de compte.
+// La couleur (data-kind) n'est qu'une identité visuelle : les droits viennent UNIQUEMENT des options « allowed » du panel.
+function renderProfileView(info){
+  const view = $('accViewProfile');
+  // Appareil modeste (peu de cœurs / peu de mémoire) : rendu de remplacement sans flou ni animation, même identité colorée
+  try{ const lowEnd = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 2); view.classList.toggle('pf-lite', !!lowEnd); }catch(e){}
+  const state = info && info.state ? info.state : 'loading';
+  const failed = ['network', 'down', 'unavailable', 'invalid', 'absent'].indexOf(state) >= 0;
+  if(failed && Account.profileReady){   // échec de rafraîchissement : on garde la dernière version connue, signalée comme telle
+    $('profNotice').textContent = t('prof.stale'); $('profNotice').hidden = false;
+    return;
+  }
+  $('profNotice').hidden = true;
+  if(state === 'ready' && info.cachedAt){ $('profNotice').textContent = t('prof.cached', { d: new Date(info.cachedAt).toLocaleString(I18N.locale(), { dateStyle: 'short', timeStyle: 'short' }) }); $('profNotice').hidden = false; }
+  if(state === 'ready' && !info.cachedAt) Account.profileReady = true;
+  else if(failed || state === 'loading') Account.profileReady = false;
+  view.setAttribute('data-state', failed ? 'error' : state);
+  $('profStateCard').hidden = !failed;
+  $('profBody').hidden = state !== 'ready';
+  $('profOptionsOk').textContent = ''; $('profOptionsKo').textContent = '';
+  if(failed){
+    const k = state === 'network' || state === 'down' ? state : (state === 'unavailable' ? 'other' : state);
+    $('profStateTitle').textContent = t(k === 'invalid' ? 'prof.err.invalid.t' : k === 'absent' ? 'prof.err.absent.t' : 'prof.err.' + k + '.t');
+    $('profStateMsg').textContent = t(k === 'invalid' ? 'prof.invalid' : k === 'absent' ? 'prof.absent' : 'prof.err.' + k + '.m');
+    $('profRetry').hidden = !(state === 'network' || state === 'down' || state === 'unavailable');
+    $('profBadge').textContent = ''; $('profRole').textContent = '';
+    return;
+  }
+  if(state !== 'ready') return;   // loading : le squelette est visible, aucune valeur n'est affichée
+  const p = info.profile;
+  view.setAttribute('data-kind', p.kind);
+  view.setAttribute('data-st', p.statusCode);
+  $('profStatusCard').setAttribute('data-st', p.statusCode);
+  $('profBadge').textContent = t('prof.kind.' + p.kind);
+  $('profRole').textContent = p.roleLabel || '';
+  const acc = Account.last;   // même avatar et même nom que la carte du compte
+  $('profName').textContent = (acc && acc.username) || info.username || '';
+  const img = $('profAvImg'), fb = $('profAvDefault');
+  if(acc && acc.avatar){ img.src = FREE_SURF_API_BASE + acc.avatar; img.hidden = false; fb.style.display = 'none'; img.onerror = () => { img.hidden = true; fb.style.display = ''; }; }
+  else { img.hidden = true; fb.style.display = ''; }
+  $('profStatus').textContent = t('prof.st.' + p.statusCode);
+  const msg = $('profMessage');
+  msg.textContent = p.statusMessage; msg.hidden = !p.statusMessage;
+  $('profOffer').textContent = p.offerApplies ? (p.offerLabel || t('prof.unknownVal')) : t('prof.none');
+  $('profValidityCell').hidden = !p.subscriptionApplies;
+  $('profValidity').textContent = p.daysRemaining === null ? t('prof.noExpiry') : (p.daysRemaining < 0 ? t('prof.st.expired') : tn('prof.daysLeft', p.daysRemaining));
+  $('profExpiry').textContent = p.expiresAt && p.daysRemaining !== null ? t(p.daysRemaining < 0 ? 'prof.expiredOn' : 'prof.expiresOn', { d: fmtExpiry(p.expiresAt) }) : '';
+  let ok = 0, ko = 0;
+  for(const o of p.options){
+    const kind = o.allowed ? 'ok' : (o.reason.indexOf('profile_') === 0 ? 'wait' : 'lock');
+    const card = document.createElement('div');
+    card.className = 'pf-opt pf-opt-' + kind;
+    const ico = document.createElement('span'); ico.className = 'pf-opt-ico';
+    ico.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#' + (kind === 'ok' ? 'i-check-circle' : kind === 'wait' ? 'i-clock' : 'i-lock') + '"/></svg>';
+    const body = document.createElement('span'); body.className = 'pf-opt-body';
+    const title = document.createElement('span'); title.className = 'pf-opt-title'; title.textContent = o.label;
+    const sub = document.createElement('span'); sub.className = 'pf-opt-sub';
+    sub.textContent = o.allowed ? t('prof.allowed') : t(o.reason === 'requires_vip' ? 'prof.lockedVip' : kind === 'wait' ? 'prof.lockedStatus' : 'prof.locked');
+    body.appendChild(title); body.appendChild(sub); card.appendChild(ico); card.appendChild(body);
+    $(o.allowed ? 'profOptionsOk' : 'profOptionsKo').appendChild(card);
+    if(o.allowed) ok++; else ko++;
+  }
+  $('profAllowedTitle').hidden = ok === 0;
+  $('profLockedTitle').hidden = ko === 0;
+  $('profResellerRow').hidden = !p.resellerName;
+  $('profReseller').textContent = p.resellerName || '';
+  $('profPanelRow').hidden = p.panelScope === 'none' && p.kind !== 'reseller' && p.kind !== 'admin' && p.kind !== 'super_admin';
+  $('profPanel').textContent = t('prof.scope.' + (['reseller', 'admin'].indexOf(p.panelScope) >= 0 ? p.panelScope : 'none'));
+  $('profExtra').hidden = $('profResellerRow').hidden && $('profPanelRow').hidden;
+  $('profActions').hidden = !(API.state.ok && p.statusOk && p.panelScope !== 'none');   // seulement si le SERVEUR indique un accès au panel (revendeur, administrateur) ; les routes du panel refusent de toute façon les autres
+}
+Actions.profRetry = () => { renderProfileView({ state: 'loading' }); reloadAccountCard(); };
 
 // ─── Bandeau d'expiration (paliers 7/3/1 jours, comme sur le site) ───
 function expiryDismissedToday(){
@@ -197,7 +290,7 @@ Actions.openPanel = async (next) => {
 
 // Communauté LABOSURF : le Live Chat du Laboratoire (salons officiel, communauté). Ouvert sur le site avec la session de
 // l'application (code d'échange, voir openPanel) : pas de mot de passe redemandé. Sans compte : page de connexion du site.
-Actions.openCommunity = () => Actions.openPanel('/tchatch');
+Actions.openCommunityWeb = () => Actions.openPanel('/tchatch');   // version web (fichiers, réactions) ; la communauté intégrée est dans js/livechat.js
 // Support : messages avec le revendeur ou l'administrateur (dans l'application si le compte y a accès, sinon sur le site)
 Actions.openSupport = () => {
   if(authToken && !$('railBtn-chat').hidden){ showScreen('chat'); return; }
@@ -270,6 +363,7 @@ function accountFromApi(me, sub, fallbackName){
     usageReason: usageAvailable ? null : (me.usage_reason || null),
     remainingGB: usageAvailable ? toNumber(me.remaining_gb) : null,
     usagePercent: usageAvailable ? toNumber(me.usage_percent) : null,
+    profileInfo: ProfileContract.parse(me),   // profil structuré du panel (affichage seulement)
   };
 }
 
@@ -281,6 +375,7 @@ async function loadAndShowAccount(fallbackName){
   const [meRes, subRes] = await Promise.all([apiFetch('/api/user/me'), apiFetch('/api/user/subscription')]);
   if(!authToken) return; // session expirée pendant le chargement
   renderAccountCard(accountFromApi(meRes.ok ? meRes.data || {} : {}, subRes.ok ? subRes.data || {} : {}, fallbackName));
+  if(meRes.ok) ProfileCache.save(meRes.data); else profileFallback(ProfileContract.failure(meRes));
   $('accLoggedOut').hidden = true;
   $('accLoggedIn').hidden = false;
   setSyncState('now');
@@ -293,11 +388,13 @@ async function loadAndShowAccount(fallbackName){
 async function reloadAccountCard(){
   try{
     const [meRes, subRes] = await Promise.all([apiFetch('/api/user/me'), apiFetch('/api/user/subscription')]);
-    if(!meRes.ok){ setSyncState('failed'); return; }
+    if(!meRes.ok){ setSyncState('failed'); profileFallback(ProfileContract.failure(meRes)); return; }
+    ProfileCache.save(meRes.data);
     renderAccountCard(accountFromApi(meRes.data || {}, subRes.ok ? subRes.data || {} : {}, $('accNameTxt').textContent));
     setSyncState('now');
   }catch(e){
     setSyncState('down');   // panneau injoignable : on n'efface pas la valeur affichée
+    profileFallback({ state: 'network' });
   }
 }
 
@@ -309,6 +406,7 @@ async function afterAuth(username){
   loadAppMessages(); loadAnnouncements(true);
   clearInterval(Account.pollTimer);
   Account.pollTimer = setInterval(pollAccountSignals, 20000);
+  if(typeof LC !== 'undefined' && LC.wantReturn){ LC.wantReturn = false; Actions.openCommunity(); }   // connexion demandée depuis la communauté : on y revient directement
 }
 
 // Durée de la session : « expires_in » (secondes) renvoyé par le panel à la connexion. Absent = inconnue (jamais inventée).
@@ -582,8 +680,9 @@ Actions.forgotReset = async () => {
 
 // ─── Sous-écrans du compte : menu · accès et abonnement · messages et annonces · sécurité ───
 function setAccView(name){
-  Account.view = ['menu', 'access', 'security'].includes(name) ? name : 'menu';
+  Account.view = ['menu', 'access', 'security', 'profile'].includes(name) ? name : 'menu';
   $('accHome').hidden = Account.view !== 'menu';
+  $('accViewProfile').hidden = Account.view !== 'profile';
   $('accViewAccess').hidden = Account.view !== 'access';
   $('accViewSecurity').hidden = Account.view !== 'security';
   $('screen-account').scrollTop = 0;
@@ -681,6 +780,9 @@ function resetToLoggedOut(){
   authExpiresAt = null;
   RememberMe.clear();   // déconnexion ou session expirée : plus rien n'est gardé sur le téléphone
   Account.last = null;
+  Account.profileReady = false;
+  ProfileCache.clear();   // plus de compte : le dernier profil connu est effacé du téléphone
+  renderProfileView({ state: 'loading' });
   if(typeof ProfileTheme !== 'undefined') ProfileTheme.refresh();   // plus de compte : identité LABOSURF par défaut
   clearInterval(Account.pollTimer);
   Account.unreadMessages = 0; Account.unreadAnnouncements = 0;

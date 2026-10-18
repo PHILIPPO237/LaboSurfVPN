@@ -15,14 +15,27 @@
 .hex-key *{ stroke:var(--logo-line); }
 .hex-key circle{ fill:var(--logo-line); stroke:none; }
 .hexagon polygon:first-child{ stroke:var(--logo-line); }
-.hero-brand.on .hexagon svg{ animation:logoGlow 2.6s ease-in-out infinite; }
+/* Emblème raster : version sans fond (thème sombre) / version sur plaque sombre (thème clair) */
+.hex-logo{ width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0 20px var(--logo-glow)); transition:filter .6s ease; }
+.hex-logo-light{ display:none; }
+:root[data-theme="light"] .hex-logo-dark{ display:none; }
+:root[data-theme="light"] .hex-logo-light{ display:block; border-radius:22%; }
+.hero-brand.on .hexagon .hex-logo{ animation:logoGlow 2.6s ease-in-out infinite; }
+/* Logo complet de l'accueil (emblème + LABO SURF + slogan) : le titre et le sous-titre restent dans la page pour
+   les lecteurs d'écran mais ne sont plus affichés en double. Thème sombre : version à fond transparent ; thème clair : logo sur sa plaque sombre. */
+.hero-brand.has-logo{ position:relative; }
+.hero-brand.has-logo .app-title, .hero-brand.has-logo .app-subtitle{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.hero-logo{ --logo-w:clamp(164px, 28vh, 232px); width:var(--logo-w); height:var(--logo-w); }
+.hero-logo .hex-logo, .hero-brand.on .hero-logo .hex-logo{ filter:none; animation:none; }
+:root[data-theme="light"] .hero-logo .hex-logo-light{ border-radius:18%; }
+.hero-pro{ position:absolute; top:6px; right:calc(50% - var(--logo-w, 150px) / 2 - 4px); font-size:10px; }
 @keyframes logoGlow{ 0%,100%{ filter:drop-shadow(0 0 18px var(--logo-glow)); } 50%{ filter:drop-shadow(0 0 34px var(--logo-glow)); } }
 .app-title{ font:800 32px/1.1 var(--font-display); letter-spacing:.03em; margin-top:8px; text-shadow:0 0 18px var(--brand-glow); }
 .app-title .g{ background:var(--grad-text); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:none; filter:drop-shadow(0 0 10px var(--brand-glow)); }
 .app-title .badge-pro{ vertical-align:middle; font-size:10px; }
 .app-subtitle{ font:600 12.5px/1.3 var(--font-body); color:var(--text-muted); letter-spacing:.04em; margin-top:3px; text-transform:uppercase; }
 .sub-green{ background:var(--grad-text); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:700; }
-.sub-white{ color:var(--text); }
+.sub-white{ background:var(--chrome); -webkit-background-clip:text; background-clip:text; color:transparent; }
 
 .power-zone{ position:relative; flex-shrink:0; width:var(--power-size); height:var(--power-size); margin:var(--sp-2) 0; }
 .power-rings i{ position:absolute; inset:0; border-radius:50%; border:1px solid var(--brand); opacity:0; pointer-events:none; }
@@ -34,7 +47,7 @@
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
   color:var(--text-muted);
   background:radial-gradient(circle at 50% 24%, var(--btn-off-hi), var(--btn-off-lo) 80%);
-  box-shadow:0 14px 28px var(--power-drop), inset 0 2px 1px var(--btn-off-edge), inset 0 -12px 24px rgba(0,0,0,.28), 0 0 0 1px var(--btn-off-edge);
+  box-shadow:0 14px 28px var(--power-drop), inset 0 2px 1px var(--btn-off-edge), inset 0 -12px 24px rgba(0,0,0,.28), 0 0 0 1px var(--silver-line), 0 0 28px var(--brand-soft);
   transition:background .45s var(--ease), color .35s var(--ease), box-shadow .45s var(--ease), transform var(--dur-fast);
 }
 .power-btn:active{ transform:scale(.96); box-shadow:0 6px 14px var(--power-drop), inset 0 3px 10px rgba(0,0,0,.4), 0 0 0 1px var(--btn-off-edge); }
@@ -68,8 +81,8 @@
   -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); }
 .home[data-state="on"] .power-btn{
   color:var(--on-brand); text-shadow:0 1px 0 rgba(255,255,255,.25);
-  background:radial-gradient(circle at 50% 20%, #d4ffdf 0%, #7dffa0 16%, #39ff6a 38%, #12b34a 76%, #0a7a32 100%);
-  box-shadow:0 14px 30px var(--power-drop), 0 0 34px var(--brand-glow), 0 0 60px rgba(47,240,168,.22), inset 0 2px 1px rgba(255,255,255,.28), inset 0 -12px 24px rgba(0,0,0,.2);
+  background:radial-gradient(circle at 50% 20%, #d4ffdf 0%, #6cfb9a 16%, #0af072 38%, #06a640 76%, #0a7a32 100%);
+  box-shadow:0 14px 30px var(--power-drop), 0 0 34px var(--brand-glow), 0 0 60px rgba(30,245,130,.22), inset 0 2px 1px rgba(255,255,255,.28), inset 0 -12px 24px rgba(0,0,0,.2);
 }
 .home[data-state="connecting"] .power-btn, .home[data-state="disconnecting"] .power-btn{
   color:var(--on-brand); cursor:progress;
@@ -131,7 +144,7 @@
 .banner-card .bc-img{ width:100%; max-height:240px; object-fit:cover; border-radius:var(--r-md); margin-bottom:var(--sp-3); }
 .banner-card .bc-text{ font:700 var(--fs-lg)/1.3 var(--font-display); color:#fff; text-wrap:balance; overflow-wrap:anywhere; white-space:pre-line; }
 .bn-title{ font:800 var(--fs-xl)/1.2 var(--font-display); color:#fff; margin-bottom:var(--sp-2); overflow-wrap:anywhere; }
-.bn-badge{ display:inline-block; margin-bottom:var(--sp-2); background:rgba(57,255,106,.14); color:#39ff6a; }
+.bn-badge{ display:inline-block; margin-bottom:var(--sp-2); background:rgba(10,240,114,.14); color:#0af072; }
 /* Message long : la bannière s'allonge vers le bas, texte aligné à gauche pour rester lisible */
 .banner-card.is-long{ text-align:left; }
 .banner-card.is-long .bc-text{ font-size:var(--fs-md); font-weight:600; line-height:1.65; text-wrap:pretty; }
@@ -141,7 +154,7 @@
    particules qui montent, réseau dont les flux circulent. Couleur = --bn-accent du style. Uniquement transform / opacity
    (GPU), derrière le contenu (z-index -1), coupé dans le cadre (overflow hidden), désactivé si « réduire les animations ». */
 .bn-fx{ display:block; position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden; border-radius:inherit; }
-.banner-card{ --bn-accent:#35e879; --bn-accent2:#d8b45a; }
+.banner-card{ --bn-accent:#0af072; --bn-accent2:#d8b45a; }
 .banner-style-gold{ --bn-accent:#ffd700; --bn-accent2:#ffd700; }
 .banner-style-gradient{ --bn-accent:#4facfe; --bn-accent2:#00f2fe; }
 .banner-style-alert{ --bn-accent:#ef4444; --bn-accent2:#ef4444; }
@@ -205,7 +218,7 @@
 .banner-style-default::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
   background:radial-gradient(120% 70% at 0% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%); }
 .banner-style-default::after{ content:''; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
-  background:linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 34%, rgba(255,255,255,0) 60%, rgba(57,255,106,.4));
+  background:linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 34%, rgba(255,255,255,0) 60%, rgba(10,240,114,.4));
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask-composite:exclude; }
 .banner-style-default .bn-halo{ opacity:.18; }   /* le décor interne s'efface : le verre laisse voir les halos du fond */
@@ -221,18 +234,18 @@
 .bd .badge{ font-size:max(10px, .68em); padding:.34em .9em; letter-spacing:.09em; text-transform:uppercase; }
 .bd-head{ display:flex; flex-direction:column; align-items:center; gap:.3em; }
 .bd-mark{ font:700 3.1em/1 var(--font-display); letter-spacing:.24em; padding-left:.24em;
-  background:linear-gradient(90deg, #d8ffe3, #7dffa0 28%, #39ff6a 55%, #2ff0a8 78%, #12b34a); -webkit-background-clip:text; background-clip:text; color:transparent;
-  filter:drop-shadow(0 0 .32em rgba(57,255,106,.45)); }
+  background:linear-gradient(90deg, #d8ffe3, #6cfb9a 28%, #0af072 55%, #3ff58a 78%, #06a640); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 .32em rgba(10,240,114,.45)); }
 .bd-rule{ display:flex; align-items:center; gap:.55em; width:9em; }
-.bd-rule i{ flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(57,255,106,.7)); }
-.bd-rule i:last-child{ background:linear-gradient(270deg, transparent, rgba(57,255,106,.7)); }
+.bd-rule i{ flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(10,240,114,.7)); }
+.bd-rule i:last-child{ background:linear-gradient(270deg, transparent, rgba(10,240,114,.7)); }
 .bd-rule b{ width:.42em; height:.42em; background:#d8b45a; transform:rotate(45deg); box-shadow:0 0 .5em rgba(216,180,90,.4); }
 .bd-tagline{ font:700 1.16em/1.25 var(--font-display); letter-spacing:.01em; text-wrap:balance; }
 .bd-sub{ margin:0; max-width:24em; font:500 max(11px, .84em)/1.45 var(--font-body); color:#d6e1db; text-wrap:balance; }
 .bd-perks{ list-style:none; margin:0; padding:0; display:flex; justify-content:center; flex-wrap:wrap; gap:.4em; }
 .bd-perks li{ display:inline-flex; align-items:center; gap:.32em; padding:.4em .66em; border-radius:999px; white-space:nowrap;
   background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.24); box-shadow:inset 0 1px 0 rgba(255,255,255,.25); font:600 max(10px, .76em)/1 var(--font-body); color:#f4f8f5; }
-.bd-perks .ic{ width:1.15em; height:1.15em; color:#35e879; }
+.bd-perks .ic{ width:1.15em; height:1.15em; color:#0af072; }
 .bd-actions{ display:flex; justify-content:center; gap:.55em; flex-wrap:wrap; }
 .bd-actions .btn{ min-height:max(38px, 2.7em); padding:0 1.1em; font-size:max(12.5px, .86em); gap:.45em; }
 .bd-actions .ic{ width:1.15em; height:1.15em; }
@@ -240,14 +253,14 @@
 .home-foot.is-inset .bn-body:has(> .bd:not([hidden])){ padding:var(--sp-3) var(--sp-2); }
 .home-foot.is-inset .bd-perks{ flex-wrap:nowrap; }
 .home-foot.is-inset .bd-perks .ic{ display:none; }
-.banner-style-default .badge-ok{ background:rgba(57,255,106,.2); color:#8dffab; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
+.banner-style-default .badge-ok{ background:rgba(10,240,114,.2); color:#8dffab; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
 .bd-badge-premium{ background:rgba(216,180,90,.18); color:#ecd28f; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
 /* La bannière est sombre dans les deux thèmes : ses boutons gardent le vert vif (le vert du thème clair y serait peu lisible) */
 .banner-card .bc-link{ border:1px solid transparent; background:var(--btn-gloss) padding-box, var(--btn-fill) padding-box, var(--btn-rim) border-box; color:var(--on-btn); box-shadow:var(--btn-hi), var(--btn-glow); }
-.banner-style-default .btn-primary{ box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 8px 24px rgba(57,255,106,.42), 0 2px 6px rgba(0,0,0,.3); }
+.banner-style-default .btn-primary{ box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 8px 24px rgba(10,240,114,.42), 0 2px 6px rgba(0,0,0,.3); }
 .banner-style-default .btn-secondary{ background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.34); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); color:#f7faf8; }
 /* Styles reprenant ceux du panel admin (Publicités) */
-.banner-style-neon{ border:1px solid #39ff6a; box-shadow:0 0 22px rgba(57,255,106,.25); background:rgba(57,255,106,.06); }
+.banner-style-neon{ border:1px solid #0af072; box-shadow:0 0 22px rgba(10,240,114,.25); background:rgba(10,240,114,.06); }
 .banner-style-gradient{ border:1px solid transparent; background:linear-gradient(#0b0c0b,#0b0c0b) padding-box, linear-gradient(120deg,#4facfe,#00f2fe) border-box; }
 .banner-style-gold{ border:1px solid #FFD700; background:linear-gradient(135deg, rgba(255,215,0,.12), transparent); box-shadow:0 0 24px rgba(255,215,0,.25); }
 .banner-style-alert{ border:1px solid #ef4444; background:rgba(239,68,68,.1); }
@@ -344,6 +357,7 @@
 /* ----- Accueil compact : petits téléphones (≤ 640 px de haut) — on réduit l'intrinsèque plutôt que de tout mettre à l'échelle ----- */
 @media (max-height:640px){
   .home{ --hex:68px; --power-size:148px; }
+  .hero-logo{ --logo-w:124px; }
   .home-main{ gap:5px; }
   .app-title{ font-size:24px; margin-top:3px; }
   .app-subtitle{ font-size:10.5px; }

@@ -12,33 +12,38 @@
   color-scheme: dark;
 
   /* Marque */
-  --brand:#39ff6a;                       /* vert principal : icônes, libellés, éléments actifs */
-  --brand-hi:#9dffb6;                    /* vert lumineux : à utiliser avec modération (connecté, action principale) */
-  --brand-strong:#12b34a;                /* vert franc : bas des dégradés, états pressés */
-  --brand-deep:#06361a;                  /* vert très sombre : fonds teintés, début des dégradés */
-  --brand-title:#39ff6a;                 /* titres de section */
-  --on-brand:#04140a;                    /* texte sur un aplat --brand */
-  --brand-soft:rgba(57,255,106,.14);
-  --brand-line:rgba(57,255,106,.38);
-  --brand-glow:rgba(57,255,106,.38);      /* halo néon */
+  --brand:#0af072;                       /* vert principal : icônes, libellés, éléments actifs */
+  --brand-hi:#9dffc0;                    /* vert lumineux : à utiliser avec modération (connecté, action principale) */
+  --brand-strong:#06a640;                /* vert franc : bas des dégradés, états pressés */
+  --brand-deep:#05381a;                  /* vert très sombre : fonds teintés, début des dégradés */
+  --brand-title:#0af072;                 /* titres de section */
+  --on-brand:#031208;                    /* texte sur un aplat --brand */
+  --brand-soft:rgba(10,240,114,.14);
+  --brand-line:rgba(10,240,114,.38);
+  --brand-glow:rgba(10,240,114,.38);      /* halo néon */
 
   /* Bouton principal (thème sombre) : dégradé néon mixant menthe, vert néon et vert franc, texte sombre ; liseré et reflet en plus */
-  --btn-from:#0b6a37; --btn-to:#0e8341; --on-btn:#04140a;
-  --btn-edge:rgba(157,255,182,.5);
+  --btn-from:#07682f; --btn-to:#0a8240; --on-btn:#031208;
+  --btn-edge:rgba(157,255,192,.5);
   --btn-hi:inset 0 1px 0 rgba(255,255,255,.55);
-  --btn-fill:linear-gradient(165deg, #9dffb6 0%, #39ff6a 40%, #22e08c 100%);
+  --btn-fill:linear-gradient(165deg, #9dffc0 0%, #0af072 40%, #0cc255 100%);
 
   /* Mixage de verts : émeraude -> vert néon -> menthe -> citron vert, pour les boutons, jauges, interrupteurs, halos et mots de marque.
      (Thème clair : mêmes rôles avec des verts plus profonds, texte clair sur émeraude, contraste >= 4,5:1.) */
-  --mix-lime:#9cf06a; --mix-mint:#2fe3a2; --mix-green:#19c763; --mix-emerald:#0f8a45;
-  --grad-brand:linear-gradient(135deg, #12b34a 0%, #39ff6a 45%, #7dffa0 75%, #b6ff8a 100%);        /* jauges, interrupteurs, remplissages */
-  --grad-text:linear-gradient(95deg, #39ff6a 0%, #9dffb6 42%, #2ff0a8 70%, #b6ff8a 100%);           /* mots de marque en dégradé */
-  --btn-rim:linear-gradient(150deg, rgba(235,255,225,.95), rgba(157,255,182,.55) 40%, rgba(18,179,74,.55) 72%, rgba(120,255,190,.8));   /* liseré */
+  --mix-lime:#7dfca8; --mix-mint:#2fe3a2; --mix-green:#0cc050; --mix-emerald:#07883a;
+  --grad-brand:linear-gradient(135deg, #06a640 0%, #0af072 45%, #6cfb9a 75%, #c8ffd8 100%);        /* jauges, interrupteurs, remplissages */
+  --grad-text:linear-gradient(95deg, #0af072 0%, #9dffc0 42%, #3ff58a 70%, #c8ffd8 100%);           /* mots de marque en dégradé */
+  --btn-rim:linear-gradient(150deg, rgba(235,255,228,.95), rgba(157,255,192,.55) 40%, rgba(18,179,74,.55) 72%, rgba(120,255,190,.8));   /* liseré */
   --btn-gloss:linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,0) 55%);              /* reflet du haut */
-  --btn-glow:0 6px 22px rgba(57,255,106,.38);
-  --btn-glow-hi:0 8px 28px rgba(57,255,106,.55);
+  --btn-glow:0 6px 22px rgba(10,240,114,.38);
+  --btn-glow-hi:0 8px 28px rgba(10,240,114,.55);
   --btn2-gloss:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 60%);            /* reflet des boutons secondaires */
-  --halo-mix:radial-gradient(circle, rgba(57,255,106,.42) 0, rgba(47,240,168,.18) 36%, transparent 66%);
+  --halo-mix:radial-gradient(circle, rgba(10,240,114,.42) 0, rgba(30,245,130,.18) 36%, transparent 66%);
+
+
+  /* Argent chromé du logo (« LABO », filets) : lettres claires qui se détachent sur le vert émeraude de « SURF » */
+  --chrome:linear-gradient(180deg, #ffffff 0%, #e4e4e4 38%, #a8a8a8 62%, #f0f0f0 100%);
+  --silver-line:rgba(224,224,224,.22);
 
   /* Sémantique */
   --gold:#d8b45a;   --gold-soft:rgba(216,180,90,.12);   --gold-line:rgba(216,180,90,.36);   /* PREMIUM uniquement */
@@ -48,28 +53,28 @@
   --warning:#f2ae45;--warning-soft:rgba(242,174,69,.14);--warning-line:rgba(242,174,69,.4);
 
   /* Surfaces & texte */
-  --bg:#020604;
-  --bg-2:#040c07;
-  --bg-glow:radial-gradient(90% 42% at 50% -6%, rgba(57,255,106,.20), transparent 60%), radial-gradient(55% 34% at 100% 40%, rgba(47,240,168,.10), transparent 62%), radial-gradient(55% 34% at 0% 80%, rgba(182,255,138,.08), transparent 62%), radial-gradient(70% 30% at 50% 110%, rgba(57,255,106,.09), transparent 65%), linear-gradient(180deg, #030a05 0%, #020604 45%, #010402 100%);
-  --btn-off:#101d16;
-  --btn-off-hi:#1f3a2b; --btn-off-lo:#060d09; --btn-off-edge:rgba(140,255,180,.12);   /* bouton START : relief */
+  --bg:#010403;
+  --bg-2:#030a06;
+  --bg-glow:radial-gradient(90% 42% at 50% -6%, rgba(10,240,114,.20), transparent 60%), radial-gradient(55% 34% at 100% 40%, rgba(30,245,130,.10), transparent 62%), radial-gradient(55% 34% at 0% 80%, rgba(182,255,138,.08), transparent 62%), radial-gradient(70% 30% at 50% 110%, rgba(10,240,114,.09), transparent 65%), linear-gradient(180deg, #030a05 0%, #010403 45%, #010402 100%);
+  --btn-off:#0e1d15;
+  --btn-off-hi:#1d3a2a; --btn-off-lo:#050c08; --btn-off-edge:rgba(140,255,180,.12);   /* bouton START : relief */
   --power-drop:rgba(0,4,1,.65);
-  --rail-bg:#050d08;
-  --rail-line:rgba(57,255,106,.26);
-  --rail-icon:#5fc98a;                   /* icône de navigation inactive */
-  --rail-active-bg:linear-gradient(150deg, #12b34a 0%, #39ff6a 55%, #9dffb6 100%);
-  --surface:#07110b;
-  --surface-2:#0b1a12;
+  --rail-bg:#040d08;
+  --rail-line:rgba(10,240,114,.26);
+  --rail-icon:#58c98a;                   /* icône de navigation inactive */
+  --rail-active-bg:linear-gradient(150deg, #06a640 0%, #0af072 55%, #9dffc0 100%);
+  --surface:#060f0a;
+  --surface-2:#0a1912;
   --border:rgba(120,255,170,.12);
   --border-strong:rgba(120,255,170,.24);
   --text:#f1f5f2;
   --text-muted:#b6c6bb;
   --text-faint:#7d9285;
-  --input-bg:#030a06;
+  --input-bg:#020906;
   --nav-bg:rgba(4,12,8,.97);
   --overlay:rgba(0,6,2,.7);
   --shadow:0 10px 30px rgba(0,0,0,.5);
-  --card-halo:0 0 0 1px rgba(57,255,106,.05), 0 10px 28px rgba(0,0,0,.45), 0 0 22px rgba(57,255,106,.06);   /* halo vert des cartes */
+  --card-halo:0 0 0 1px rgba(10,240,114,.05), 0 10px 28px rgba(0,0,0,.45), 0 0 22px rgba(10,240,114,.06);   /* halo vert des cartes */
 
   /* Typographie */
   --font-display:'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -120,6 +125,10 @@
   --btn2-gloss:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,0) 65%);
   --halo-mix:radial-gradient(circle, rgba(15,157,106,.24) 0, rgba(10,122,61,.12) 36%, transparent 66%);
 
+
+  --chrome:linear-gradient(180deg, #2a3a34 0%, #0b1a12 55%, #3a4a43 100%);
+  --silver-line:rgba(10,40,25,.18);
+
   --gold:#7c5c0d;   --gold-soft:rgba(124,92,13,.12);   --gold-line:rgba(124,92,13,.38);
   --orange:#a8480a; --orange-soft:rgba(168,72,10,.12);
   --info:#086a96;   --info-soft:rgba(8,106,150,.10);
@@ -154,7 +163,7 @@
    États de connexion : une seule source de couleur pour l'accueil, l'historique, les pastilles et le guide. */
 :root{
   /* Logo : inchangé (décision du propriétaire) — toujours la version sombre, quel que soit le thème */
-  --logo-fill:#000000; --logo-line:#39ff6a; --logo-glow:rgba(57,255,106,.38);
+  --logo-fill:#000000; --logo-line:#0af072; --logo-glow:rgba(10,240,114,.38);
 
   --state-idle:var(--text);          /* prêt / déconnecté : neutre, jamais rouge (ce n'est pas une erreur) */
   --state-busy:var(--warning);       /* connexion / déconnexion en cours (l'or est réservé à PREMIUM) */

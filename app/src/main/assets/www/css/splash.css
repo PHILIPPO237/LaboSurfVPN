@@ -48,7 +48,7 @@
 /* Textes : LABO (blanc) puis SURF (vert), puis la ligne « Laboratoire du Free-Surf » */
 .sp-title{ display:flex; gap:.32em; font:800 34px/1 var(--font-display); letter-spacing:.04em; }
 .sp-title span{ opacity:0; transform:translateY(16px); animation:spUp .55s var(--ease) forwards; }
-.sp-labo{ color:var(--text); animation-delay:.95s !important; }
+.sp-labo{ background:var(--chrome); -webkit-background-clip:text; background-clip:text; color:transparent; animation-delay:.95s !important; }
 .sp-surf{ color:var(--brand); text-shadow:0 0 18px var(--brand-glow); animation-delay:1.08s !important; }
 @keyframes spUp{ to{ opacity:1; transform:none; } }
 .sp-sub{ display:flex; gap:.4em; font:600 12px/1.3 var(--font-body); letter-spacing:.1em; text-transform:uppercase; opacity:0; animation:spFade .6s ease 1.3s forwards; }

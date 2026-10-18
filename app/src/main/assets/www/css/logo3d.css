@@ -1,0 +1,21 @@
+/* Logo animé « LABOSURF VPN » : cadre + texte (img/logo3-B.png), globe qui tourne (canvas, js/logo-globe.js), clé + anneau (img/logo3-K.png).
+   Le globe occupe 44,34 % du carré à (26,87 % ; 15,15 %) : position du globe dans le logo d'origine (1254 x 1254). */
+.logo3d{ position:relative; width:100%; aspect-ratio:1; }
+.logo3d .lg-b{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.logo3d .lg-globe, .logo3d .lg-k{ position:absolute; left:26.87%; top:15.15%; width:44.34%; height:44.34%; display:block; }
+/* thème clair : le logo reste sur sa plaque sombre d'origine, lisible sur fond clair */
+:root[data-theme="light"] .logo3d{ background:#02070a; border-radius:18%; }
+
+/* Accueil : le logo complet contient déjà le nom et le slogan */
+.hero-logo .logo3d{ filter:none; animation:none; }
+.hero-logo{ --logo-w:clamp(172px, 28vh, 236px); flex-shrink:0; }
+@media (max-height:640px){ .hero-logo{ --logo-w:132px; } }
+
+/* Ouverture : même logo, plus grand ; le texte CSS d'origine est masqué (déjà dans l'image) */
+.sp-stage{ width:min(64vw, 250px); }
+.splash .sp-title, .splash .sp-sub{ display:none; }
+.sp-stage .logo3d{ opacity:0; transform:scale(.7); animation:spEmblem .8s cubic-bezier(.2,1.2,.4,1) .1s forwards; }
+
+/* À propos */
+.about-hex{ --hex:112px; }
+.about-hex .logo3d{ width:100%; }

@@ -3,6 +3,7 @@
 //   1. ApiBase        — adresse de l'API : configurable, HTTPS obligatoire (sauf boucle locale de développement) ;
 //   2. ConnectContract — lecture stricte de la réponse de POST /api/user/connect ;
 //   3. ProfileOptions  — lecture stricte de GET /api/user/connect/options (profils au choix) et corps de connexion.
+//   4. ProfileContract — lecture stricte du bloc `profile` de GET /api/user/me (profil structuré calculé par le Panel).
 //
 // Rien n'est inventé ici : une réponse qui ne respecte pas le contrat est un ÉCHEC (jamais une configuration
 // reconstruite côté Android). Le contenu de la configuration (uri) ne sort jamais de ce module dans un message.
@@ -197,5 +198,102 @@ const ProfileOptions = (function(){
   return { parse: parse, connectBody: connectBody };
 })();
 
+// ─── 4. Profil structuré : bloc `profile` de GET /api/user/me ───
+// Le Panel décide (rôle, offre, statut, options autorisées) ; l'application AFFICHE. Aucune permission n'est déduite ici :
+// une réponse absente = panel ancien (état « absent »), une réponse qui ne respecte pas le contrat = « invalid » (rien n'est inventé).
+const ProfileContract = (function(){
+  const KINDS = ['free', 'vip', 'reseller', 'admin', 'super_admin'];
+  const STATUS = ['active', 'configuring', 'pending', 'suspended', 'expired'];
+  const str = (v) => (typeof v === 'string' ? v : '');
+
+  function parse(me){
+    if(!me || typeof me !== 'object' || me.profile === undefined || me.profile === null) return { state: 'absent' };
+    const p = me.profile;
+    if(typeof p !== 'object' || Array.isArray(p) || p.version !== 1) return { state: 'invalid' };
+    if(KINDS.indexOf(p.kind) < 0 || !p.status || typeof p.status !== 'object' || STATUS.indexOf(p.status.code) < 0) return { state: 'invalid' };
+    if(typeof p.status.ok !== 'boolean' || !Array.isArray(p.options)) return { state: 'invalid' };
+    const options = [];
+    for(const o of p.options){
+      if(!o || typeof o !== 'object' || typeof o.code !== 'string' || !o.code) return { state: 'invalid' };
+      options.push({ code: o.code, label: str(o.label) || o.code, allowed: o.allowed === true, reason: str(o.reason) });
+    }
+    const sub = p.subscription && typeof p.subscription === 'object' ? p.subscription : {};
+    const days = typeof sub.days_remaining === 'number' && isFinite(sub.days_remaining) ? sub.days_remaining : null;   // inconnu = null, jamais 0
+    return {
+      state: 'ready',
+      profile: {
+        kind: p.kind,
+        kindLabel: str(p.kind_label) || p.kind,
+        roleLabel: str(p.role && p.role.label),
+        offerLabel: str(p.offer && p.offer.label),
+        offerApplies: !(p.offer && p.offer.applies === false),
+        statusCode: p.status.code,
+        statusOk: p.status.ok,
+        statusMessage: str(p.status.message),
+        subscriptionApplies: sub.applies === true,
+        expiresAt: str(sub.expires_at),
+        daysRemaining: days,
+        resellerName: str(p.reseller && p.reseller.username),
+        panelScope: p.panel_access && p.panel_access.allowed === true ? str(p.panel_access.scope) : 'none',
+        options: options,
+      },
+    };
+  }
+  // Résultat d'un appel /api/user/me qui a ÉCHOUÉ -> état d'affichage. Une panne n'est JAMAIS un statut du compte :
+  // 0 = réseau (rien reçu), >= 500 = panel indisponible, autre = profil non fourni.
+  function failure(res){
+    const st = res && typeof res.status === 'number' ? res.status : 0;
+    return { state: st === 0 ? 'network' : (st >= 500 ? 'down' : 'unavailable') };
+  }
+  return { parse: parse, failure: failure };
+})();
+
+// ─── 5. Communauté interne : routes /api/chat/* du panel (lecture stricte, aucune donnée inventée) ───
+// Le panel décide des salons visibles et du droit d'écrire (permissions) ; l'application n'affiche que ce qu'il renvoie.
+const CommunityContract = (function(){
+  const str = (v) => (typeof v === 'string' ? v : '');
+  const num = (v) => (typeof v === 'number' && isFinite(v) ? v : null);
+
+  // Appel échoué -> état d'affichage. 401 = session absente ou expirée (connexion à refaire) ; 403 = compte sans accès ;
+  // 0 = réseau ; >= 500 = panel indisponible. Une panne n'est jamais un refus d'accès.
+  function failure(res){
+    const st = res && typeof res.status === 'number' ? res.status : 0;
+    if(st === 401 || (res && res.expired)) return { state: 'login' };
+    if(st === 403) return { state: 'forbidden', code: str(res && res.data && res.data.code) };
+    if(st === 0) return { state: 'network' };
+    return { state: st >= 500 ? 'down' : 'unavailable' };
+  }
+
+  function parseBootstrap(data){
+    if(!data || typeof data !== 'object' || data.status !== 'ok' || !Array.isArray(data.rooms)) return { state: 'invalid' };
+    const rooms = [];
+    for(const r of data.rooms){
+      if(!r || typeof r !== 'object' || typeof r.id !== 'string' || !r.id || typeof r.label !== 'string' || !r.label) return { state: 'invalid' };
+      rooms.push({ id: r.id, label: r.label, description: str(r.description), unread: num(r.unread) || 0, canWrite: r.can_write === true });
+    }
+    const rs = data.restriction && typeof data.restriction === 'object' ? data.restriction : null;
+    return {
+      state: 'ready',
+      rooms: rooms,
+      canWrite: !!(data.me && data.me.can_write === true),
+      restriction: rs ? { until: num(rs.until), reason: str(rs.reason) } : null,
+      maxText: data.limits && num(data.limits.max_text) ? data.limits.max_text : 2000,
+    };
+  }
+
+  function parseMessages(data){
+    if(!data || typeof data !== 'object' || data.status !== 'ok' || !Array.isArray(data.messages)) return { state: 'invalid' };
+    const messages = [];
+    for(const m of data.messages){
+      if(!m || typeof m !== 'object' || num(m.id) === null) return { state: 'invalid' };
+      const a = m.author && typeof m.author === 'object' ? m.author : {};
+      messages.push({ id: m.id, text: str(m.text), author: str(a.username), role: str(a.role), official: a.official === true,
+        createdAt: m.created_at === undefined ? null : m.created_at, mine: m.mine === true, hasFile: !!m.file });
+    }
+    return { state: 'ready', messages: messages, lastId: num(data.last_id) };
+  }
+  return { failure: failure, parseBootstrap: parseBootstrap, parseMessages: parseMessages };
+})();
+
 // Chargé aussi par les tests Node (CommonJS) ; sans effet dans le navigateur
-if(typeof module !== 'undefined' && module.exports) module.exports = { ApiBase: ApiBase, ConnectContract: ConnectContract, ProfileOptions: ProfileOptions };
+if(typeof module !== 'undefined' && module.exports) module.exports = { ApiBase: ApiBase, ConnectContract: ConnectContract, ProfileOptions: ProfileOptions, ProfileContract: ProfileContract, CommunityContract: CommunityContract };
