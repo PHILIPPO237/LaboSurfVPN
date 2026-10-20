@@ -73,6 +73,15 @@
 .pf-sub{ font-size:var(--fs-xs); color:var(--text-muted); }
 .pf-sub:empty{ display:none; }
 
+/* Jauge de validité (semi-circulaire) : durée réelle seulement */
+.pf-ring{ display:block; width:min(120px, 100%); height:auto; margin:4px 0 2px; overflow:visible; }
+.pf-ring[hidden]{ display:none; }
+.pf-ring path{ fill:none; stroke-width:7; stroke-linecap:round; }
+.pf-ring-track{ stroke:rgba(255,255,255,.10); }
+.pf-ring-val{ stroke:rgb(var(--pf-b)); filter:drop-shadow(0 0 5px rgba(var(--pf-b),.55)); transition:stroke-dasharray .6s var(--ease); }
+.pf[data-st="expired"] .pf-ring-val, .pf[data-st="suspended"] .pf-ring-val{ stroke:rgb(var(--bad)); }
+:root[data-theme="light"] .pf-ring-track{ stroke:rgba(0,0,0,.10); }
+
 /* Options : cartes compactes (une colonne : le rail latéral réduit déjà la largeur) ; l'état se lit à l'icône ET à la couleur ET au texte */
 .pf-opts{ display:grid; grid-template-columns:1fr; gap:var(--sp-2); margin-bottom:var(--sp-3); }
 .pf-opts:empty{ display:none; }

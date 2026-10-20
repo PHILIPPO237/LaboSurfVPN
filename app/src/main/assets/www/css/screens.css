@@ -383,6 +383,11 @@
 /* Les styles de bannières du panel sont conçus pour un fond sombre : socle sombre conservé en thème clair */
 :root[data-theme="light"] .banner-card:not(.banner-style-default){ background-color:#0b0c0b; }
 
+/* Symbole officiel LABOSURF (planche « LABOSURF INTERFACES », symbole seul) : repère de marque des menus, jamais un bouton */
+.brand-mark{ display:block; width:64px; height:64px; margin:0 auto var(--sp-3); border-radius:22%;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 8px 22px rgba(0,0,0,.45), 0 0 22px rgba(10,240,114,.16); }
+
+
 /* ---------- Historique : lignes de session ---------- */
 .hist-meta{ display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; }
 .hist-dur{ font:600 var(--fs-sm)/1.2 var(--font-mono); }

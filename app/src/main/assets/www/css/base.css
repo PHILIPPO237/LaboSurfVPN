@@ -34,7 +34,13 @@ a{ color:inherit; }
 .screen{
   display:none; position:absolute; inset:0; overflow-x:hidden; overflow-y:auto;
   padding:var(--sp-5) var(--sp-4) var(--sp-6) calc(var(--rail-left) + var(--rail-btn) + 22px); -webkit-overflow-scrolling:touch;
+  transition:padding-left var(--dur) var(--ease);   /* l'écran secondaire récupère fluidement la largeur du rail */
 }
+/* ─── Rail : écran principal uniquement ─────────────────────────────────────────
+   Hors accueil, le rail disparaît complètement (pas de copie, pas de barre basse) et l'écran secondaire
+   récupère toute la largeur : la goutte réservée au rail est libérée, les marges intérieures restent harmonieuses. */
+:root:not([data-screen="home"]) .rail{ display:none; }
+:root:not([data-screen="home"]) .screen{ padding-left:var(--sp-4); }
 /* Rail adaptatif : tailles décroissantes selon l'écran, mêmes boutons partout (aucun n'est retiré).
    Cible tactile minimale 44 px sur les petits écrans. */
 @media (max-height:760px){ .app{ --rail-btn:48px; --rail-gap:8px; } }

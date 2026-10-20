@@ -1,0 +1,269 @@
+/* ==========================================================================
+   LABOSURF — « Verre de forêt » : langage visuel unique de l'application (refonte 2026-10).
+   Chargé EN DERNIER : il remplace l'habillage des écrans (néon, grille, accents multicolores en rotation)
+   sans toucher à la structure ni au comportement. Les feuilles précédentes restent en place (rien n'est supprimé) ;
+   les règles d'ici sont préfixées par #app pour primer sur elles.
+
+   Principes
+   - Fond : noir abysse et vert forêt profond. Le vert lumineux (#0af072) est réservé aux ACTIONS et aux états actifs.
+   - Une seule famille de verre pour les cartes ; la couleur ne change que si elle porte une information
+     (premium = champagne, externe/Telegram = saphir, danger = rouge, information = acier).
+   - Hiérarchie par l'élévation : carte héroïque (rayon 24, ombre portée + ombres latérales), groupe (rayon 20),
+     puce/ligne (rayon 12). Pas le même rayon partout.
+   - Titres en casse de phrase (plus de capitales espacées ni de néon), chiffres en tabulaires.
+   - L'animation d'ouverture et le logo animé (globe, hexagone, clé) ne sont pas modifiés.
+   ========================================================================== */
+
+:root{
+  --lg-abyss:#020705;            /* fond */
+  --lg-wood:#0a1f15;             /* sous-bois : panneaux */
+  --lg-moss:#123628;             /* mousse : panneaux éclairés */
+  --lg-emerald:#10c47a;          /* identité */
+  --lg-light:#0af072;            /* actions, états actifs */
+  --lg-mint:#8fe3bc;             /* texte d'accent secondaire */
+  --lg-steel:#8fa7b3;            /* information neutre */
+  --lg-champagne:#d8b45a;        /* premium uniquement */
+  --lg-sapphire:#5aa9e6;         /* externe (Telegram) */
+
+  --lg-glass:linear-gradient(162deg, rgba(20,58,43,.62) 0%, rgba(9,27,19,.74) 46%, rgba(4,13,9,.82) 100%);
+  --lg-glass-soft:linear-gradient(162deg, rgba(16,46,34,.46), rgba(6,18,13,.62));
+  --lg-edge:rgba(143,227,188,.16);
+  --lg-edge-top:rgba(196,245,222,.30);
+  --lg-hi:inset 0 1px 0 rgba(255,255,255,.09);
+  /* ombres latérales : la carte se détache à gauche ET à droite, puis repose sur une ombre portée */
+  --lg-side:-16px 0 26px -20px rgba(0,0,0,.9), 16px 0 26px -20px rgba(0,0,0,.9), 0 22px 36px -22px rgba(0,0,0,.85);
+  --lg-blur:blur(16px) saturate(140%);
+  --lg-r-hero:24px; --lg-r-group:20px; --lg-r-chip:12px;
+
+  /* Fond d'application : deux nappes de forêt très diffuses, jamais de grille */
+  --bg:#020705;
+  --bg-glow:radial-gradient(120% 55% at 50% -12%, rgba(16,196,122,.16), transparent 62%),
+            radial-gradient(70% 40% at 105% 55%, rgba(18,54,40,.55), transparent 70%),
+            radial-gradient(60% 36% at -8% 88%, rgba(18,54,40,.45), transparent 70%),
+            linear-gradient(180deg, #03100a 0%, #020705 50%, #010403 100%);
+}
+
+/* ---------------------------------------------------------------- Rail (accueil uniquement) ---
+   Une colonne de verre unique ; les boutons y sont posés à plat, l'actif devient une pastille émeraude. */
+#app .rail{
+  padding:8px; margin-right:0; gap:calc(var(--rail-gap) - 2px); border-radius:28px;
+  background:var(--lg-glass); border:1px solid var(--lg-edge); border-top-color:var(--lg-edge-top);
+  box-shadow:var(--lg-side), var(--lg-hi), 0 0 30px rgba(16,196,122,.06);
+  -webkit-backdrop-filter:var(--lg-blur); backdrop-filter:var(--lg-blur);
+}
+#app .rail-btn{ border-radius:18px; background:transparent; border:1px solid transparent; box-shadow:none; color:rgba(143,227,188,.78); }
+#app .rail-btn:not(.active):active{ background:rgba(16,196,122,.10); }
+#app .rail-btn.active{ border-color:rgba(196,245,222,.45); color:var(--on-btn);
+  box-shadow:0 8px 18px -6px rgba(10,240,114,.45), inset 0 1px 0 rgba(255,255,255,.5); }
+#app .rail-caret{ background:var(--lg-wood); border-color:var(--lg-edge); color:var(--lg-mint); right:-4px; }
+#app .rail-mini{ background:rgba(10,31,21,.85); border-color:var(--lg-edge); color:var(--lg-mint); }
+#app .rail-badge{ box-shadow:0 0 0 2px var(--lg-wood); }
+/* l'accueil réserve la largeur de la colonne (bouton + 2 × 8 px de verre) */
+#app #screen-home{ padding-left:calc(var(--rail-left) + var(--rail-btn) + 16px + 16px); }
+#app .home-foot{ margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 16px + 16px) + var(--sp-4)); }
+#app .home-foot.is-inset{ margin-left:0; }
+
+/* ---------------------------------------------------------------- Accueil ---
+   Bouton central conservé (identité validée) ; les informations de connexion deviennent UNE carte de verre
+   héroïque, posée sous le bouton, qui regroupe statut, session réelle, serveur choisi et trafic. */
+#app .conn-card{
+  position:relative; align-self:stretch; display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:14px 16px 16px; border-radius:var(--lg-r-hero);
+  background:var(--lg-glass); border:1px solid var(--lg-edge); border-top-color:var(--lg-edge-top);
+  box-shadow:var(--lg-side), var(--lg-hi);
+  -webkit-backdrop-filter:var(--lg-blur); backdrop-filter:var(--lg-blur);
+}
+#app .conn-card::before{   /* filet lumineux du haut : le verre accroche la lumière */
+  content:''; position:absolute; left:18%; right:18%; top:-1px; height:1px; border-radius:1px; pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(143,227,188,.65), transparent);
+}
+#app .home[data-state="on"] .conn-card{ border-color:rgba(10,240,114,.32); box-shadow:var(--lg-side), var(--lg-hi), 0 0 28px rgba(10,240,114,.10); }
+#app .home[data-state="error"] .conn-card{ border-color:var(--danger-line); }
+#app .conn-card .status-block{ width:100%; }
+#app .conn-card .profile-chip{ margin-top:2px; }
+#app .conn-card .tiles{ width:100%; margin-top:2px; }
+#app .conn-card .tile{ background:rgba(2,7,5,.45); border:1px solid rgba(143,227,188,.12); border-radius:var(--lg-r-chip); box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
+#app .conn-card .tile-v{ font-variant-numeric:tabular-nums; }
+#app .conn-card .tile-k .ic{ color:var(--lg-mint); }
+#app .conn-card .home-action{ width:100%; }
+#app .conn-card .status-title{ font-size:var(--fs-lg); }
+#app .conn-card .timer{ color:var(--lg-light); text-shadow:0 0 14px rgba(10,240,114,.25); }
+
+
+/* ---------------------------------------------------------------- Écrans secondaires ---
+   Pleine largeur (le rail a disparu), fond sans grille, en-tête : retour en verre + titre en casse de phrase. */
+#app .screen:not(#screen-home){ background-image:none; }
+#app .screen:not(#screen-home) .screen-head{ margin-bottom:18px; gap:12px; }
+#app .screen:not(#screen-home) .screen-head h1,
+#app .screen:not(#screen-home):not(#screen-about) .screen-head h1{
+  padding-bottom:0; font:700 22px/1.2 var(--font-display); letter-spacing:-.01em; text-transform:none;
+  color:var(--text); text-shadow:none;
+}
+#app .screen:not(#screen-home):not(#screen-about) .screen-head h1::after{ content:none; }
+#app .head-title{ display:flex; align-items:center; gap:12px; min-width:0; }
+#app .back-btn{
+  width:42px; height:42px; flex:0 0 42px; border-radius:50%;
+  background:var(--lg-glass-soft); border:1px solid var(--lg-edge); border-top-color:var(--lg-edge-top); color:var(--lg-mint);
+  box-shadow:0 8px 18px -10px rgba(0,0,0,.9), var(--lg-hi);
+}
+#app .back-btn .ic{ width:19px; height:19px; }
+
+/* Titres de section : casse de phrase, menthe, sans capitales espacées ni lueur */
+#app .section-title,
+#app .screen:not(#screen-home):not(#screen-about) .section-title{
+  font:600 13.5px/1.3 var(--font-display); letter-spacing:0; text-transform:none; color:var(--lg-mint); text-shadow:none;
+  margin:22px 4px 10px;
+}
+#app .section-title:first-child{ margin-top:0; }
+#app .card-title,
+#app .screen:not(#screen-home):not(#screen-about) .card-title{
+  font:600 14px/1.3 var(--font-display); letter-spacing:0; text-transform:none; color:var(--text);
+}
+
+/* Cartes et groupes : UNE famille de verre (fini la rotation de couleurs), ombres latérales, filet supérieur */
+#app .screen:not(#screen-home):not(#screen-about) :is(.card,.list,.accordion,.svc-card),
+:root:not([data-theme="light"]) #app .screen:not(#screen-home):not(#screen-about) :is(.card,.list,.accordion,.svc-card){
+  position:relative;
+  background:var(--lg-glass); border:1px solid var(--lg-edge); border-top-color:var(--lg-edge-top); border-left-width:1px;
+  border-radius:var(--lg-r-group); box-shadow:var(--lg-side), var(--lg-hi);
+  -webkit-backdrop-filter:var(--lg-blur); backdrop-filter:var(--lg-blur);
+}
+#app .screen:not(#screen-home):not(#screen-about) :is(.card,.list,.accordion,.svc-card)::after{
+  content:''; position:absolute; left:14%; right:14%; top:-1px; height:1px; inset-block-end:auto; pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(196,245,222,.55), transparent); animation:none; transform:none; opacity:1;
+}
+/* Couleur porteuse de sens uniquement */
+:root:not([data-theme="light"]) #app .screen:not(#screen-home):not(#screen-about) :is(.card,.list).fam-sapphire{
+  background:linear-gradient(162deg, rgba(24,60,98,.58), rgba(8,22,38,.80)); border-color:rgba(90,169,230,.24); border-top-color:rgba(160,205,240,.36);
+}
+:root #app .screen:not(#screen-home):not(#screen-about) .fam-sapphire .row-ico{ background:rgba(90,169,230,.14); border-color:rgba(90,169,230,.28); color:var(--lg-sapphire); }
+
+/* Lignes de liste : icône en pastille de verre, séparateurs fins, appui émeraude */
+#app .screen:not(#screen-home) .list .row + .row,
+#app .screen:not(#screen-home):not(#screen-about) .list .row + .row{ border-top:0; }
+#app .screen:not(#screen-home) .row{ border-bottom-color:rgba(143,227,188,.08); min-height:58px; }
+#app .screen:not(#screen-home) button.row:active, #app .screen:not(#screen-home) a.row:active{ background:rgba(16,196,122,.08); }
+#app .screen:not(#screen-home) .row-ico,
+#app .screen:not(#screen-home):not(#screen-about) .row-ico{
+  width:38px; height:38px; border-radius:var(--lg-r-chip);
+  background:rgba(16,196,122,.10); border:1px solid rgba(143,227,188,.18); color:var(--lg-mint); box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+#app .screen:not(#screen-home) .row-primary .row-ico,
+#app .screen:not(#screen-home):not(#screen-about) .row-primary .row-ico{
+  background:linear-gradient(160deg, #6cfb9a, #0af072 45%, #06a640); border-color:rgba(196,245,222,.55); color:var(--on-btn);
+  box-shadow:0 6px 14px -6px rgba(10,240,114,.55), inset 0 1px 0 rgba(255,255,255,.45);
+}
+#app .screen:not(#screen-home) .row-title{ font-weight:600; }
+#app .screen:not(#screen-home) .row-sub{ color:var(--text-muted); }
+#app .screen:not(#screen-home) .row-chev{ color:rgba(143,227,188,.45); }
+
+/* Boutons secondaires et icônes : verre */
+#app .btn-secondary{ background:var(--lg-glass-soft); border-color:var(--lg-edge); border-top-color:var(--lg-edge-top); color:var(--text);
+  box-shadow:0 8px 18px -12px rgba(0,0,0,.9), var(--lg-hi); }
+#app .icon-btn:not(.back-btn){ background:var(--lg-glass-soft); border-color:var(--lg-edge); }
+
+/* États vides et chargement : lisibles, sans décor */
+#app .empty-title{ font:700 var(--fs-lg)/1.3 var(--font-display); color:var(--text); }
+
+/* ---------------------------------------------------------------- Thème clair ---
+   Verre laiteux légèrement teinté de vert ; mêmes rayons, mêmes ombres latérales adoucies. */
+:root[data-theme="light"]{
+  --lg-glass:linear-gradient(162deg, rgba(255,255,255,.86), rgba(236,246,240,.78) 55%, rgba(222,239,230,.80));
+  --lg-glass-soft:linear-gradient(162deg, rgba(255,255,255,.80), rgba(232,244,237,.72));
+  --lg-edge:rgba(18,90,58,.16); --lg-edge-top:rgba(255,255,255,.95);
+  --lg-mint:#0b7a4b;
+  --lg-side:-14px 0 24px -20px rgba(16,52,36,.45), 14px 0 24px -20px rgba(16,52,36,.45), 0 18px 30px -22px rgba(16,52,36,.5);
+}
+:root[data-theme="light"] #app .rail-btn{ color:#2c6b4f; }
+:root[data-theme="light"] #app .conn-card .tile{ background:rgba(255,255,255,.65); border-color:rgba(18,90,58,.14); }
+:root[data-theme="light"] #app .screen:not(#screen-home) .row-ico{ background:rgba(16,160,100,.10); border-color:rgba(18,90,58,.16); }
+:root[data-theme="light"] #app .screen:not(#screen-home):not(#screen-about) :is(.card,.list).fam-sapphire{
+  background:linear-gradient(162deg, rgba(232,242,252,.92), rgba(214,232,248,.84)); border-color:rgba(40,100,160,.22); }
+
+/* ---------------------------------------------------------------- Performances ---
+   Appareils sans flou d'arrière-plan : le verre devient un aplat dégradé, même identité. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #app .rail, #app .conn-card, #app .screen:not(#screen-home) :is(.card,.list,.accordion,.svc-card){ background:linear-gradient(162deg, #123628, #06140d); }
+}
+#app .conn-card > .alert{ align-self:stretch; margin:0; }
+#app .app, .app#app{ --rail-btn:48px; --rail-gap:8px; }
+@media (max-height:760px){ #app.app{ --rail-btn:44px; --rail-gap:6px; } }
+
+/* ---------------------------------------------------------------- Accueil : proportions ---
+   Le logo animé et le bouton restent les deux repères ; ils sont dimensionnés pour que la carte de connexion,
+   l'emplacement publicitaire et la bannière tiennent sans réduire tout l'écran. */
+#app .home{ --power-size:clamp(146px, 21vh, 182px); gap:10px; }
+#app .hero-logo{ --logo-w:clamp(124px, 19vh, 180px); }
+#app .power-zone{ margin:4px 0; }
+#app .sig-home{ margin-top:0; }
+#app .sig-home .sig-rule{ display:none; }
+@media (max-height:640px){
+  #app .home{ --power-size:136px; }
+  #app .hero-logo{ --logo-w:108px; }
+  #app .conn-card{ padding:10px 12px 12px; gap:6px; }
+}
+
+/* ---------------------------------------------------------------- Courbe du débit (mesures réelles) ---
+   Réception = émeraude, envoi = bleu acier ; les deux tuiles reprennent ces couleurs pour lire la courbe sans légende. */
+#app .tiles .spark{ grid-column:1 / -1; width:100%; height:44px; display:block; overflow:visible; }
+#app .tiles .spark[hidden]{ display:none; }
+#app .spark path{ fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+#app .spark-rx{ stroke:var(--lg-light); filter:drop-shadow(0 0 4px rgba(10,240,114,.45)); }
+#app .spark-tx{ stroke:var(--lg-steel); opacity:.9; }
+#app .conn-card .tile:first-child .tile-k .ic{ color:var(--lg-light); }
+#app .conn-card .tile:nth-child(2) .tile-k .ic{ color:var(--lg-steel); }
+
+/* ---------------------------------------------------------------- Serveurs et profils de connexion ---
+   Chaque serveur est une carte de verre individuelle (pas une ligne de liste) : la sélection se lit au liseré émeraude,
+   à la coche pleine et à la lueur ; un serveur indisponible est assourdi. Charge et ping restent ceux renvoyés par le panel. */
+#app #screen-servers .server-row{
+  position:relative; margin-bottom:10px; border-radius:18px; padding:12px 14px;
+  background:var(--lg-glass); border:1px solid var(--lg-edge); border-top-color:var(--lg-edge-top);
+  box-shadow:var(--lg-side), var(--lg-hi);
+  -webkit-backdrop-filter:var(--lg-blur); backdrop-filter:var(--lg-blur);
+  transition:border-color .25s var(--ease), box-shadow .25s var(--ease), transform .2s var(--ease);
+}
+#app #screen-servers .server-row:active{ transform:scale(.985); }
+#app #screen-servers .server-row .avatar{ border-radius:14px; background:rgba(16,196,122,.10); border:1px solid rgba(143,227,188,.18); color:var(--lg-mint); }
+#app #screen-servers .server-row.is-active{
+  border-color:rgba(10,240,114,.55); border-top-color:rgba(196,245,222,.7);
+  box-shadow:var(--lg-side), var(--lg-hi), 0 0 0 1px rgba(10,240,114,.18), 0 0 26px rgba(10,240,114,.14);
+}
+#app #screen-servers .server-row.is-active .avatar{ background:linear-gradient(160deg, #6cfb9a, #0af072 45%, #06a640); color:var(--on-btn); border-color:rgba(196,245,222,.55); }
+#app #screen-servers .server-row.is-disabled{ opacity:.55; filter:saturate(.5); }
+#app #screen-servers .load-bar{ background:rgba(255,255,255,.08); border-radius:4px; }
+#app #screen-servers .srv-summary{ color:var(--lg-mint); }
+:root[data-theme="light"] #app #screen-servers .server-row.is-active{ border-color:rgba(6,166,64,.55); }
+
+/* Compte : une sous-vue (profil, accès, sécurité) porte son propre en-tête ; celui de l'écran est masqué pour éviter le doublon */
+#app #screen-account[data-view]:not([data-view="menu"]):has(#accLoggedIn:not([hidden])) > .screen-head{ display:none; }
+#app #screen-account .subhead-title{ font:700 22px/1.2 var(--font-display); letter-spacing:-.01em; }
+
+/* ---------------------------------------------------------------- Logos officiels (planche LABISURF INTERFACES) ---
+   Accueil : logo vertical officiel (globe, clé, hexagone, LABOSURF), proportions d'origine. Animation discrète :
+   une lueur émeraude qui respire et un reflet qui traverse le logo (masqué par le logo lui-même). */
+#app .official-hero{
+  position:relative; width:var(--logo-w, 160px); aspect-ratio:560 / 632; margin:0 auto;
+  filter:drop-shadow(0 0 18px rgba(10,240,114,.22)); animation:officialGlow 6s ease-in-out infinite;
+}
+#app .official-hero-img{ display:block; width:100%; height:100%; object-fit:contain; }
+#app .official-hero-shine{
+  position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg, transparent 38%, rgba(255,255,255,.55) 48%, transparent 58%) no-repeat;
+  background-size:260% 100%; background-position:160% 0;
+  -webkit-mask:url(../img/official-vertical.png) center / contain no-repeat; mask:url(../img/official-vertical.png) center / contain no-repeat;
+  mix-blend-mode:screen; animation:officialShine 7s ease-in-out 1.2s infinite;
+}
+#app .hero-brand.has-logo .official-hero{ --logo-w:clamp(124px, 19vh, 180px); }
+@keyframes officialGlow{ 0%,100%{ filter:drop-shadow(0 0 14px rgba(10,240,114,.16)); } 50%{ filter:drop-shadow(0 0 26px rgba(10,240,114,.34)); } }
+@keyframes officialShine{ 0%,70%{ background-position:160% 0; } 100%{ background-position:-60% 0; } }
+@media (max-height:640px){ #app .hero-brand.has-logo .official-hero{ --logo-w:104px; } }
+@media (prefers-reduced-motion: reduce){ #app .official-hero, #app .official-hero-shine{ animation:none; } }
+
+/* À propos : logo horizontal officiel, pleine largeur de la carte */
+#app .about-official{ display:block; }
+#app .about-official-img{ display:block; width:100%; height:auto; filter:drop-shadow(0 0 14px rgba(10,240,114,.14)); }
+
+/* Thème clair : les logos officiels sont conçus pour un fond noir — posés sur leur plaque sombre arrondie */
+:root[data-theme="light"] #app .official-hero{ background:#030806; border-radius:22px; padding:8px; box-shadow:0 12px 26px rgba(16,52,36,.25); }
+:root[data-theme="light"] #app .about-official{ background:#030806; border-radius:18px; padding:10px 12px; }

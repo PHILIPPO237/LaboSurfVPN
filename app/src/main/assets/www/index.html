@@ -6,12 +6,14 @@
 <title>Labo Surf</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#020604" id="metaTheme">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/symbol-192.png">
+<link rel="apple-touch-icon" href="icons/symbol-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Labo Surf">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- Titre « VPN » de la vitrine : Cinzel 700, seulement les lettres V, P, N (sous-ensemble de quelques Ko) ; hors ligne : repli sur Space Grotesk -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&text=VPN&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/splash.css">
 <link rel="stylesheet" href="css/base.css">
@@ -23,6 +25,10 @@
 <link rel="stylesheet" href="css/ap-global.css">
 <link rel="stylesheet" href="css/profile.css">
 <link rel="stylesheet" href="css/livechat.css">
+<link rel="stylesheet" href="css/glass.css">
+<link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/secondary.css">
+<link rel="stylesheet" href="css/orbite-pages.css">
 <!-- Appliqué avant le premier rendu pour éviter tout flash de thème -->
 <script src="js/theme.js"></script>
 <!-- Accent du profil (couche secondaire de l'identité LABOSURF) : posé avant le premier rendu, voir js/profile-theme.js -->
@@ -30,17 +36,21 @@
 </head>
 <body>
 
-<!-- Animation d'ouverture (css/splash.css, js/splash.js) : décorative, se retire seule, un tap la passe -->
+<!-- Ouverture « Orbite » (css/splash.css, js/splash.js) : décorative, se retire seule, un tap la passe.
+     Symbole et titre officiels découpés dans la planche LABISURF INTERFACES (aucun logo redessiné). -->
 <div class="splash" id="splash" aria-hidden="true">
-  <div class="sp-stage">
-    <i class="sp-glow"></i><i class="sp-ring"></i><i class="sp-ring sp-ring-2"></i>
-    <div class="logo3d" aria-hidden="true"><img class="lg-b" src="img/logo3-B.png" alt="" decoding="async"><canvas class="lg-globe"></canvas><img class="lg-k" src="img/logo3-K.png" alt="" decoding="async"></div>
+  <i class="ns-stars"></i><i class="ns-stars ns-stars-b"></i>
+  <div class="ns-stage">
+    <i class="ns-halo"></i>
+    <span class="ns-orbit ns-orbit-a"><i></i><i></i></span>
+    <span class="ns-orbit ns-orbit-b"><i></i><i></i></span>
+    <span class="ns-sym"><img class="ns-symbol" src="img/official-symbol.png" alt="" decoding="async"><i class="ns-sweep"></i></span>
   </div>
-  <div class="sp-title"><span class="sp-labo">LABO</span><span class="sp-surf">SURF</span></div>
-  <div class="sp-sub"><span class="sp-sub-g">Laboratoire</span><span class="sp-sub-w">du Free-Surf</span></div></div>
+  <img class="ns-word" src="img/official-wordmark.png" alt="" decoding="async">
+  <div class="ns-tag"><b>Laboratoire</b> du Free-Surf</div>
+  <i class="ns-line"></i>
+</div>
 <script src="js/splash.js"></script>
-<script src="js/globe-tex-data.js"></script>
-<script src="js/logo-globe.js"></script>
 <script src="js/apropos.js"></script>
 
 <!-- Sprite d'icônes (une seule définition, réutilisée partout via <use>) -->
@@ -104,7 +114,7 @@
       <button class="rail-btn" type="button" id="railBtn-services" data-action="nav" data-screen="services" data-i18n-attr="title:nav.services;aria-label:nav.services"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></button>
       <button class="rail-btn" type="button" id="railBtn-account" data-action="nav" data-screen="account" data-i18n-attr="title:nav.account;aria-label:nav.account"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="rail-badge" id="accountBadge" hidden></span></button>
       <button class="rail-btn" type="button" id="railBtn-chat" data-action="nav" data-screen="chat" hidden data-i18n-attr="title:nav.chat;aria-label:nav.chat"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span class="rail-badge" id="chatBadge" hidden></span></button>
-      <button class="rail-btn" type="button" id="railBtn-livechat" data-action="openCommunity" data-i18n-attr="title:nav.community;aria-label:nav.community"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></button>
+      <button class="rail-btn" type="button" id="railBtn-livechat" data-action="openCommunity" data-i18n-attr="title:nav.community;aria-label:nav.community"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span class="rail-badge" id="communityBadge" hidden></span></button>
       <div class="rail-group" id="railGroup">
         <button class="rail-btn" type="button" id="railBtn-settings" data-action="nav" data-screen="settings" data-i18n-attr="title:nav.settings;aria-label:nav.settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg></button>
         <button class="rail-caret" type="button" id="railCaret" data-action="toggleRail" aria-expanded="false" aria-controls="railExpand" data-i18n-attr="aria-label:nav.shortcutsShow"><svg class="ic" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
@@ -113,8 +123,6 @@
           <button class="rail-mini" type="button" id="miniLang" data-action="quickLang" data-i18n-attr="title:set.language;aria-label:set.language"><svg class="flag" aria-hidden="true"><use href="#f-fr"/></svg></button>
         </div>
       </div>
-      <button class="rail-btn" type="button" id="railBtn-logs" data-action="nav" data-screen="logs" data-i18n-attr="title:nav.logs;aria-label:nav.logs"><svg class="ic" aria-hidden="true"><use href="#i-terminal"/></svg></button>
-      <button class="rail-btn" type="button" id="railBtn-about" data-action="nav" data-screen="about" data-i18n-attr="title:nav.about;aria-label:nav.about"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg></button>
     </nav>
 
 
@@ -122,11 +130,29 @@
     <!-- ===================== ACCUEIL ===================== -->
     <section class="screen active" id="screen-home" aria-labelledby="brandName">
       <button class="help-btn home-help" type="button" data-action="openGuide" data-topic="start" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg></button>
+      <!-- Fond galactique (décor, derrière tout le contenu) : étoiles fixes, nuages, quelques scintillements et étoiles filantes
+           à intervalles irréguliers. Animations CSS seules, suspendues hors de l'accueil, en arrière-plan et si « réduire les animations ». -->
+      <div class="galaxy" aria-hidden="true">
+        <i class="gx-stars"></i><i class="gx-stars gx-stars-b"></i><i class="gx-neb gx-neb-a"></i><i class="gx-neb gx-neb-b"></i>
+        <i class="gx-tw" style="--x:18%;--y:11%;--d:4.5s;--s:0s"></i><i class="gx-tw" style="--x:88%;--y:18%;--d:6s;--s:1.2s"></i>
+        <i class="gx-tw" style="--x:93%;--y:52%;--d:5.2s;--s:2.4s"></i><i class="gx-tw" style="--x:8%;--y:62%;--d:7s;--s:.6s"></i>
+        <i class="gx-shoot" style="--x:78%;--y:5%;--len:120px;--dur:13s;--delay:2s;--ang:152deg;--c:#ffffff"></i>
+        <i class="gx-shoot" style="--x:98%;--y:28%;--len:84px;--dur:17s;--delay:7s;--ang:160deg;--c:#8fe6ff"></i>
+        <i class="gx-shoot" style="--x:46%;--y:2%;--len:140px;--dur:23s;--delay:12s;--ang:140deg;--c:#7df5b9"></i>
+        <i class="gx-shoot gx-far" style="--x:72%;--y:46%;--len:60px;--dur:19s;--delay:4s;--ang:165deg;--c:#ffffff"></i>
+        <i class="gx-shoot gx-far" style="--x:30%;--y:18%;--len:70px;--dur:29s;--delay:16s;--ang:146deg;--c:#bff5dc"></i>
+        <i class="gx-shoot" style="--x:94%;--y:62%;--len:100px;--dur:31s;--delay:21s;--ang:156deg;--c:#cfe9ff"></i>
+        <i class="gx-shoot gx-far" style="--x:12%;--y:8%;--len:54px;--dur:37s;--delay:27s;--ang:30deg;--c:#7df5b9"></i>
+        <i class="gx-tw" style="--x:52%;--y:7%;--d:5.6s;--s:3.1s"></i><i class="gx-tw" style="--x:70%;--y:40%;--d:6.6s;--s:1.8s"></i><i class="gx-tw" style="--x:30%;--y:74%;--d:4.9s;--s:.9s"></i>
+        <i class="gx-shoot" style="--x:64%;--y:10%;--len:110px;--dur:21s;--delay:9s;--ang:148deg;--c:#bfeeff"></i>
+        <i class="gx-shoot gx-far" style="--x:86%;--y:74%;--len:64px;--dur:26s;--delay:14s;--ang:162deg;--c:#ffffff"></i>
+        <i class="gx-shoot" style="--x:40%;--y:30%;--len:90px;--dur:33s;--delay:24s;--ang:142deg;--c:#7df5b9"></i>
+      </div>
       <div class="home" id="home" data-state="off">
         <div class="home-main" id="homeMain">
 
         <div class="hero-brand has-logo" id="heroBrand">
-          <div class="hexagon hero-logo"><div class="logo3d" aria-hidden="true"><img class="lg-b" src="img/logo3-B.png" alt="" decoding="async"><canvas class="lg-globe"></canvas><img class="lg-k" src="img/logo3-K.png" alt="" decoding="async"></div></div>
+          <div class="official-hero" aria-hidden="true"><img class="official-hero-img" src="img/official-vertical.png" alt="" width="560" height="632" decoding="async"><i class="globe-atmo"></i><i class="globe-sun-wrap"><i class="globe-sun"></i></i></div>
           <div class="app-title" id="brandName">LABO <span class="g">SURF</span></div>
           <span class="badge badge-pro hero-pro" id="proBadgeHome" hidden>PRO</span>
           <div class="app-subtitle"><span class="sub-green">Laboratoire</span> <span class="sub-white">du Free-Surf</span></div>
@@ -142,6 +168,7 @@
           </button>
         </div>
 
+        <div class="conn-card" id="connCard">
         <div class="status-block">
           <div role="status" aria-live="polite">
             <div class="status-title" id="statusTitle"></div>
@@ -177,10 +204,13 @@
         </div>
 
         <!-- Statistiques de trafic : 3 états (loading / ready / unavailable), jamais de valeur inventée. Alimenté par window.onNativeVpnStats -->
-        <div class="tiles" id="homeTiles" data-state="loading" hidden>
+        <div class="tiles" id="homeTiles" data-state="idle">
+          <div class="tile tile-time"><div class="tile-k"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><span data-i18n="act.duration"></span></div><div class="tile-v" id="tileTimer">00:00:00</div></div>
           <div class="tile"><div class="tile-k"><svg class="ic" aria-hidden="true"><use href="#i-arrow-down"/></svg><span data-i18n="home.received"></span></div><div class="tile-v" id="statRx">—</div><div class="tile-s" id="statRxSpeed"></div></div>
           <div class="tile"><div class="tile-k"><svg class="ic" aria-hidden="true"><use href="#i-arrow-up"/></svg><span data-i18n="home.sent"></span></div><div class="tile-v" id="statTx">—</div><div class="tile-s" id="statTxSpeed"></div></div>
+        <svg class="spark" id="trafficSpark" viewBox="0 0 200 44" preserveAspectRatio="none" role="img" data-i18n-attr="aria-label:home.spark" hidden><path class="spark-rx" id="sparkRx" d=""/><path class="spark-tx" id="sparkTx" d=""/></svg>
         <p class="tiles-note" id="statNote"></p>
+        </div>
         </div>
 
         </div>
@@ -189,6 +219,7 @@
           <!-- Bannière premium : décor animé (bn-fx) + corps défilable (bn-body). Emplacements prévus pour une future campagne :
                image, badge, titre, texte, action, indicateur. Le contenu par défaut est neutre (canal et groupe officiels). -->
           <div class="banner-card banner-style-default" id="homeBannerCard">
+            <span class="bn-label" data-i18n="banner.adLabel"></span>
             <div class="bn-fx" aria-hidden="true">
               <i class="bn-halo bn-halo-a"></i><i class="bn-halo bn-halo-b"></i><i class="bn-shine"></i><i class="bn-dot" style="--x:8%;--d:9s;--s:-0s;--z:4px"></i><i class="bn-dot" style="--x:17%;--d:12s;--s:-3s;--z:3px"></i><i class="bn-dot" style="--x:27%;--d:10s;--s:-6s;--z:5px"></i><i class="bn-dot" style="--x:38%;--d:13s;--s:-1s;--z:3px"></i><i class="bn-dot" style="--x:49%;--d:9s;--s:-4s;--z:4px"></i><i class="bn-dot" style="--x:58%;--d:11s;--s:-7s;--z:3px"></i><i class="bn-dot" style="--x:68%;--d:12s;--s:-2s;--z:5px"></i><i class="bn-dot" style="--x:78%;--d:10s;--s:-5s;--z:3px"></i><i class="bn-dot" style="--x:88%;--d:13s;--s:-8s;--z:4px"></i><i class="bn-dot" style="--x:94%;--d:9s;--s:-3s;--z:3px"></i>
               <svg class="bn-net" viewBox="0 0 320 220" preserveAspectRatio="xMaxYMid slice" focusable="false">
@@ -196,10 +227,6 @@
                 <circle cx="20" cy="170" r="2.2"/><circle cx="88" cy="120" r="2.6"/><circle cx="150" cy="150" r="2.2"/><circle cx="214" cy="84" r="3"/>
                 <circle cx="288" cy="116" r="2.2"/><circle cx="112" cy="48" r="2.2"/><circle cx="196" cy="200" r="2.2"/><circle cx="262" cy="30" r="2.2"/>
               </svg>
-              <!-- Opérateurs : apparaissent puis s'effacent tour à tour, en arrière-plan (voir js/banner.js pour brancher les vrais logos) -->
-              <span class="bn-op bn-op-orange" data-op="orange"><b>orange</b></span>
-              <span class="bn-op bn-op-mtn" data-op="mtn"><b>MTN</b></span>
-              <span class="bn-op bn-op-camtel" data-op="camtel"><b>CAMTEL</b></span>
             </div>
             <div class="bn-body" id="homeBannerBody">
               <div id="homeBannerDefault" class="bd">
@@ -208,7 +235,12 @@
                   <span class="badge bd-badge-premium">Premium</span>
                 </div>
                 <div class="bd-head">
-                  <div class="bd-mark">VPN</div>
+                  <!-- Titre VPN encadré par les logos réels des opérateurs (img/operators/), qui apparaissent tour à tour de chaque côté -->
+                  <div class="bd-markrow">
+                    <span class="bd-side bd-side-l" aria-hidden="true"><span class="bd-op" data-op="orange"><b>orange</b></span><span class="bd-op" data-op="mtn"><b>MTN</b></span><span class="bd-op" data-op="camtel"><b>CAMTEL</b></span></span>
+                    <div class="bd-mark">VPN</div>
+                    <span class="bd-side bd-side-r" aria-hidden="true"><span class="bd-op" data-op="mtn"><b>MTN</b></span><span class="bd-op" data-op="camtel"><b>CAMTEL</b></span><span class="bd-op" data-op="orange"><b>orange</b></span></span>
+                  </div>
                   <div class="bd-rule" aria-hidden="true"><i></i><b></b><i></i></div>
                 </div>
                 <div class="bd-tagline"><span class="sr-only" data-i18n="banner.tagline"></span><span class="tw" id="bdTagline" aria-hidden="true"></span></div>
@@ -220,8 +252,8 @@
                 </ul>
                 <div class="bd-actions">
                   <!-- Communauté LABOSURF = Live Chat du Laboratoire (salons officiel / communauté), plus Telegram -->
-                  <button class="btn btn-primary btn-sm" type="button" data-action="openCommunity"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span data-i18n="banner.community"></span></button>
-                  <button class="btn btn-secondary btn-sm" type="button" data-action="openGuide" data-topic="start"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span data-i18n="banner.help"></span></button>
+                  <button class="btn bd-act bd-act-community" type="button" data-action="openCommunity"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span data-i18n="banner.discover"></span></button>
+                  <button class="btn bd-act bd-act-contact" type="button" data-action="openSupport"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg><span data-i18n="banner.contact"></span></button>
                 </div>
               </div>
               <div id="homeBannerAd" hidden>
@@ -241,8 +273,8 @@
 
     <!-- ===================== SERVICES ===================== -->
     <section class="screen" id="screen-services" aria-labelledby="svcTitle">
-      <div class="screen-head">
-        <h1 id="svcTitle" data-i18n="svc.title"></h1>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async">
+        <div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="home" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="svcTitle" data-i18n="svc.title"></h1></div>
         <div class="head-actions"><button class="help-btn" type="button" data-action="openGuide" data-topic="service" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></button><button class="icon-btn" id="svcRefresh" type="button" data-action="refreshServices" data-i18n-attr="aria-label:svc.refresh;title:svc.refresh"><svg class="ic " aria-hidden="true"><use href="#i-refresh"/></svg></button></div>
       </div>
       <p class="hint" data-i18n="svc.note"></p>
@@ -259,7 +291,7 @@
 
     <!-- ===================== SERVEURS ===================== -->
     <section class="screen" id="screen-servers" aria-labelledby="srvTitle">
-      <div class="screen-head">
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async">
         <div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="services" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="srvTitle" data-i18n="srv.title"></h1></div>
         <div class="head-actions"><button class="help-btn" type="button" data-action="openGuide" data-topic="server" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></button><button class="icon-btn" id="srvRefresh" type="button" data-action="refreshServers" data-i18n-attr="aria-label:srv.refresh"><svg class="ic " aria-hidden="true"><use href="#i-refresh"/></svg></button></div>
       </div>
@@ -274,7 +306,7 @@
 
     <!-- ===================== HISTORIQUE ===================== -->
     <section class="screen" id="screen-activity" aria-labelledby="actTitle">
-      <div class="screen-head"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="account" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="actTitle" data-i18n="act.title"></h1></div><button class="help-btn" type="button" data-action="openGuide" data-topic="history" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></button></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="account" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="actTitle" data-i18n="act.title"></h1></div><button class="help-btn" type="button" data-action="openGuide" data-topic="history" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></button></div>
       <div class="status-pill" id="statusPill"><span class="dot"></span><span id="statusPillTxt"></span></div>
       <div class="card" id="connInfoCard" hidden>
         <div class="card-title" data-i18n="act.connInfo"></div>
@@ -306,7 +338,7 @@
 
     <!-- ===================== COMPTE ===================== -->
     <section class="screen" id="screen-account" aria-labelledby="accTitle">
-      <div class="screen-head"><h1 id="accTitle" data-i18n="acc.title"></h1><button class="help-btn" type="button" data-action="openGuide" data-topic="access" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></button></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="home" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="accTitle" data-i18n="acc.title"></h1></div><button class="help-btn" type="button" data-action="openGuide" data-topic="access" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></button></div>
 
       <div id="accLoggedOut">
         <form class="card" id="accLoginCard" data-submit="login" novalidate>
@@ -466,7 +498,7 @@
 
             <div class="pf-offer pf-glass">
               <div class="pf-cell"><span class="pf-cap" data-i18n="prof.offer"></span><b class="pf-val" id="profOffer">—</b></div>
-              <div class="pf-cell" id="profValidityCell"><span class="pf-cap" data-i18n="prof.validity"></span><b class="pf-val" id="profValidity">—</b><span class="pf-sub" id="profExpiry"></span></div>
+              <div class="pf-cell" id="profValidityCell"><span class="pf-cap" data-i18n="prof.validity"></span><svg class="pf-ring" id="profRing" viewBox="0 0 100 56" aria-hidden="true" hidden><path class="pf-ring-track" d="M8 50 A42 42 0 0 1 92 50"/><path class="pf-ring-val" id="profRingVal" d="M8 50 A42 42 0 0 1 92 50" pathLength="100" stroke-dasharray="0 100"/></svg><b class="pf-val" id="profValidity">—</b><span class="pf-sub" id="profExpiry"></span></div>
             </div>
 
             <div class="section-title" id="profAllowedTitle" data-i18n="prof.allowedTitle" hidden></div>
@@ -561,6 +593,7 @@
     <section class="screen" id="screen-chat" aria-labelledby="chatTitle">
       <div class="chat">
         <header class="chat-head">
+          <button class="icon-btn back-btn" type="button" data-action="nav" data-screen="account" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
           <span class="chat-ava" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></span>
           <div class="chat-id"><h1 id="chatTitle" data-i18n="chat.title"></h1><p data-i18n="chat.sub"></p></div>
           <span class="badge-dot" id="messagesCardBadge" hidden></span>
@@ -583,7 +616,7 @@
     </section>
 
     <section class="screen" id="screen-livechat" aria-labelledby="lcTitle">
-      <div class="screen-head"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="lcBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="lcTitle" data-i18n="lc.title"></h1></div></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="lcBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="lcTitle" data-i18n="lc.title"></h1></div></div>
       <div class="lc" id="lcView" data-state="loading">
         <div class="lc-state" id="lcState" hidden role="status">
           <div class="lc-state-title" id="lcStateTitle"></div>
@@ -616,8 +649,9 @@
     </section>
 
     <section class="screen" id="screen-community" aria-labelledby="comTitle">
-      <div class="screen-head"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="settings" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="comTitle">Laboratoire du Free-Surf</h1></div></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="settings" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="comTitle">Laboratoire du Free-Surf</h1></div></div>
       <div class="card" style="text-align:center">
+        <img class="brand-mark" src="img/brand-symbol.png" alt="" width="64" height="64" decoding="async">
         <div class="empty-title" data-i18n="set.joinTitle"></div>
         <p class="hint" style="margin-bottom:0" data-i18n="set.joinText"></p>
       </div>
@@ -636,7 +670,7 @@
       </div>
     </section>
     <section class="screen" id="screen-clients" aria-labelledby="cliTitle">
-      <div class="screen-head"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="account" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="cliTitle" data-i18n="cli.title"></h1></div></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="account" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="cliTitle" data-i18n="cli.title"></h1></div></div>
 
       <details class="card collapsible" id="createClientCard">
         <summary class="card-title" style="margin-bottom:0"><span data-i18n="cli.create"></span><svg class="ic chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
@@ -669,13 +703,10 @@
 
     <!-- ===================== À PROPOS ===================== -->
     <section class="screen" id="screen-about" aria-labelledby="aboutTitle">
-      <div class="screen-head"><h1 id="aboutTitle" data-i18n="about.title"></h1></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="settings" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="aboutTitle" data-i18n="about.title"></h1></div></div>
 
       <div class="card about-hero">
-        <div class="about-lockup">
-          <div class="lk-emblem"><div class="logo3d" aria-hidden="true"><img class="lg-b" src="img/logo3-B.png" alt="" decoding="async"><canvas class="lg-globe"></canvas><img class="lg-k" src="img/logo3-K.png" alt="" decoding="async"></div></div>
-          <div class="lk-text"><img class="lk-word" src="img/logo3-word.png" alt="LABOSURF VPN — Laboratoire du Free-Surf" decoding="async"></div>
-        </div>
+        <div class="about-lockup about-official"><img class="about-official-img" src="img/official-horizontal.png" alt="LABOSURF — Laboratoire du Free-Surf" width="900" height="294" decoding="async"></div>
         <p class="about-tagline" data-i18n="about.tagline"></p>
         <span class="badge badge-ok"><span data-i18n="set.version"></span>&nbsp;<span id="aboutVersion">—</span></span>
       </div>
@@ -699,13 +730,13 @@
 
     <!-- ===================== DOCUMENTS LÉGAUX ===================== -->
     <section class="screen" id="screen-legal" aria-labelledby="legalTitle">
-      <div class="screen-head"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="legalBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="legalTitle"></h1></div></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="legalBack" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="legalTitle"></h1></div></div>
       <div class="legal" id="legalBody"></div>
     </section>
 
     <!-- ===================== JOURNAL ET CACHE ===================== -->
     <section class="screen" id="screen-logs" aria-labelledby="logsTitle">
-      <div class="screen-head"><h1 id="logsTitle" data-i18n="logs.title"></h1></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="settings" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="logsTitle" data-i18n="logs.title"></h1></div></div>
       <div class="section-title" data-i18n="diag.title"></div>
       <div class="card" id="diagCard"></div>
       <div class="card" id="diagProbe" hidden style="margin-top:var(--sp-2)"></div>
@@ -727,10 +758,10 @@
 
     <!-- ===================== RÉGLAGES ===================== -->
     <section class="screen" id="screen-settings" aria-labelledby="setTitle">
-      <div class="screen-head"><h1 id="setTitle" data-i18n="set.title"></h1></div>
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async"><div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="home" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="setTitle" data-i18n="set.title"></h1></div></div>
 
       <div class="section-title" data-i18n="set.helpSection"></div>
-      <div class="list">
+      <div class="list nv-quick">
         <button class="row row-primary" type="button" data-action="openGuide" data-topic="start"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-help"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.help"></div><div class="row-sub" data-i18n="set.helpSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="openAssistant"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-message"/></svg></span><div class="row-main"><div class="row-title" data-i18n="assistant.title"></div><div class="row-sub" data-i18n="set.assistantSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <button class="row" type="button" data-action="replayOnboarding"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-book"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.replayIntro"></div><div class="row-sub" data-i18n="set.replayIntroSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
@@ -799,6 +830,7 @@
           <p class="about-text" data-i18n="set.aboutText"></p>
         </div>
         <button class="row" type="button" data-action="nav" data-screen="about"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-info"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.aboutRow"></div><div class="row-sub" data-i18n="set.aboutRowSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+        <button class="row" type="button" data-action="nav" data-screen="logs"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-terminal"/></svg></span><div class="row-main"><div class="row-title" data-i18n="nav.logs"></div><div class="row-sub" data-i18n="set.logsRowSub"></div></div><svg class="ic row-chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
         <div class="row"><span class="row-ico"><svg class="ic " aria-hidden="true"><use href="#i-info"/></svg></span><div class="row-main"><div class="row-title" data-i18n="set.version"></div></div><span class="row-value" id="appVersion">—</span></div>
       </div>
       <div class="sig sig-settings"><i class="sig-rule"></i><div class="sig-org"><span class="sig-g">Laboratoire</span> <span class="sig-w">du Free-Surf</span></div><div class="sig-credit"><span class="sig-by" data-i18n="sig.by"></span> <b class="sig-name">Philippo</b></div><i class="sig-rule"></i></div>

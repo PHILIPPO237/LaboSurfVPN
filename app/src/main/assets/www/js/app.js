@@ -7,7 +7,7 @@
 
 const SCREENS = ['home', 'services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'livechat', 'settings', 'about', 'logs', 'legal'];
 // Sous-écrans : le bouton du parent reste allumé sur le rail, et « retour » y ramène
-const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', community: 'settings', legal: 'settings' };
+const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', community: 'settings', legal: 'settings', logs: 'settings', about: 'settings' };
 let currentScreen = 'home';
 document.documentElement.dataset.screen = 'home';
 
@@ -65,6 +65,8 @@ function setRailOpen(open){
   const caret = $('railCaret');
   caret.setAttribute('aria-expanded', String(open));
   caret.setAttribute('aria-label', t(open ? 'nav.shortcutsHide' : 'nav.shortcutsShow'));
+  // raccourcis dépliés : la colonne s'allonge ; la bannière et l'emplacement publicitaire se rangent à côté (jamais dessous)
+  setTimeout(() => { if(typeof fitHomeScreen === 'function') fitHomeScreen(); }, 460);
 }
 // Effet au clic / à l'ouverture d'une option du rail : onde + icône qui rebondit (CSS, classe .is-pop retirée à la fin)
 $('rail').addEventListener('click', (e) => {
@@ -96,10 +98,14 @@ window.LaboBack = function(){
   if(Guide.isOpen()){ Guide.close(); return true; }
   if(currentScreen === 'account' && Account.view !== 'menu'){ setAccView('menu'); return true; }
   if(currentScreen === 'legal'){ Actions.legalBack(); return true; }
+  if(currentScreen === 'livechat' && typeof LC !== 'undefined' && LC.room){ Actions.lcRooms(); return true; }   // salon ouvert : retour à la liste des salons
   if(PARENT_OF[currentScreen]){ showScreen(PARENT_OF[currentScreen]); return true; }
   if(currentScreen !== 'home'){ showScreen('home'); return true; }
   return false;
 };
+
+// Application en arrière-plan : les animations décoratives (fond galactique, halos) sont suspendues (économie de batterie)
+document.addEventListener('visibilitychange', () => document.documentElement.classList.toggle('is-bg', document.hidden));
 
 // ─── Initialisation ───
 // Chaque module redessine son contenu dynamique sur "langchange" ; ici, accueil / serveurs / services / bandeau.

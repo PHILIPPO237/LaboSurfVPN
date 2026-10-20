@@ -357,6 +357,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /**
+         * Retour haptique court (interface). performHapticFeedback sans FLAG_IGNORE_GLOBAL_SETTING : le reglage systeme
+         * « Retour haptique / vibration au toucher » est respecte, et aucune permission n'est necessaire.
+         * kind : "tick" (micro-retour : rail, choix), "press" (bouton de connexion), "confirm" (resultat reussi), "reject" (echec).
+         */
+        @JavascriptInterface
+        fun haptic(kind: String) {
+            val c = when (kind) {
+                "press" -> android.view.HapticFeedbackConstants.VIRTUAL_KEY
+                "confirm" -> if (android.os.Build.VERSION.SDK_INT >= 30) android.view.HapticFeedbackConstants.CONFIRM else android.view.HapticFeedbackConstants.VIRTUAL_KEY
+                "reject" -> if (android.os.Build.VERSION.SDK_INT >= 30) android.view.HapticFeedbackConstants.REJECT else android.view.HapticFeedbackConstants.LONG_PRESS
+                else -> android.view.HapticFeedbackConstants.CLOCK_TICK
+            }
+            runOnUiThread { webView.performHapticFeedback(c) }
+        }
+
         /** Journal et cache > Vider le cache : vide le cache web (images de banniere, fichiers). Ne touche ni au compte ni aux reglages. */
         @JavascriptInterface
         fun clearWebCache() {

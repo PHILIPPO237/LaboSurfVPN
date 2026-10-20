@@ -227,6 +227,11 @@ function renderProfileView(info){
   $('profOffer').textContent = p.offerApplies ? (p.offerLabel || t('prof.unknownVal')) : t('prof.none');
   $('profValidityCell').hidden = !p.subscriptionApplies;
   $('profValidity').textContent = p.daysRemaining === null ? t('prof.noExpiry') : (p.daysRemaining < 0 ? t('prof.st.expired') : tn('prof.daysLeft', p.daysRemaining));
+  // Jauge : uniquement avec la durée totale réelle (début ET fin connus) ; sinon rien n'est dessiné
+  const totalDays = acc && typeof acc.totalDays === 'number' && acc.totalDays > 0 ? acc.totalDays : null;
+  const ringOn = p.subscriptionApplies && totalDays !== null && p.daysRemaining !== null && p.daysRemaining >= 0;
+  if(ringOn) $('profRing').removeAttribute('hidden'); else $('profRing').setAttribute('hidden', '');   // <svg> : attribut, pas .hidden
+  if(ringOn) $('profRingVal').setAttribute('stroke-dasharray', (Math.min(1, p.daysRemaining / totalDays) * 100).toFixed(1) + ' 100');
   $('profExpiry').textContent = p.expiresAt && p.daysRemaining !== null ? t(p.daysRemaining < 0 ? 'prof.expiredOn' : 'prof.expiresOn', { d: fmtExpiry(p.expiresAt) }) : '';
   let ok = 0, ko = 0;
   for(const o of p.options){
@@ -682,6 +687,7 @@ Actions.forgotReset = async () => {
 function setAccView(name){
   Account.view = ['menu', 'access', 'security', 'profile'].includes(name) ? name : 'menu';
   $('accHome').hidden = Account.view !== 'menu';
+  $('screen-account').dataset.view = Account.view;   // sous-vue ouverte : elle a son propre titre et son propre retour (pas d'en-tête en double)
   $('accViewProfile').hidden = Account.view !== 'profile';
   $('accViewAccess').hidden = Account.view !== 'access';
   $('accViewSecurity').hidden = Account.view !== 'security';
@@ -777,6 +783,7 @@ function resetToLoggedOut(){
   authToken = null;
   $('railBtn-chat').hidden = true;
   if(currentScreen === 'chat') showScreen('account');
+  if(typeof lcReset === 'function') lcReset();   // communauté : non-lus, salons et pastille effacés avec le compte
   authExpiresAt = null;
   RememberMe.clear();   // déconnexion ou session expirée : plus rien n'est gardé sur le téléphone
   Account.last = null;
@@ -1047,11 +1054,25 @@ function renderAnnouncements(items){
   const card = $('announcementsCard');
   card.hidden = !(items && items.length);
   if(card.hidden) return;
-  $('announcementsList').innerHTML = items.map((n) => `
-    <div style="padding:8px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:var(--fs-sm);font-weight:700;${n.is_read ? 'color:var(--text-muted)' : ''}">${esc(localizedField(n, 'title'))}</div>
-      <div class="muted" style="font-size:var(--fs-xs);margin-top:2px">${esc(localizedField(n, 'message'))}</div>
-    </div>`).join('');
+  // Cartes du système de design (aucun style en ligne) : titre, date, texte ; les annonces lues restent perceptibles mais discrètes
+  const list = $('announcementsList');
+  list.textContent = '';
+  for(const n of items){
+    const el = document.createElement('div');
+    el.className = 'acc-an' + (n.is_read ? ' is-read' : '');
+    const head = document.createElement('div'); head.className = 'acc-an-head';
+    const ico = document.createElement('span'); ico.className = 'acc-an-ico';
+    ico.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg>';   // gabarit statique, aucune donnée
+    head.appendChild(ico);
+    const title = document.createElement('div'); title.className = 'acc-an-title';
+    title.textContent = localizedField(n, 'title');
+    head.appendChild(title);
+    el.appendChild(head);
+    const msg = document.createElement('div'); msg.className = 'acc-an-text';
+    msg.textContent = localizedField(n, 'message');
+    el.appendChild(msg);
+    list.appendChild(el);
+  }
 }
 
 async function loadAnnouncements(markSeen){
@@ -1098,6 +1119,7 @@ function updateAccountBadge(){
 function pollAccountSignals(){
   pollUnreadMessages();
   loadAnnouncements(false);
+  if(typeof lcPulse === 'function' && LC.track) lcPulse();   // non-lus de la communauté pour la pastille du rail
   if(currentScreen === 'account' && authToken) reloadAccountCard();   // écran Profil ouvert (aussi à son ouverture)
 }
 

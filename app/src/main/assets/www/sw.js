@@ -2,7 +2,7 @@
 // Met en cache l'interface pour qu'elle s'ouvre meme sans reseau.
 // Ne gere PAS le tunnel VPN (ca, ce sera du code natif Android plus tard).
 
-const CACHE_NAME = "labo-surf-v91";
+const CACHE_NAME = "labo-surf-v107";
 const ASSETS = [
   "./index.html",
   "./css/tokens.css",
@@ -12,6 +12,10 @@ const ASSETS = [
   "./css/screens.css",
   "./css/profile.css",
   "./css/livechat.css",
+  "./css/glass.css",
+  "./css/home.css",
+  "./css/secondary.css",
+  "./css/orbite-pages.css",
   "./js/theme.js",
   "./js/profile-theme.js",
   "./js/splash.js",
@@ -54,6 +58,13 @@ const ASSETS = [
   "./js/logo-globe.js",
   "./js/globe-tex-data.js",
   "./icons/icon-512.png",
+  "./icons/symbol-192.png",
+  "./icons/symbol-512.png",
+  "./img/brand-symbol.png",
+  "./img/official-vertical.png",
+  "./img/official-horizontal.png",
+  "./img/official-wordmark.png",
+  "./img/official-symbol.png",
 ];
 
 self.addEventListener("install", (event) => {

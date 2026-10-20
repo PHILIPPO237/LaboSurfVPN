@@ -269,7 +269,11 @@ const CommunityContract = (function(){
     const rooms = [];
     for(const r of data.rooms){
       if(!r || typeof r !== 'object' || typeof r.id !== 'string' || !r.id || typeof r.label !== 'string' || !r.label) return { state: 'invalid' };
-      rooms.push({ id: r.id, label: r.label, description: str(r.description), unread: num(r.unread) || 0, canWrite: r.can_write === true });
+      rooms.push({ id: r.id, label: r.label, description: str(r.description),
+        // Métadonnées de salon fournies par le panel (emoji « icon », libellé court « short »). Absentes = panel plus ancien : vides,
+        // jamais inventées (l'application garde alors son icône générique).
+        icon: str(r.icon), short: str(r.short),
+        unread: num(r.unread) || 0, canWrite: r.can_write === true });
     }
     const rs = data.restriction && typeof data.restriction === 'object' ? data.restriction : null;
     return {
@@ -281,6 +285,33 @@ const CommunityContract = (function(){
     };
   }
 
+  // Annonce officielle du panel : carte « system » reconnue uniquement par le drapeau SERVER (`author.official === true` au
+  // rendu venant du panel). Deux formes réelles : « announcement » (champs du produit, notes, lien) et « publication » (minimal).
+  // Toute autre forme, ou un objet non conforme : `null` — le message reste affiché comme un message ordinaire.
+  function systemOf(m){
+    const s = m.system;
+    if(!s || typeof s !== 'object' || Array.isArray(s)) return null;
+    const kind = str(s.kind);
+    if(kind === 'publication') return { kind: 'publication' };
+    if(kind === 'announcement'){
+      return {
+        kind: 'announcement',
+        product: str(s.product), label: str(s.label), icon: str(s.icon),
+        version: str(s.version), title: str(s.title), url: str(s.url),
+        notes: Array.isArray(s.notes) ? s.notes.slice(0, 8).map(str).filter(Boolean) : [],
+      };
+    }
+    return null;   // forme inconnue : rien n'est inventé, le texte du message reste affiché
+  }
+
+  // « Lu par N abonnés » : donnée réelle du panel pour les annonces. Le 0 est un vrai 0 (faux « indisponible »).
+  function readersOf(m){
+    const r = m.readers;
+    if(!r || typeof r !== 'object' || Array.isArray(r)) return null;
+    const c = num(r.count), tot = num(r.total);
+    return c !== null && tot !== null && c >= 0 && tot >= 0 ? { count: Math.min(c, tot), total: tot } : null;
+  }
+
   function parseMessages(data){
     if(!data || typeof data !== 'object' || data.status !== 'ok' || !Array.isArray(data.messages)) return { state: 'invalid' };
     const messages = [];
@@ -288,11 +319,29 @@ const CommunityContract = (function(){
       if(!m || typeof m !== 'object' || num(m.id) === null) return { state: 'invalid' };
       const a = m.author && typeof m.author === 'object' ? m.author : {};
       messages.push({ id: m.id, text: str(m.text), author: str(a.username), role: str(a.role), official: a.official === true,
-        createdAt: m.created_at === undefined ? null : m.created_at, mine: m.mine === true, hasFile: !!m.file });
+        createdAt: m.created_at === undefined ? null : m.created_at, mine: m.mine === true, hasFile: !!m.file,
+        pinned: m.pinned === true,
+        system: systemOf(m), readers: readersOf(m) });
     }
-    return { state: 'ready', messages: messages, lastId: num(data.last_id) };
+    // Épingles du salon : le panel n'envoie la liste complète qu'à l'ouverture du salon `(before<=0)` — identifiants seulement.
+    const pins = Array.isArray(data.pins) ? data.pins.map((p) => num(p && p.id)).filter((v) => v !== null) : [];
+    return { state: 'ready', messages: messages, lastId: num(data.last_id), hasMore: data.has_more === true, pins: pins };
   }
-  return { failure: failure, parseBootstrap: parseBootstrap, parseMessages: parseMessages };
+
+  // Sondage léger (GET /api/chat/pulse) pour les pastilles hors communauté : non-lus par salon, tels que le panel les donne
+  // (chaque salon = objet {unread, last_id, pins…} ; seule la valeur « unread » est utilisée ici).
+  function parsePulse(data){
+    if(!data || typeof data !== 'object' || data.status !== 'ok' || !data.rooms || typeof data.rooms !== 'object') return { state: 'invalid' };
+    const unread = {};
+    for(const k of Object.keys(data.rooms)){
+      const r = data.rooms[k];
+      const n = r && typeof r === 'object' ? num(r.unread) : null;
+      if(n === null || n < 0) return { state: 'invalid' };
+      unread[k] = n;
+    }
+    return { state: 'ready', unread: unread };
+  }
+  return { failure: failure, parseBootstrap: parseBootstrap, parseMessages: parseMessages, parsePulse: parsePulse };
 })();
 
 // Chargé aussi par les tests Node (CommonJS) ; sans effet dans le navigateur

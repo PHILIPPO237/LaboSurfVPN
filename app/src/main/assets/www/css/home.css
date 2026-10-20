@@ -1,0 +1,634 @@
+/* ==========================================================================
+   Accueil LABOSURF « galactique » (maquette validée le 2026-10-19) — chargé après glass.css.
+   Même composition qu'avant : logo officiel en haut, bouton circulaire, statut, serveur, compteurs, grande vitrine
+   publicitaire, rail à gauche. Toutes les animations sont décoratives, en CSS seul, et s'arrêtent :
+   hors de l'accueil, quand l'application passe en arrière-plan (classe .is-bg posée par js/app.js)
+   et si le téléphone demande de réduire les animations.
+   ========================================================================== */
+
+#app #screen-home{ --gx-bg:#03060d; background:var(--gx-bg); }
+#app #screen-home > .home{ position:relative; z-index:1; }
+#app #screen-home > .home-help{ z-index:2; }   /* reste en haut à droite (position absolue d'origine) */
+
+/* ---------------------------------------------------------------- Fond galactique ---------- */
+#app .galaxy{ position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+#app .gx-stars{ position:absolute; inset:0; background-image:
+  radial-gradient(1px 1px at 6% 8%, #fff, transparent), radial-gradient(1px 1px at 20% 4%, #cfe9ff, transparent),
+  radial-gradient(1px 1px at 34% 13%, #fff, transparent), radial-gradient(1.4px 1.4px at 90% 8%, #fff, transparent),
+  radial-gradient(1px 1px at 79% 23%, #bff5dc, transparent), radial-gradient(1px 1px at 12% 31%, #fff, transparent),
+  radial-gradient(1px 1px at 95% 36%, #cfe9ff, transparent), radial-gradient(1px 1px at 25% 46%, #fff, transparent),
+  radial-gradient(1.2px 1.2px at 88% 50%, #fff, transparent), radial-gradient(1px 1px at 7% 56%, #bff5dc, transparent),
+  radial-gradient(1px 1px at 55% 2%, #fff, transparent), radial-gradient(1px 1px at 67% 17%, #cfe9ff, transparent),
+  radial-gradient(1px 1px at 97% 62%, #fff, transparent), radial-gradient(1px 1px at 3% 70%, #fff, transparent),
+  radial-gradient(1px 1px at 62% 36%, #fff, transparent), radial-gradient(1px 1px at 15% 17%, #cfe9ff, transparent),
+  radial-gradient(1px 1px at 48% 74%, #fff, transparent), radial-gradient(1px 1px at 84% 80%, #bff5dc, transparent); }
+#app .gx-neb{ position:absolute; border-radius:50%; filter:blur(12px); animation:gxDrift 26s ease-in-out infinite; }
+#app .gx-neb-a{ left:-30%; top:12%; width:110%; height:36%; background:radial-gradient(ellipse, rgba(24,170,110,.22), rgba(24,170,110,0) 70%); }
+#app .gx-neb-b{ right:-38%; top:40%; width:110%; height:34%; background:radial-gradient(ellipse, rgba(30,160,200,.17), rgba(30,160,200,0) 70%); animation-duration:31s; animation-direction:reverse; }
+#app .gx-tw{ position:absolute; left:var(--x); top:var(--y); width:3px; height:3px; border-radius:50%; background:#fff; box-shadow:0 0 6px #fff;
+  animation:gxTwinkle var(--d) ease-in-out var(--s) infinite; }
+/* Étoile filante : un trait fin à tête lumineuse ; chaque étoile a sa durée de cycle (13 à 29 s) et n'est visible
+   qu'une petite fraction du cycle, d'où des passages irréguliers, jamais simultanés en masse. */
+#app .gx-shoot{ position:absolute; left:var(--x); top:var(--y); width:var(--len); height:1.6px; border-radius:2px; opacity:0;
+  background:linear-gradient(90deg, var(--c) 0%, rgba(255,255,255,.25) 18%, transparent 100%);
+  filter:drop-shadow(0 0 4px var(--c)); transform-origin:0 50%;
+  animation:gxShoot var(--dur) cubic-bezier(.25,.6,.4,1) var(--delay) infinite; }
+#app .gx-shoot.gx-far{ height:1px; filter:none; }
+@keyframes gxDrift{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(14px,-10px); } }
+@keyframes gxTwinkle{ 0%,100%{ opacity:.2; } 50%{ opacity:1; } }
+@keyframes gxShoot{
+  0%{ opacity:0; transform:rotate(var(--ang, 148deg)) translateX(0); }
+  1%{ opacity:1; }
+  5%{ opacity:0; transform:rotate(var(--ang, 148deg)) translateX(-260px); }
+  100%{ opacity:0; transform:rotate(var(--ang, 148deg)) translateX(-260px); }
+}
+:root:not([data-screen="home"]) #app .galaxy *, :root.is-bg #app .galaxy *{ animation-play-state:paused; }
+
+/* ---------------------------------------------------------------- Logo et globe ---------- */
+#app .hero-brand.has-logo .official-hero{ --logo-w:clamp(150px, 24vh, 200px); animation:none; filter:drop-shadow(0 10px 24px rgba(0,0,0,.6)); }
+#app .official-hero::before{ content:''; position:absolute; left:50%; top:42%; width:150%; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%; z-index:-1;
+  background:radial-gradient(circle, rgba(46,210,140,.38) 0%, rgba(30,160,200,.13) 42%, rgba(3,6,13,0) 68%); animation:gxHalo 7s ease-in-out infinite; }
+/* Le globe du logo est une image fixe (le dossier officiel ne fournit ni globe ni clé séparés) : il n'est pas tourné.
+   Il vit par la lumière : un reflet de soleil balaie lentement sa surface, son atmosphère respire. Positions en % du logo. */
+#app .globe-atmo{ position:absolute; left:49.5%; top:40.5%; width:61%; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
+  box-shadow:0 0 18px 4px rgba(120,200,255,.42); animation:gxAtmo 6s ease-in-out infinite; pointer-events:none; }
+#app .globe-sun-wrap{ position:absolute; left:49.5%; top:40.5%; width:58%; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
+  overflow:hidden; mix-blend-mode:screen; pointer-events:none; }
+#app .globe-sun{ position:absolute; left:15%; top:-8%; width:70%; height:116%;
+  background:radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.42), rgba(190,240,255,.14) 45%, rgba(255,255,255,0) 70%);
+  animation:gxSun 9s ease-in-out infinite alternate; }
+@keyframes gxHalo{ 0%,100%{ opacity:.6; transform:translate(-50%,-50%) scale(1); } 50%{ opacity:.9; transform:translate(-50%,-50%) scale(1.05); } }
+@keyframes gxAtmo{ 0%,100%{ opacity:.35; } 50%{ opacity:.75; } }
+@keyframes gxSun{ from{ transform:translateX(-60%); } to{ transform:translateX(60%); } }
+:root:not([data-screen="home"]) #app .official-hero *, :root:not([data-screen="home"]) #app .official-hero::before,
+:root.is-bg #app .official-hero *, :root.is-bg #app .official-hero::before{ animation-play-state:paused; }
+
+/* ---------------------------------------------------------------- Bouton central (signature) ---------- */
+/* Anneau de verre épais (la zone) → puits sombre (::after) → noyau vitré éclairé de l'intérieur (le bouton). */
+#app .home{ --power-size:clamp(176px, 26vh, 216px); }
+#app .power-rings{ display:none; }
+#app .power-zone{ border-radius:50%; margin:6px 0;
+  background:radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 58%, rgba(255,255,255,.12) 66%, rgba(255,255,255,.02) 74%),
+             linear-gradient(160deg, rgba(225,255,242,.34), rgba(40,90,70,.10) 45%, rgba(0,0,0,.38));
+  border:1px solid rgba(225,255,242,.36);
+  box-shadow:0 28px 50px rgba(0,0,0,.65), inset 0 2px 0 rgba(255,255,255,.4), inset 0 -8px 18px rgba(0,0,0,.45); }
+#app .power-zone::before{ inset:-18%; z-index:-1; opacity:.12; animation:none;
+  background:radial-gradient(circle, rgba(52,232,150,.55) 0%, rgba(52,232,150,0) 64%); transition:opacity .7s ease; }
+#app .power-zone::after{ content:''; position:absolute; inset:8.8%; border-radius:50%; pointer-events:none;
+  background:#020906; box-shadow:inset 0 3px 10px rgba(0,0,0,.9), 0 0 0 1px rgba(95,240,168,.22); }
+#app .power-btn{ inset:13%; z-index:1; overflow:hidden; gap:6px; color:#bff5dc;
+  background:radial-gradient(circle at 50% 62%, #1e5a43 0%, #0d3325 45%, #061a11 85%);
+  box-shadow:inset 0 2px 0 rgba(191,245,220,.30), inset 0 -12px 24px rgba(0,0,0,.5), 0 0 0 1px rgba(95,240,168,.28);
+  transition:background .7s ease, box-shadow .7s ease, color .4s ease, transform .22s cubic-bezier(.3,1.5,.5,1); }
+#app .power-btn::before{ content:''; position:absolute; left:12%; top:4%; width:76%; height:38%; border-radius:50%; pointer-events:none;
+  background:radial-gradient(ellipse, rgba(255,255,255,.22), rgba(255,255,255,0) 70%); }
+#app .power-btn::after{ content:''; position:absolute; left:19%; bottom:-25%; width:62%; aspect-ratio:1; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, rgba(170,255,215,.24), rgba(170,255,215,0) 65%); transition:opacity .6s ease; }
+#app .power-btn > *{ position:relative; }
+#app .power-btn:active{ transform:scale(.955); }
+#app .power-lbl{ letter-spacing:.07em; }
+/* comète pendant la connexion : arc lumineux qui fait le tour de l'anneau (élément existant .power-spinner) */
+#app .power-spinner{ inset:1.5%; z-index:2;
+  background:conic-gradient(from 0deg, rgba(95,240,168,0) 0deg, rgba(95,240,168,0) 260deg, rgba(95,240,168,.85) 345deg, #f0fff7 360deg);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px)); mask:radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px)); }
+#app .home[data-state="connecting"] .power-btn, #app .home[data-state="disconnecting"] .power-btn{
+  color:#032216; background:radial-gradient(circle at 50% 62%, #5ff0a8 0%, #1c7a52 40%, #0a3a26 80%, #05200f 100%); animation:none; }
+#app .home[data-state="connecting"] .power-zone::before, #app .home[data-state="disconnecting"] .power-zone::before{ opacity:.5; }
+/* connecté : le noyau s'allume de l'intérieur, sa lumière respire, le halo se renforce */
+#app .home[data-state="on"] .power-btn{ color:#032216; text-shadow:none;
+  background:radial-gradient(circle at 50% 62%, #f0fff7 0%, #8cf7c4 18%, #2fd98a 46%, #0e8a50 80%, #075a33 100%);
+  box-shadow:0 0 30px rgba(52,232,150,.6), inset 0 2px 0 rgba(255,255,255,.6), inset 0 -10px 20px rgba(0,60,30,.35);
+  animation:gxCore 3.6s ease-in-out infinite; }
+#app .home[data-state="on"] .power-btn::before{ background:radial-gradient(ellipse, rgba(255,255,255,.55), rgba(255,255,255,0) 70%); }
+#app .home[data-state="on"] .power-zone::before{ opacity:1; animation:gxHaloBtn 4.6s ease-in-out infinite; }
+#app .home[data-state="error"] .power-btn{ color:#ffb3bd; background:radial-gradient(circle at 50% 62%, #5a1e2a 0%, #33101a 55%, #1a0710 100%);
+  box-shadow:inset 0 2px 0 rgba(255,200,210,.25), 0 0 0 1px rgba(255,122,138,.4); }
+@keyframes gxCore{ 0%,100%{ box-shadow:0 0 30px rgba(52,232,150,.55), 0 0 70px rgba(52,232,150,.30), inset 0 2px 0 rgba(255,255,255,.6); }
+  50%{ box-shadow:0 0 42px rgba(52,232,150,.75), 0 0 100px rgba(52,232,150,.42), inset 0 2px 0 rgba(255,255,255,.6); } }
+@keyframes gxHaloBtn{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
+:root.is-bg #app .power-btn, :root.is-bg #app .power-zone::before{ animation-play-state:paused; }
+
+/* ---------------------------------------------------------------- Statut ---------- */
+#app .status-title{ font:700 var(--fs-sm)/1.3 var(--font-body); }
+
+/* ---------------------------------------------------------------- Rail : sphères sur un axe ---------- */
+#app .rail{ background:none; border:0; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; padding:6px 4px; gap:16px; border-radius:0; }
+#app .rail::before{ content:''; position:absolute; left:calc(4px + var(--rail-btn) / 2 - 1px); top:26px; bottom:26px; width:2px; border-radius:1px; z-index:0;
+  background:linear-gradient(180deg, rgba(95,240,168,.75), rgba(95,240,168,.14) 35%, rgba(191,227,210,.08)); }
+#app .rail-btn{ z-index:1; border-radius:50%; color:#cdeadc;
+  background:radial-gradient(circle at 35% 26%, rgba(255,255,255,.24), rgba(120,190,160,.08) 52%, rgba(3,10,8,.92) 100%);
+  border:1px solid rgba(191,227,210,.24);
+  box-shadow:0 0 0 4px #03060d, 0 6px 14px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.28); }
+#app .rail-btn::after{ inset:-1px; background:radial-gradient(circle at 38% 30%, #e3fff1 0%, #6af3b0 30%, #18b46d 68%, #0a6a3e 100%); }
+#app .rail-btn.active{ color:#032216; border-color:transparent;
+  box-shadow:0 0 0 4px #03060d, 0 0 0 5.5px rgba(95,240,168,.55), 0 0 24px rgba(95,240,168,.55), inset 0 -6px 10px rgba(0,60,30,.35); }
+#app .rail-btn:not(.active):active{ background:radial-gradient(circle at 35% 26%, rgba(255,255,255,.30), rgba(95,240,168,.18) 52%, rgba(3,10,8,.92) 100%); }
+#app .rail-badge{ box-shadow:0 0 0 2px #03060d; }
+#app .rail-caret{ border-radius:50%; background:#0a1a13; border-color:rgba(191,227,210,.24); color:#cdeadc; }
+#app .rail-mini{ border-radius:50%; background:radial-gradient(circle at 35% 26%, rgba(255,255,255,.2), rgba(3,10,8,.9) 80%); border-color:rgba(191,227,210,.22); }
+
+/* ---------------------------------------------------------------- Serveur : capsule compacte ---------- */
+#app .conn-card{ background:none; border:0; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; padding:0; gap:8px; }
+#app .conn-card::before{ content:none; }
+#app .conn-card .profile-chip{ height:42px; box-sizing:border-box; padding:0 12px 0 6px; gap:10px; border-radius:21px;
+  background:linear-gradient(90deg, rgba(95,240,168,.10), rgba(255,255,255,.03)); border:1px solid rgba(191,227,210,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); }
+#app .conn-card .pc-dot{ width:30px; height:30px; box-shadow:none; border:1px solid rgba(95,240,168,.35);
+  background:radial-gradient(circle at 40% 30%, rgba(95,240,168,.30), rgba(95,240,168,.06) 70%); position:relative; }
+#app .conn-card .pc-dot::after{ content:''; position:absolute; inset:7px; background:#5ff0a8;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z'/%3E%3Ccircle cx='12' cy='10' r='2.4'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z'/%3E%3Ccircle cx='12' cy='10' r='2.4'/%3E%3C/svg%3E") center / contain no-repeat; }
+#app .conn-card .pc-main{ flex-direction:row; align-items:baseline; gap:8px; min-width:0; }
+#app .conn-card .pc-k{ font:800 10.5px/1.2 var(--font-body); letter-spacing:.08em; color:#7fbf9f; flex:none; }
+#app .conn-card .pc-main b{ font-size:14px; max-width:46vw; }
+#app .conn-card .conn-since{ display:none; }   /* la durée vit dans la barre des compteurs */
+
+/* ---------------------------------------------------------------- Compteurs : une barre vitrée ---------- */
+#app .conn-card .tiles{ grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0; align-items:center; min-height:58px; box-sizing:border-box;
+  padding:6px 4px; border-radius:29px; background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  border:1px solid rgba(191,227,210,.14); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); }
+#app .conn-card .tile{ background:none; border:0; border-radius:0; box-shadow:none; padding:2px 8px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+#app .conn-card .tile + .tile{ border-left:1px solid rgba(191,227,210,.12); }
+#app .conn-card .tile-v{ order:1; margin:0; font:700 16px/1.15 var(--font-display); font-variant-numeric:tabular-nums; }
+#app .conn-card .tile-k{ order:2; gap:4px; font-size:10.5px; color:#7fbf9f; margin-top:2px; }
+#app .conn-card .tile-k .ic{ width:12px; height:12px; }
+#app .conn-card .tile-s{ order:3; font-size:10px; color:#7fbf9f; }
+#app .conn-card .tile-time .tile-k .ic{ color:#bfe3d2; }
+#app .conn-card .tiles[data-state="idle"] .tile-v{ color:#9db8ac; }
+#app .conn-card .tiles .spark{ height:30px; margin-top:4px; }
+#app .conn-card .tiles .tiles-note{ grid-column:1 / -1; font-size:10.5px; padding-top:2px; }
+
+/* ---------------------------------------------------------------- Vitrine publicitaire ---------- */
+/* La bannière existante (publicité du panel, ou bannière maison quand le panel n'en fournit pas) devient une plaque
+   de verre posée dans l'espace : on voit le fond galactique au travers, flouté. Une seule des deux à la fois (js/banner.js). */
+#app .home-foot{ margin-top:2px; }
+#app .home-foot::before, #app .home-foot::after{ display:none; }   /* les anciens halos de la bannière laissent place à la galaxie */
+#app .home-foot .banner-card{ border-radius:28px; box-shadow:0 22px 44px rgba(0,0,0,.6), 0 0 40px rgba(52,232,150,.14); }
+#app .home-foot .banner-card.banner-style-default{
+  border:1.5px solid transparent;
+  background:linear-gradient(165deg, rgba(14,46,34,.42), rgba(4,14,10,.62)) padding-box,
+             linear-gradient(135deg, rgba(191,255,225,.75), rgba(52,232,150,.2) 30%, rgba(111,220,245,.25) 65%, rgba(52,232,150,.6)) border-box;
+  -webkit-backdrop-filter:blur(14px) saturate(150%); backdrop-filter:blur(14px) saturate(150%); }
+#app .home-foot .banner-style-default::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0) 28%); }
+#app .home-foot .banner-style-default::after{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0; padding:0;
+  -webkit-mask:none; mask:none;
+  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.10) 45%, transparent 58%) no-repeat; background-size:260% 100%;
+  animation:gxGlass 9s ease-in-out infinite; }
+@keyframes gxGlass{ 0%,55%{ background-position:150% 0; } 100%{ background-position:-60% 0; } }
+#app .home-foot .banner-style-default .bn-fx{ display:none; }   /* plus de décor interne (réseau, opérateurs) : la vitre suffit */
+#app .home-foot .bd-badges, #app .home-foot .bd-sub, #app .home-foot .bd-perks{ display:none; }
+#app .home-foot .bd-mark{ font:800 4em/1 var(--font-display); letter-spacing:.2em; padding-left:.2em;
+  background:linear-gradient(180deg, #ffffff 0%, #d8f5e7 40%, #5ff0a8 78%, #1fb875 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 2px 0 rgba(0,40,20,.6)) drop-shadow(0 0 16px rgba(95,240,168,.35)); text-shadow:none; }
+#app .home-foot .bd-tagline{ text-transform:uppercase; letter-spacing:.06em; font-size:.96em; min-height:2.5em; display:flex; align-items:center; justify-content:center; }
+#app .home-foot .bd-tagline .tw{ transition:color .8s ease, text-shadow .8s ease; }
+#app .home-foot .bd-actions{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.5em; margin-top:.2em; width:100%; }
+#app .home-foot .bd-act{ min-height:44px; padding:.35em .7em; border-radius:22px; font:700 max(12px, .76em)/1.15 var(--font-body); color:#eaf6f0; white-space:normal; text-align:left;
+  background:rgba(255,255,255,.07); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18); transition:transform .2s cubic-bezier(.3,1.5,.5,1), background .2s ease; }
+#app .home-foot .bd-act:active{ transform:scale(.95); background:rgba(255,255,255,.12); }
+#app .home-foot .bd-act-community{ border:1.5px solid rgba(95,240,168,.65); }
+#app .home-foot .bd-act-community .ic{ color:#5ff0a8; }
+#app .home-foot .bd-act-contact{ border:1.5px solid rgba(111,220,245,.65); }
+#app .home-foot .bd-act-contact .ic{ color:#6fdcf5; }
+/* une vraie publicité du panel garde son contenu et son style ; la vitre ne fait que l'encadrer */
+#app .home-foot .banner-card:not(.banner-style-default){ outline:1.5px solid rgba(95,240,168,.45); outline-offset:-1.5px; }
+#app .home-foot .bc-img{ object-fit:contain; }
+#app .sig-home{ opacity:.7; }
+:root.is-bg #app .home-foot .banner-style-default::after{ animation-play-state:paused; }
+
+/* ---------------------------------------------------------------- Écrans courts / étroits ---------- */
+@media (max-height:700px){
+  #app .home{ --power-size:clamp(150px, 24vh, 176px); }
+  #app .hero-brand.has-logo .official-hero{ --logo-w:clamp(118px, 21vh, 150px); }
+  #app .home-foot .bd-mark{ font-size:3.2em; }
+}
+@media (max-width:360px){ #app .home-foot .bd-act{ padding:.35em .55em; gap:.35em; } }
+
+/* ---------------------------------------------------------------- Mouvement réduit ---------- */
+@media (prefers-reduced-motion: reduce){
+  #app .galaxy *, #app .official-hero::before, #app .globe-atmo, #app .globe-sun, #app .power-btn, #app .power-zone::before,
+  #app .home-foot .banner-style-default::after{ animation:none !important; }
+  #app .gx-shoot{ display:none; }
+}
+
+
+/* ==========================================================================
+   Finition (2026-10-19 soir) : plus de place pour la vitrine, bouton à anneaux, étiquette « Annonce ».
+   ========================================================================== */
+/* Proportions : logo toujours grand, bouton central fort, statut et lien d'aide compacts → la vitrine gagne la hauteur libérée */
+#app .hero-brand.has-logo .official-hero{ --logo-w:clamp(150px, 22vh, 186px); }
+#app .home{ --power-size:clamp(168px, 24vh, 204px); gap:8px; }
+#app .power-zone{ margin:4px 0 2px; }
+#app .conn-card{ gap:6px; }
+#app .conn-card .status-title{ font-size:13px; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+#app .conn-card .status-sub{ font-size:12px; max-width:34ch; margin-top:1px; line-height:1.35; }
+#app .conn-card .home-action{ margin:0; }
+#app .conn-card #homeCtaGuide{ min-height:32px; padding:4px 8px; font-size:12px; }
+#app .sig-home{ display:flex; flex-direction:row; flex-wrap:wrap; justify-content:center; align-items:center; gap:2px .6em; padding:2px 0 0; }
+#app .sig-home .sig-credit{ flex-direction:row; align-items:baseline; gap:.4em; }
+#app .sig-home .sig-org{ font-size:10.5px; }
+#app .sig-home .sig-credit{ font-size:10.5px; margin:0; }
+#app .sig-home .sig-name{ font-size:10.5px; letter-spacing:.12em; }
+
+/* Bouton : un anneau métallique très fin entoure l'anneau de verre (l'élément .power-rings, devenu inutile, est réutilisé).
+   Au repos, seul le halo respire très lentement ; rien ne tourne. */
+#app .power-rings{ display:block; position:absolute; inset:-7px; border-radius:50%; pointer-events:none;
+  background:conic-gradient(from 200deg, #5b6762, #f1f6f3, #87938e, #2f3934, #dfe9e4, #707c77, #5b6762);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); mask:radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  opacity:.75; }
+#app .power-rings i{ display:none; }
+#app .home[data-state="off"] .power-zone::before{ animation:gxIdle 7s ease-in-out infinite; }
+@keyframes gxIdle{ 0%,100%{ opacity:.10; } 50%{ opacity:.22; } }
+#app .home[data-state="error"] .power-zone::before{ opacity:0; animation:none; }
+#app .home[data-state="error"] .power-rings{ opacity:.45; }
+
+/* Vitrine : étiquette discrète, aussi au-dessus d'une vraie publicité du panel */
+#app .home-foot .bn-label{ position:absolute; top:12px; right:16px; z-index:3; padding:2px 8px; border-radius:9px;
+  font:800 9.5px/1.5 var(--font-body); letter-spacing:.08em; text-transform:uppercase; color:#032216; background:rgba(191,255,225,.85); pointer-events:none; }
+#app .home-foot .bd-mark{ font-size:4.6em; }
+@media (max-height:700px){ #app .home-foot .bd-mark{ font-size:3.4em; } }
+@media (prefers-reduced-motion: reduce){ #app .home[data-state="off"] .power-zone::before{ animation:none; } }
+
+/* Vitrine étroite (petit écran : la vitrine se range à côté du rail) : boutons l'un sous l'autre, textes jamais coupés,
+   et l'étiquette « Annonce » ne touche jamais le titre */
+#app .home-foot .bd-act{ min-width:0; }
+#app .home-foot .bd-act span{ min-width:0; overflow-wrap:anywhere; }
+#app .home-foot .banner-style-default .bn-body{ padding-top:28px; }
+#app .home-foot.is-inset .bd-actions{ grid-template-columns:1fr; gap:.4em; }
+#app .home-foot.is-inset .bd-act{ min-height:44px; justify-content:flex-start; }
+#app .home-foot.is-inset .bd-mark{ font-size:3.2em; }
+#app .home-foot.is-inset .bn-label{ top:9px; right:12px; }
+
+
+/* ==========================================================================
+   Vitrine « plaque de verre » (2026-10-19, v3)
+   Rectangle net (coins de 8 px), surface fumée noir / vert forêt, contenu au premier plan parfaitement net.
+   Derrière la vitre : l'ancien décor animé de la bannière est rétabli (halos, particules, logos réels Orange / MTN / Camtel
+   de img/operators/, un seul à la fois) ; une teinte (::before) le place optiquement derrière le verre.
+   Le flou (backdrop-filter) ne concerne que le fond galactique situé derrière la carte, et reste léger.
+   ========================================================================== */
+#app .home-foot .banner-card{
+  border-radius:8px; border:1px solid transparent;
+  background:linear-gradient(160deg, rgba(12,38,29,.50) 0%, rgba(4,14,12,.66) 55%, rgba(2,8,10,.74) 100%) padding-box,
+             linear-gradient(120deg, rgba(150,255,205,.70), rgba(52,232,150,.28) 26%, rgba(255,255,255,.06) 50%, rgba(111,220,245,.34) 76%, rgba(111,220,245,.70)) border-box;
+  -webkit-backdrop-filter:blur(6px) saturate(140%); backdrop-filter:blur(6px) saturate(140%);
+  box-shadow:0 20px 38px -6px rgba(1,4,16,.82), 0 6px 14px rgba(0,0,0,.5),
+             -14px 6px 34px -18px rgba(52,232,150,.42), 14px -4px 34px -18px rgba(111,220,245,.34),
+             inset 0 1px 0 rgba(255,255,255,.20), inset 0 -1px 0 rgba(255,255,255,.04);
+  outline:0; }
+/* Teinte + reflet fixe : la lumière glisse en diagonale sur le haut gauche de la vitre, filet clair sur le bord haut */
+#app .home-foot .banner-card::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.16) 0, rgba(255,255,255,0) 1.5px),
+             linear-gradient(112deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,.015) 24%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 78%, rgba(255,255,255,.04) 100%),
+             rgba(3,12,10,.34); }
+/* Reflet mobile : une bande de lumière traverse lentement la vitre (transform seulement) */
+#app .home-foot .banner-card::after{ content:''; position:absolute; inset:auto; top:-30%; bottom:-30%; left:-40%; width:30%; z-index:0; pointer-events:none;
+  border-radius:0; padding:0; -webkit-mask:none; mask:none; background:linear-gradient(100deg, transparent, rgba(255,255,255,.08) 45%, rgba(255,255,255,.12) 50%, transparent);
+  transform:translate3d(0,0,0) skewX(-16deg); animation:gxPane 11s ease-in-out infinite; }
+@keyframes gxPane{ 0%,62%{ transform:translate3d(0,0,0) skewX(-16deg); opacity:0; } 66%{ opacity:1; } 92%{ opacity:.8; } 100%{ transform:translate3d(520%,0,0) skewX(-16deg); opacity:0; } }
+#app .home-foot .bn-body{ z-index:1; }
+#app .home-foot .bn-body:has(> .bd:not([hidden])){ padding-left:12px; padding-right:12px; }
+#app .home-foot .bn-label{ border-radius:4px; }
+
+/* Le décor animé revient derrière la vitre (bannière maison seulement, jamais sur une vraie publicité) */
+#app .home-foot .banner-style-default .bn-fx{ display:block; z-index:-1; }
+#app .home-foot .banner-style-default .bn-net, #app .home-foot .banner-style-default .bn-shine{ display:none; }   /* le reflet de la vitre (::after) remplace le faisceau */
+#app .home-foot .banner-style-default .bn-halo-a{ opacity:.22; background:radial-gradient(circle, #20d68a, transparent 64%); }
+#app .home-foot .banner-style-default .bn-halo-b{ opacity:.22; background:radial-gradient(circle, #3cc8e8, transparent 64%); }
+#app .home-foot .banner-style-default .bn-dot{ background:#bff5dc; box-shadow:0 0 6px rgba(127,245,190,.8); }
+#app .home-foot .banner-style-default .bn-dot:nth-of-type(3n){ background:#bfeeff; box-shadow:0 0 6px rgba(111,220,245,.8); }
+/* Logos d'opérateurs : proportions d'origine (contain), petits, atténués par la vitre, dans les coins (jamais sous le titre) */
+#app .home-foot .bn-op{ animation-name:gxOp; }
+#app .home-foot .bn-op{ min-width:0; }
+#app .home-foot .bn-op:has(img){ width:auto; height:auto; }   /* le cadre suit l'image réelle (pas de carré imposé) */
+#app .home-foot .bn-op img{ max-width:56px; max-height:32px; object-fit:contain; border-radius:4px; box-shadow:0 0 16px rgba(255,255,255,.12); }
+#app .home-foot .bn-op-orange{ top:16%; left:5%; right:auto; }
+#app .home-foot .bn-op-mtn{ top:20%; bottom:auto; left:auto; right:3%; }
+#app .home-foot .bn-op-camtel{ top:20%; bottom:auto; left:3%; right:auto; }
+@keyframes gxOp{
+  0%   { opacity:0;   transform:translate3d(calc(var(--dx) * -1), calc(var(--dy) * -1), 0) scale(.9); }
+  9%   { opacity:.5;  transform:translate3d(0,0,0) scale(1); }
+  22%  { opacity:.5;  transform:translate3d(calc(var(--dx) * .4), calc(var(--dy) * .4), 0) scale(1.02); }
+  31%  { opacity:0;   transform:translate3d(var(--dx), var(--dy), 0) scale(1.06); }
+  100% { opacity:0;   transform:translate3d(var(--dx), var(--dy), 0) scale(1.06); }
+}
+:root:not([data-screen="home"]) #app .home-foot .bn-fx *, :root.is-bg #app .home-foot .bn-fx *, :root.is-bg #app .home-foot .banner-card::after{ animation-play-state:paused; }
+
+/* Titre VPN : élément principal, blanc lumineux avec une touche émeraude / cyan, contour net */
+#app .home-foot .bd-mark{ font:800 5.6em/.95 var(--font-display); letter-spacing:.14em; padding-left:.14em;
+  background:linear-gradient(180deg, #ffffff 0%, #ffffff 46%, #c9f7e2 66%, #6ff0b4 86%, #5fd8f0 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(0,30,20,.85)) drop-shadow(0 0 10px rgba(95,240,168,.28)); }
+@media (max-height:700px){ #app .home-foot .bd-mark{ font-size:4.4em; } }
+#app .home-foot.is-inset .bd-mark{ font-size:4.2em; }
+#app .home-foot .bd-rule{ width:7em; }
+#app .home-foot .bd-tagline{ font-size:.92em; letter-spacing:.08em; }
+
+/* Deux boutons compacts côte à côte ; passage sur deux lignes seulement si la place manque vraiment */
+#app .home-foot .bd-actions, #app .home-foot.is-inset .bd-actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; width:100%; margin-top:.1em; }
+#app .home-foot .bd-act, #app .home-foot.is-inset .bd-act{ flex:1 1 118px; max-width:190px; min-height:44px; padding:0 8px; gap:6px; justify-content:center; text-align:center;
+  border-radius:8px; font:700 13px/1.1 var(--font-body); letter-spacing:.01em; white-space:nowrap; color:#eef8f3;
+  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)); -webkit-backdrop-filter:none; backdrop-filter:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 4px 10px rgba(0,0,0,.28); transition:transform .15s ease, background .2s ease, box-shadow .2s ease; }
+#app .home-foot .bd-act span{ overflow:hidden; text-overflow:ellipsis; }
+#app .home-foot .bd-act .ic{ width:17px; height:17px; flex:none; }
+#app .home-foot .bd-act-community{ border:1px solid rgba(95,240,168,.55); }
+#app .home-foot .bd-act-contact{ border:1px solid rgba(111,220,245,.55); }
+#app .home-foot .bd-act:active{ transform:translateY(1px) scale(.97); background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 0 14px rgba(95,240,168,.25); }
+
+/* Vitrine étroite (petit écran, à côté du rail) : les boutons restent côte à côte, icône au-dessus du libellé ;
+   le titre VPN garde ainsi la place d'être l'élément principal. Libellé sur deux lignes plutôt que coupé si besoin. */
+#app .home-foot.is-inset .bd-actions{ flex-wrap:nowrap; gap:6px; }
+#app .home-foot.is-inset .bd-act{ flex:1 1 0; min-width:0; max-width:none; flex-direction:column; gap:3px; padding:5px 4px; font-size:12px; white-space:normal; }
+#app .home-foot.is-inset .bd-act span{ overflow:visible; text-overflow:clip; overflow-wrap:normal; }
+#app .home-foot.is-inset .bd-act .ic{ width:16px; height:16px; }
+#app .home-foot.is-inset .bn-body:has(> .bd:not([hidden])){ padding-left:10px; padding-right:10px; }
+#app .home-foot.is-inset .bn-op{ top:5px; left:9px; right:auto; bottom:auto; }
+#app .home-foot.is-inset .bn-op img{ max-width:40px; max-height:22px; }
+
+/* Vraie publicité du panel : même vitre, image entière (aucun recadrage, proportions respectées) */
+/* le bloc remplit la vitre ; l'image prend la hauteur restante et s'y affiche ENTIÈRE (contain), texte et lien en dessous */
+#app .home-foot #homeBannerAd:not([hidden]){ display:flex; flex-direction:column; align-items:center; flex:1 1 auto; min-height:0; margin:0; }
+#app .home-foot #homeBannerAd .bc-img{ flex:1 1 0; min-height:72px; width:100%; height:auto; max-height:none; object-fit:contain; border-radius:4px; margin:0 0 8px; }
+#app .home-foot #homeBannerAd .bc-img[hidden]{ display:none; }
+#app .home-foot .banner-card:not(.banner-style-default) .bn-body{ padding-top:30px; }
+#app .home-foot .banner-card .bc-link{ border-radius:8px; }
+
+@media (prefers-reduced-motion: reduce){
+  #app .home-foot .banner-card::after{ animation:none !important; opacity:0; }
+  #app .home-foot .bn-op{ display:none; }
+}
+
+/* ==========================================================================
+   Vitrine v4 (2026-10-19) : boutons colorés, signature en minuscules.
+   ========================================================================== */
+/* Signature en minuscules, telle qu'écrite (« Fournisseur officiel du Free-Surf ») */
+#app .home-foot .bd-tagline{ text-transform:none; letter-spacing:.01em; font-size:1.02em; }
+
+/* Boutons de la vitrine : deux couleurs franches et sobres, verre teinté, liseré clair et reflet haut */
+#app .home-foot .bd-act, #app .home-foot.is-inset .bd-act{ color:#ffffff; text-shadow:0 1px 2px rgba(0,0,0,.35); font-weight:700; }
+#app .home-foot .bd-act .ic{ color:#ffffff; opacity:.95; }
+#app .home-foot .bd-act-community, #app .home-foot.is-inset .bd-act-community{ border:1px solid rgba(160,255,208,.55);
+  background:linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 48%), linear-gradient(135deg, #1fbf78 0%, #0f8a54 55%, #0a6640 100%);
+  box-shadow:0 6px 16px -4px rgba(16,150,90,.55), 0 2px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.35); }
+#app .home-foot .bd-act-contact, #app .home-foot.is-inset .bd-act-contact{ border:1px solid rgba(170,232,255,.55);
+  background:linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 48%), linear-gradient(135deg, #2aa8d8 0%, #1b74b8 55%, #164f8c 100%);
+  box-shadow:0 6px 16px -4px rgba(30,120,200,.55), 0 2px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.35); }
+#app .home-foot .bd-act-community .ic, #app .home-foot .bd-act-contact .ic{ color:#ffffff; }
+/* Au toucher : légère pression et éclat ; la couleur reste (la règle :active précédente éclaircissait le fond) */
+#app .home-foot .bd-act-community:active, #app .home-foot.is-inset .bd-act-community:active{ transform:translateY(1px) scale(.97); filter:brightness(1.12);
+  background:linear-gradient(180deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 48%), linear-gradient(135deg, #1fbf78 0%, #0f8a54 55%, #0a6640 100%); }
+#app .home-foot .bd-act-contact:active, #app .home-foot.is-inset .bd-act-contact:active{ transform:translateY(1px) scale(.97); filter:brightness(1.12);
+  background:linear-gradient(180deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 48%), linear-gradient(135deg, #2aa8d8 0%, #1b74b8 55%, #164f8c 100%); }
+#app .home-foot .bd-act:focus-visible{ outline:2px solid #ffffff; outline-offset:2px; }
+
+/* ==========================================================================
+   Vitrine v5 (2026-10-19) : logos des opérateurs à gauche et à droite du titre VPN.
+   Le bandeau en haut de la vitre reste libre (réservé aux futures petites bandes défilantes).
+   Chaque côté fait apparaître ses logos un par un (fondu + léger zoom, 12 s pour les trois) ; jamais le même
+   opérateur des deux côtés à la fois. Logos réels, proportions d'origine (contain), aussi grands que l'espace le permet.
+   ========================================================================== */
+#app .home-foot .bd-head{ align-self:stretch; }
+#app .home-foot .bd-markrow{ display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr); align-items:center; width:100%; column-gap:6px; }
+#app .home-foot .bd-side{ position:relative; display:block; height:3.6em; min-width:0; }
+#app .home-foot .bd-op{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0;
+  animation:gxSide 12s ease-in-out infinite; will-change:opacity, transform; }
+#app .home-foot .bd-op:nth-child(2){ animation-delay:4s; }
+#app .home-foot .bd-op:nth-child(3){ animation-delay:8s; }
+#app .home-foot .bd-op img{ display:block; max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; border-radius:6px;
+  box-shadow:0 6px 18px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.12); }
+/* sans fichier de logo : macaron sobre avec le nom (jamais un faux logo) */
+#app .home-foot .bd-op b{ font:800 .8em/1 var(--font-display); letter-spacing:.06em; color:#eaf6f0; padding:.45em .6em; border-radius:6px;
+  border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.08); }
+@keyframes gxSide{
+  0%   { opacity:0; transform:scale(.86); }
+  8%   { opacity:1; transform:scale(1); }
+  28%  { opacity:1; transform:scale(1.02); }
+  34%  { opacity:0; transform:scale(1.06); }
+  100% { opacity:0; transform:scale(1.06); }
+}
+:root:not([data-screen="home"]) #app .home-foot .bd-op, :root.is-bg #app .home-foot .bd-op{ animation-play-state:paused; }
+@media (prefers-reduced-motion: reduce){
+  #app .home-foot .bd-op{ animation:none; }
+  #app .home-foot .bd-op:first-child{ opacity:1; }
+}
+/* Vitrine étroite : lettres de VPN un peu plus serrées pour laisser aux logos des côtés une vraie largeur */
+#app .home-foot.is-inset .bd-mark{ letter-spacing:.05em; padding-left:.05em; }
+#app .home-foot.is-inset .bd-markrow{ column-gap:4px; }
+
+/* ==========================================================================
+   Orbite (2026-10-20) : le logo officiel et le bouton reprennent la priorité ; la vitrine, un peu moins haute
+   (réserve 176-205 px au lieu de 220-300, js/vpn.js), devient une vraie plaque à angles droits.
+   ========================================================================== */
+#app .hero-brand.has-logo .official-hero{ --logo-w:clamp(160px, 23.5vh, 204px); }
+#app .home{ --power-size:clamp(170px, 23.5vh, 204px); }
+@media (max-height:700px){
+  #app .hero-brand.has-logo .official-hero{ --logo-w:clamp(120px, 21vh, 150px); }
+  #app .home{ --power-size:clamp(140px, 23vh, 170px); }
+}
+#app .home-foot .banner-card{ border-radius:2px; }
+#app .home-foot .bn-label, #app .home-foot .bd-act, #app .home-foot .banner-card .bc-link, #app .home-foot #homeBannerAd .bc-img{ border-radius:2px; }
+#app .home-foot .bd-act, #app .home-foot.is-inset .bd-act{ min-height:46px; }   /* zone tactile ≥ 44 px même quand la vitrine s'ajuste */
+/* VPN reste le point focal même quand la vitrine est moins haute : taille plancher en px (le reste du contenu s'ajuste) */
+#app .home-foot .bd-mark{ font-size:max(5.6em, 78px); line-height:.92; }
+#app .home-foot.is-inset .bd-mark{ font-size:max(4.2em, 62px); }
+@media (max-height:700px){ #app #screen-home{ padding-top:10px; padding-bottom:12px; } }   /* petit écran : la hauteur va au logo et au bouton */
+
+/* ==========================================================================
+   ACCUEIL « ORBITE » (2026-10-20) — nouvelle identité de l'accueil.
+   Priorité : « :root:not(#nv) » (même convention que secondary.css) pour passer devant les couches précédentes.
+   - Bouton de connexion = cadran d'instrument : disque de verre profond, couronne graduée, anneau d'orbite très fin,
+     noyau vitré. États réels (data-state de .home, js/vpn.js) : off · connecting · on · disconnecting · error.
+     La comète (.power-spinner) ne tourne QUE pendant connecting / disconnecting (screens.css) ; rien ne tourne une fois connecté.
+   - Rail = colonne de verre ; touches carrées adoucies ; l'actif est rempli (émeraude → cyan), sans halo.
+   - Compteurs = bandeau d'instrument : valeur en grand, libellé simple dessous, filets entre les cases ; « — » hors connexion.
+   - Boutons de la vitrine = touches de verre : tuile d'icône teintée, libellé, liseré d'accent en bas.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- Bouton de connexion : cadran ---------- */
+:root:not(#nv) #app .power-zone{ border-radius:50%;
+  background:radial-gradient(circle at 50% 30%, rgba(76,216,240,.10), transparent 58%),
+             radial-gradient(circle, #0b1c22 0%, #071219 62%, #040a10 100%);
+  border:1px solid rgba(160,240,215,.24);
+  box-shadow:0 0 0 9px rgba(255,255,255,.012), 0 0 0 10px rgba(160,240,215,.10),
+             0 30px 50px -18px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -10px 22px rgba(0,0,0,.55); }
+/* couronne graduée (instrument) */
+:root:not(#nv) #app .power-zone::after{ content:''; position:absolute; inset:5%; border-radius:50%; pointer-events:none; background:none; box-shadow:none;
+  background:repeating-conic-gradient(from -1deg, rgba(160,240,215,.42) 0 1.2deg, transparent 1.2deg 7.5deg);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6.5px)); mask:radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6.5px));
+  opacity:.55; transition:opacity .5s ease; }
+/* halo très doux derrière le cadran, qui respire lentement au repos */
+:root:not(#nv) #app .power-zone::before{ inset:-16%; background:radial-gradient(circle, rgba(47,227,154,.40) 0%, rgba(76,216,240,.12) 40%, transparent 66%); opacity:.12; }
+/* noyau vitré */
+:root:not(#nv) #app .power-btn{ inset:15%; color:#cfeee2;
+  background:radial-gradient(circle at 50% 28%, rgba(255,255,255,.14), rgba(255,255,255,0) 46%),
+             radial-gradient(circle at 50% 62%, #174a3a 0%, #0b2a22 50%, #061612 100%);
+  box-shadow:0 0 0 1px rgba(160,240,215,.30), inset 0 1px 0 rgba(255,255,255,.28), inset 0 -12px 22px rgba(0,0,0,.55), 0 10px 22px -10px rgba(0,0,0,.8);
+  transition:background .6s ease, box-shadow .6s ease, color .3s ease, transform .18s cubic-bezier(.3,1.4,.5,1); }
+:root:not(#nv) #app .power-btn::before{ left:16%; top:6%; width:68%; height:34%; background:radial-gradient(ellipse, rgba(255,255,255,.20), rgba(255,255,255,0) 70%); }
+:root:not(#nv) #app .power-btn::after{ opacity:.6; }
+:root:not(#nv) #app .power-lbl{ font:700 calc(var(--power-size) * .095)/1.1 var(--font-display); letter-spacing:.06em; }
+/* appui : le noyau s'enfonce et s'éclaire un instant */
+:root:not(#nv) #app .power-btn:active{ transform:scale(.95); box-shadow:0 0 0 1px rgba(160,240,215,.5), inset 0 0 26px rgba(47,227,154,.35), inset 0 -8px 18px rgba(0,0,0,.5); }
+/* connexion / déconnexion en cours : la couronne s'allume en cyan, la comète court (screens.css) ; le noyau reste sombre (pas encore connecté) */
+:root:not(#nv) #app .power-spinner{ inset:3%; background:conic-gradient(from 0deg, transparent 0 250deg, rgba(76,216,240,.6) 330deg, #eafcff 360deg);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px)); mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px)); }
+:root:not(#nv) #app .home:is([data-state="connecting"], [data-state="disconnecting"]) .power-zone::after{ opacity:.9;
+  background:repeating-conic-gradient(from -1deg, rgba(76,216,240,.7) 0 1.2deg, transparent 1.2deg 7.5deg); }
+:root:not(#nv) #app .home:is([data-state="connecting"], [data-state="disconnecting"]) .power-btn{ color:#bfefff; animation:none;
+  background:radial-gradient(circle at 50% 28%, rgba(255,255,255,.14), rgba(255,255,255,0) 46%), radial-gradient(circle at 50% 62%, #12424a 0%, #0a262c 52%, #05141a 100%);
+  box-shadow:0 0 0 1px rgba(76,216,240,.45), inset 0 1px 0 rgba(255,255,255,.28), inset 0 -12px 22px rgba(0,0,0,.55); }
+:root:not(#nv) #app .home:is([data-state="connecting"], [data-state="disconnecting"]) .power-zone::before{ opacity:.35; animation:none; }
+/* connecté (résultat réel) : noyau émeraude lumineux, couronne pleine, anneau d'orbite émeraude ; seule la lueur respire (opacity) */
+:root:not(#nv) #app .home[data-state="on"] .power-zone{ border-color:rgba(47,227,154,.55);
+  box-shadow:0 0 0 9px rgba(47,227,154,.03), 0 0 0 10px rgba(47,227,154,.35), 0 30px 50px -18px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.2); }
+:root:not(#nv) #app .home[data-state="on"] .power-zone::after{ opacity:1; background:repeating-conic-gradient(from -1deg, rgba(47,227,154,.9) 0 1.2deg, transparent 1.2deg 7.5deg); }
+:root:not(#nv) #app .home[data-state="on"] .power-btn{ color:#03140d; animation:none;
+  background:radial-gradient(circle at 50% 26%, rgba(255,255,255,.55), rgba(255,255,255,0) 44%), radial-gradient(circle at 50% 62%, #8ff5c6 0%, #2fe39a 42%, #12a46b 78%, #0a6b45 100%);
+  box-shadow:0 0 0 1px rgba(200,255,232,.6), 0 0 34px rgba(47,227,154,.45), inset 0 -10px 20px rgba(0,60,30,.3); }
+:root:not(#nv) #app .home[data-state="on"] .power-zone::before{ opacity:.9; animation:gxOrbitGlow 5s ease-in-out infinite; }
+@keyframes gxOrbitGlow{ 0%,100%{ opacity:.65; } 50%{ opacity:1; } }
+/* erreur (échec réel) : rouge sobre, aucune animation */
+:root:not(#nv) #app .home[data-state="error"] .power-zone{ border-color:rgba(255,122,138,.45); }
+:root:not(#nv) #app .home[data-state="error"] .power-zone::after{ opacity:.6; background:repeating-conic-gradient(from -1deg, rgba(255,122,138,.55) 0 1.2deg, transparent 1.2deg 7.5deg); }
+:root:not(#nv) #app .home[data-state="error"] .power-btn{ color:#ffc2ca; animation:none;
+  background:radial-gradient(circle at 50% 28%, rgba(255,255,255,.12), rgba(255,255,255,0) 46%), radial-gradient(circle at 50% 62%, #4a1a26 0%, #2a0f18 55%, #16070d 100%);
+  box-shadow:0 0 0 1px rgba(255,122,138,.45), inset 0 -12px 22px rgba(0,0,0,.55); }
+:root:not(#nv) #app .home[data-state="error"] .power-zone::before{ opacity:0; animation:none; }
+:root.is-bg #app .power-zone::before{ animation-play-state:paused; }
+
+/* ---------------------------------------------------------------- Rail : colonne de verre ---------- */
+:root:not(#nv) #app .rail{ padding:6px; gap:6px; border-radius:16px;
+  background:linear-gradient(180deg, rgba(16,34,38,.70), rgba(6,14,20,.78)); border:1px solid rgba(150,235,205,.13);
+  box-shadow:0 22px 36px -20px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.08); }
+:root:not(#nv) #app .rail::before{ content:none; }
+:root:not(#nv) #app .rail-btn{ border-radius:12px; color:#9fbdb3; background:transparent; border:1px solid transparent; box-shadow:none; transition:color .2s ease, background .2s ease; }
+:root:not(#nv) #app .rail-btn::after{ inset:-1px; border-radius:inherit; background:linear-gradient(135deg, #2fe39a, #3fc3e8); box-shadow:inset 0 1px 0 rgba(255,255,255,.45); }
+:root:not(#nv) #app .rail-btn.active{ color:#03140d; border-color:transparent; box-shadow:0 8px 16px -10px rgba(47,227,154,.8); }
+:root:not(#nv) #app .rail-btn:not(.active):active{ background:rgba(47,227,154,.12); color:#e6f6ef; }
+:root:not(#nv) #app .rail-badge{ box-shadow:0 0 0 2px #071219; }
+:root:not(#nv) #app .rail-caret{ border-radius:10px; background:rgba(255,255,255,.04); border:1px solid rgba(150,235,205,.15); color:#9fbdb3; box-shadow:none; }
+:root:not(#nv) #app .rail-mini{ border-radius:10px; background:rgba(255,255,255,.04); border:1px solid rgba(150,235,205,.15); box-shadow:none; }
+
+/* ---------------------------------------------------------------- Serveur et statut ---------- */
+:root:not(#nv) #app .conn-card .profile-chip{ border-radius:10px; background:linear-gradient(90deg, rgba(47,227,154,.10), rgba(255,255,255,.02)); border:1px solid rgba(150,235,205,.16);
+  -webkit-backdrop-filter:none; backdrop-filter:none; }
+:root:not(#nv) #app .conn-card .pc-dot{ border-radius:8px; }
+:root:not(#nv) #app .conn-card .pc-k{ font:600 11px/1.2 var(--font-body); letter-spacing:0; text-transform:none; color:#8fb3a6; }
+:root:not(#nv) #app .status-title{ border-radius:8px; }
+
+/* ---------------------------------------------------------------- Compteurs : bandeau d'instrument ---------- */
+:root:not(#nv) #app .conn-card .tiles{ position:relative; min-height:60px; padding:8px 2px; border-radius:6px;
+  background:linear-gradient(180deg, rgba(16,34,38,.62), rgba(6,14,20,.74)); border:1px solid rgba(150,235,205,.12);
+  box-shadow:0 18px 30px -22px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.07); -webkit-backdrop-filter:none; backdrop-filter:none; }
+:root:not(#nv) #app .conn-card .tiles::before{ content:''; position:absolute; inset:-1px; pointer-events:none; border-radius:6px;
+  background:linear-gradient(#2fe39a, #2fe39a) left top / 12px 1.5px no-repeat, linear-gradient(#2fe39a, #2fe39a) left top / 1.5px 12px no-repeat,
+             linear-gradient(#4cd8f0, #4cd8f0) right bottom / 12px 1.5px no-repeat, linear-gradient(#4cd8f0, #4cd8f0) right bottom / 1.5px 12px no-repeat; opacity:.8; }
+:root:not(#nv) #app .conn-card .tile + .tile{ border-left:1px solid rgba(150,235,205,.10); }
+:root:not(#nv) #app .conn-card .tile-v{ font:600 18px/1.1 var(--font-display); letter-spacing:-.01em; color:#eaf5f0; }
+:root:not(#nv) #app .conn-card .tiles[data-state="idle"] .tile-v{ color:#7f978f; }
+:root:not(#nv) #app .conn-card .tile-k{ font:500 11px/1.2 var(--font-body); letter-spacing:0; text-transform:none; color:#8fb3a6; }
+:root:not(#nv) #app .conn-card .tile-k .ic{ color:#4cd8f0; }
+:root:not(#nv) #app .conn-card .tile-time .tile-k .ic{ color:#2fe39a; }
+
+/* ---------------------------------------------------------------- Boutons de la vitrine : touches de verre ---------- */
+:root:not(#nv) #app .home-foot .bd-actions{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+:root:not(#nv) #app .home-foot .bd-act{ position:relative; flex:1 1 128px; max-width:200px; min-height:46px; padding:0 12px 0 6px; gap:9px;
+  justify-content:flex-start; text-align:left; border-radius:2px; overflow:hidden;
+  font:600 13.5px/1.15 var(--font-body); letter-spacing:.005em; color:#eef8f3; text-shadow:none; white-space:nowrap;
+  background:linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.03) 55%, rgba(255,255,255,.05) 100%);
+  border:1px solid rgba(200,240,225,.20); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 18px -12px rgba(0,0,0,.9);
+  transition:background .2s ease, transform .15s ease, border-color .2s ease; }
+/* tuile d'icône teintée */
+:root:not(#nv) #app .home-foot .bd-act .ic{ flex:none; width:32px; height:32px; padding:7px; box-sizing:border-box; border-radius:2px; opacity:1; }
+:root:not(#nv) #app .home-foot .bd-act-community .ic{ color:#03140d; background:linear-gradient(135deg, #5ff0b4, #2fe39a); }
+:root:not(#nv) #app .home-foot .bd-act-contact .ic{ color:#03121a; background:linear-gradient(135deg, #8fe8fb, #4cc6ea); }
+/* liseré d'accent en bas (la couleur dit la destination) */
+:root:not(#nv) #app .home-foot .bd-act::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:2px; pointer-events:none; }
+:root:not(#nv) #app .home-foot .bd-act-community::after{ background:linear-gradient(90deg, #2fe39a, transparent); }
+:root:not(#nv) #app .home-foot .bd-act-contact::after{ background:linear-gradient(90deg, #4cd8f0, transparent); }
+:root:not(#nv) #app .home-foot .bd-act span{ overflow:hidden; text-overflow:ellipsis; min-width:0; }
+:root:not(#nv) #app .home-foot .bd-act:active{ transform:translateY(1px); filter:none; border-color:rgba(200,240,225,.38);
+  background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.07)); }
+:root:not(#nv) #app .home-foot .bd-act:focus-visible{ outline:2px solid #4cd8f0; outline-offset:2px; }
+/* vitrine étroite (petit écran) : icône au-dessus du libellé, côte à côte tant que c'est lisible */
+:root:not(#nv) #app .home-foot.is-inset .bd-actions{ flex-wrap:nowrap; gap:6px; }
+:root:not(#nv) #app .home-foot.is-inset .bd-act{ flex:1 1 0; max-width:none; flex-direction:column; justify-content:center; align-items:center; text-align:center;
+  gap:4px; padding:6px 4px; min-height:58px; white-space:normal; font-size:12.5px; }
+:root:not(#nv) #app .home-foot.is-inset .bd-act .ic{ width:26px; height:26px; padding:5px; }
+:root:not(#nv) #app .home-foot.is-inset .bd-act span{ overflow:visible; }
+
+@media (prefers-reduced-motion: reduce){
+  :root:not(#nv) #app .home[data-state="on"] .power-zone::before{ animation:none; }
+}
+/* libellé jamais coupé : il passe sur deux lignes dans la touche si la largeur manque */
+:root:not(#nv) #app .home-foot .bd-act{ white-space:normal; line-height:1.15; padding-right:10px; }
+:root:not(#nv) #app .home-foot .bd-act span{ overflow:visible; text-overflow:clip; overflow-wrap:normal; }
+
+/* Demande du 2026-10-20 : vitrine et boutons aux coins arrondis ; logos d'opérateurs : même cycle de 12 s, mais apparition et disparition plus courtes (~0,4 s) */
+:root:not(#nv) #app .home-foot .banner-card{ border-radius:16px; }
+:root:not(#nv) #app .home-foot .bn-label{ border-radius:6px; }
+:root:not(#nv) #app .home-foot .bd-act, :root:not(#nv) #app .home-foot.is-inset .bd-act{ border-radius:12px; }
+:root:not(#nv) #app .home-foot .bd-act .ic{ border-radius:8px; }
+:root:not(#nv) #app .home-foot .banner-card .bc-link, :root:not(#nv) #app .home-foot #homeBannerAd .bc-img{ border-radius:10px; }
+
+/* Logos d'opérateurs : le cycle reste de 12 s (4 s par logo) ; seules l'apparition et la disparition sont plus courtes (~0,4 s) */
+:root:not(#nv) #app .home-foot .bd-op{ animation-name:gxSideQuick; animation-duration:12s; }
+@keyframes gxSideQuick{
+  0%    { opacity:0; transform:scale(.94); }
+  3.5%  { opacity:1; transform:scale(1); }
+  30%   { opacity:1; transform:scale(1.01); }
+  33.3% { opacity:0; transform:scale(1.03); }
+  100%  { opacity:0; transform:scale(1.03); }
+}
+
+/* Titre VPN : caractère de la marque. Inclinaison dynamique comme le titre officiel LABOSURF, chrome argenté qui glisse
+   vers l'émeraude, fin liseré, ombre portée nette et lueur émeraude ; un reflet le traverse lentement (toutes les 8 s). */
+:root:not(#nv) #app .home-foot .bd-mark{ font-weight:700; letter-spacing:.11em; padding-left:.11em; transform:skewX(-9deg);
+  background:linear-gradient(100deg, transparent 42%, rgba(255,255,255,.95) 50%, transparent 58%),
+             linear-gradient(180deg, #ffffff 0%, #eef6f2 34%, #a8b9b2 50%, #f6fffb 54%, #9ff5cf 78%, #2fe39a 100%);
+  background-size:320% 100%, 100% 100%; background-position:170% 0, 0 0; background-repeat:no-repeat;
+  -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-stroke:.6px rgba(255,255,255,.35);
+  filter:drop-shadow(0 2px 0 rgba(0,22,14,.95)) drop-shadow(0 0 16px rgba(47,227,154,.38));
+  animation:vpnSheen 8s ease-in-out infinite; }
+@keyframes vpnSheen{ 0%,72%{ background-position:170% 0, 0 0; } 100%{ background-position:-70% 0, 0 0; } }
+:root:not([data-screen="home"]) #app .home-foot .bd-mark, :root.is-bg #app .home-foot .bd-mark{ animation-play-state:paused; }
+/* Accroche « machine à écrire » légèrement plus grande */
+:root:not(#nv) #app .home-foot .bd-tagline{ font-size:1.14em; }
+:root:not(#nv) #app .home-foot.is-inset .bd-tagline{ font-size:1.06em; }
+@media (prefers-reduced-motion: reduce){ :root:not(#nv) #app .home-foot .bd-mark{ animation:none; } }
+
+/* Titre VPN (version retenue le 2026-10-20) : capitales romaines Cinzel, élégantes et imposantes, droites ;
+   blanc ivoire lumineux qui descend vers un émeraude pâle, ombre nette, lueur émeraude douce ; reflet lent conservé. */
+:root:not(#nv) #app .home-foot .bd-mark{ font-family:"Cinzel", var(--font-display); font-weight:700; letter-spacing:.14em; padding-left:.14em;
+  line-height:1; transform:none; -webkit-text-stroke:0;
+  background:linear-gradient(100deg, transparent 44%, rgba(255,255,255,.85) 50%, transparent 56%),
+             linear-gradient(180deg, #ffffff 0%, #fbfff9 40%, #dff5ea 66%, #a9ecc9 100%);
+  background-size:320% 100%, 100% 100%; background-position:170% 0, 0 0; background-repeat:no-repeat;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 2px 0 rgba(0,18,12,.9)) drop-shadow(0 0 18px rgba(47,227,154,.30)); }
+/* Accroche : légèrement plus grande, jamais sous 14 px */
+:root:not(#nv) #app .home-foot .bd-tagline{ font-size:max(1.14em, 14px); }
+:root:not(#nv) #app .home-foot.is-inset .bd-tagline{ font-size:max(1.06em, 13px); }
+
+/* 2026-10-20 : ciel un peu plus riche (seconde couche d'étoiles fixes, plus fines) et rail légèrement plus bas (~24 px) */
+#app .gx-stars.gx-stars-b{ opacity:.75; background-image:
+  radial-gradient(.8px .8px at 10% 22%, #fff, transparent), radial-gradient(.8px .8px at 28% 9%, #cfe9ff, transparent),
+  radial-gradient(.8px .8px at 44% 27%, #fff, transparent), radial-gradient(1px 1px at 58% 12%, #bff5dc, transparent),
+  radial-gradient(.8px .8px at 73% 31%, #fff, transparent), radial-gradient(.8px .8px at 84% 15%, #cfe9ff, transparent),
+  radial-gradient(.8px .8px at 18% 41%, #fff, transparent), radial-gradient(1px 1px at 92% 44%, #fff, transparent),
+  radial-gradient(.8px .8px at 5% 48%, #bff5dc, transparent), radial-gradient(.8px .8px at 38% 58%, #fff, transparent),
+  radial-gradient(.8px .8px at 66% 66%, #cfe9ff, transparent), radial-gradient(.8px .8px at 96% 72%, #fff, transparent),
+  radial-gradient(.8px .8px at 22% 82%, #fff, transparent), radial-gradient(1px 1px at 50% 88%, #bff5dc, transparent),
+  radial-gradient(.8px .8px at 80% 92%, #fff, transparent), radial-gradient(.8px .8px at 8% 94%, #cfe9ff, transparent); }
+:root:not(#nv) #app .rail{ --rail-top:clamp(88px, calc(18vh + 24px), 194px); }
+
+/* Écran court (< 700 px) : la vitrine de 188 px doit tout contenir sans couper les boutons */
+@media (max-height:700px){
+  :root:not(#nv) #app .home-foot .bd-mark{ font-size:max(4.2em, 64px); }
+  :root:not(#nv) #app .home-foot .bd-tagline{ min-height:1.4em; font-size:max(1.06em, 13px); }
+  :root:not(#nv) #app .home-foot .banner-style-default .bn-body{ padding-top:24px; padding-bottom:10px; }
+  :root:not(#nv) #app .home-foot .bd-act{ min-height:44px; }
+}

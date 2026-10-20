@@ -1,0 +1,331 @@
+/* ==========================================================================
+   Écrans secondaires « Orbite » (2026-10-20) — nouvelle identité, chargé après home.css.
+   Le rail n'existe pas sur ces écrans (base.css) : chaque écran prend toute la largeur.
+
+   Grammaire commune (la cohérence vient de l'identité, pas d'un modèle de carte répété) :
+   - Pont (en-tête) : collant en haut de l'écran, verre bleu-noir, retour carré, grand titre ; logo officiel en filigrane.
+   - Plaques : rectangles nets (rayon 6 px), filet clair, ombre froide, repères d'angle émeraude (haut-gauche) et cyan (bas-droite)
+     comme un instrument de bord.
+   - Intertitres : texte simple suivi d'un filet qui court jusqu'au bord (regroupement visible, pas d'étiquette en capitales).
+   - Icônes de ligne : tuile carrée à liseré dégradé émeraude → cyan.
+   Compositions propres à chaque écran : serveurs en couloirs (avatar hexagonal, comme le logo), services en « passes » à
+   tuiles, réglages avec tuiles d'accès rapide, historique en frise, journal en terminal, communauté en portes.
+   Thème sombre : tout est sombre. Thème clair : mêmes compositions sur verre givré (variables --nv-*).
+   Priorité : chaque règle commence par « :root:not(#nv) » (un identifiant de plus) pour passer devant les anciennes couches
+   (premium, ap-global, glass) sans !important ; les règles d'un écran précis portent en plus l'identifiant de l'écran.
+   ========================================================================== */
+:root{
+  --nv-abyss:#040a12; --nv-emerald:#2fe39a; --nv-cyan:#4cd8f0; --nv-frost:#eaf5f0; --nv-dim:#93aaa3;
+  --nv-plate:linear-gradient(180deg, rgba(16,38,36,.62), rgba(7,16,22,.78));
+  --nv-edge:rgba(150,235,205,.11); --nv-hair:rgba(150,235,205,.08);
+  --nv-shadow:0 22px 34px -24px rgba(0,6,16,.95), 0 2px 6px rgba(0,0,0,.25);
+  --nv-head:linear-gradient(180deg, rgba(4,10,18,.94), rgba(5,13,20,.82));
+  --nv-screen:
+    radial-gradient(70% 30% at 100% 0%, rgba(46,180,230,.14), transparent 70%),
+    radial-gradient(80% 36% at 0% 100%, rgba(24,170,110,.16), transparent 70%),
+    radial-gradient(1px 1px at 14% 22%, rgba(255,255,255,.55), transparent), radial-gradient(1px 1px at 82% 38%, rgba(207,233,255,.5), transparent),
+    radial-gradient(1px 1px at 36% 68%, rgba(255,255,255,.45), transparent), radial-gradient(1px 1px at 64% 88%, rgba(191,245,220,.45), transparent),
+    linear-gradient(180deg, #050d16 0%, #040a12 60%, #03080e 100%);
+  --nv-field:rgba(2,8,12,.62);
+}
+:root[data-theme="light"]{
+  --nv-abyss:#eef6f2; --nv-frost:#0d2a1e; --nv-dim:#4f6b5e;
+  --nv-plate:linear-gradient(180deg, rgba(255,255,255,.97), rgba(246,251,249,.97));
+  --nv-edge:rgba(13,58,39,.10); --nv-hair:rgba(13,58,39,.08);
+  --nv-shadow:0 18px 30px -22px rgba(13,58,39,.35), 0 2px 6px rgba(13,58,39,.06);
+  --nv-head:linear-gradient(180deg, rgba(240,247,244,.96), rgba(236,245,241,.88));
+  --nv-screen:radial-gradient(70% 30% at 100% 0%, rgba(46,180,230,.10), transparent 70%), radial-gradient(80% 36% at 0% 100%, rgba(24,170,110,.10), transparent 70%), linear-gradient(180deg, #eef6f2, #f5f9f7);
+  --nv-field:#f3f8f6;
+}
+
+/* ---------------------------------------------------------------- Fond des écrans ---------- */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about){ background:var(--nv-screen); background-color:var(--nv-abyss); color:var(--nv-frost); }
+:root[data-theme="light"]:not(#nv) #app .screen:not(#screen-home):not(#screen-about){ --text:#0d2a1e; --text-muted:#4f6b5e; --text-faint:#7a9488; }
+
+/* ---------------------------------------------------------------- Pont (en-tête) ---------- */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head{
+  position:sticky; top:0; z-index:6; isolation:isolate; overflow:hidden;
+  display:flex; align-items:center; gap:10px;
+  margin:calc(-1 * var(--sp-5)) calc(-1 * var(--sp-4)) 18px; padding:16px var(--sp-4) 14px;
+  border-radius:0; background:var(--nv-head); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  box-shadow:0 10px 24px -18px rgba(0,0,0,.9); border-bottom:1px solid var(--nv-edge); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head::after{ content:''; position:absolute; left:var(--sp-4); bottom:-1px; width:120px; height:1.5px; pointer-events:none;
+  background:linear-gradient(90deg, var(--nv-emerald), var(--nv-cyan) 60%, transparent); }
+/* logo officiel en filigrane, à droite, derrière le titre et les commandes */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .head-logo{ position:absolute; z-index:-1; right:-26px; top:50%; height:170%; width:auto; max-width:none;
+  transform:translateY(-50%); opacity:.12; pointer-events:none; filter:none; }
+:root[data-theme="light"]:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .head-logo{ opacity:.10; filter:brightness(.7); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .head-title{ flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:12px; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head h1,
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head h1{ margin:0; min-width:0; font:600 24px/1.15 var(--font-display); letter-spacing:-.015em; color:var(--nv-frost); text-shadow:none;
+  overflow-wrap:anywhere; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .head-actions{ display:flex; gap:8px; flex:none; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .back-btn,
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .icon-btn,
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .help-btn{
+  flex:none; width:42px; height:42px; border-radius:12px; color:var(--nv-frost); display:grid; place-items:center;
+  background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border:1px solid var(--nv-edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10); transition:background .18s ease, transform .15s ease; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .back-btn{ border-color:rgba(47,227,154,.35); color:#7ff0c0; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head :is(.back-btn, .icon-btn, .help-btn):active{ transform:scale(.94); background:rgba(47,227,154,.12); }
+:root[data-theme="light"]:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head .back-btn{ color:#0b7a45; }
+
+/* ---------------------------------------------------------------- Intertitres et textes ---------- */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .section-title{
+  display:flex; align-items:center; gap:10px; margin:24px 2px 10px; padding:0;
+  font:600 14px/1.2 var(--font-display); letter-spacing:.005em; text-transform:none; color:var(--nv-frost); opacity:.9; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .section-title::before{ content:none; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .section-title::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg, var(--nv-edge), transparent); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .hint{ color:var(--nv-dim); font-size:13.5px; line-height:1.55; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .card-title{ font:600 16px/1.3 var(--font-display); color:var(--nv-frost); letter-spacing:-.005em; text-transform:none; }
+
+/* ---------------------------------------------------------------- Plaques ---------- */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) :is(.card, .list, .svc-card, .accordion){
+  position:relative; background:var(--nv-plate); border:1px solid var(--nv-edge); border-radius:6px; box-shadow:var(--nv-shadow);
+  -webkit-backdrop-filter:none; backdrop-filter:none; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) :is(.card, .list, .svc-card, .accordion)::after{ content:''; position:absolute; left:10%; right:10%; top:-1px; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); border-radius:0; pointer-events:none; }
+/* repères d'angle : un instrument de bord, pas une carte générique */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) :is(.card, .list, .svc-card):not(.primer)::before{ content:''; position:absolute; inset:-1px; pointer-events:none; z-index:1;
+  background:
+    linear-gradient(var(--nv-emerald), var(--nv-emerald)) left top / 14px 1.5px no-repeat,
+    linear-gradient(var(--nv-emerald), var(--nv-emerald)) left top / 1.5px 14px no-repeat,
+    linear-gradient(var(--nv-cyan), var(--nv-cyan)) right bottom / 14px 1.5px no-repeat,
+    linear-gradient(var(--nv-cyan), var(--nv-cyan)) right bottom / 1.5px 14px no-repeat;
+  border-radius:6px; opacity:.85; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .card.primer{ background:transparent; box-shadow:none; border-style:dashed; }
+
+/* ---------------------------------------------------------------- Lignes ---------- */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .list .row{ min-height:62px; padding:12px 14px; gap:14px; border-bottom:0; background:transparent; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .list .row + .row, :root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .list .setting-block + .setting-block,
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .list .about-block + .row{ border-top:1px solid var(--nv-hair); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) button.row:active, :root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) a.row:active{ background:rgba(47,227,154,.07); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .row-ico{
+  width:40px; height:40px; border-radius:10px; color:#7ff0c0; box-shadow:none;
+  border:1px solid transparent;
+  background:linear-gradient(160deg, rgba(47,227,154,.14), rgba(76,216,240,.05)) padding-box,
+             linear-gradient(160deg, rgba(47,227,154,.60), rgba(76,216,240,.22)) border-box; }
+:root[data-theme="light"]:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .row-ico{ color:#0b7a45;
+  background:linear-gradient(160deg, #eaf7f0, #f4fbfd) padding-box, linear-gradient(160deg, rgba(19,168,98,.55), rgba(46,170,210,.3)) border-box; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .row-title{ font:600 15px/1.3 var(--font-body); color:var(--nv-frost); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .row-sub{ font-size:12.5px; line-height:1.4; color:var(--nv-dim); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .row-chev{ width:18px; height:18px; color:var(--nv-dim); opacity:.7; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .row-value{ font:600 14px/1 var(--font-mono); color:var(--nv-dim); }
+
+/* ---------------------------------------------------------------- Commandes ---------- */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .btn{ min-height:48px; border-radius:10px; font:600 15px/1.1 var(--font-display); letter-spacing:.005em; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .btn-primary{ color:#03140d; border:1px solid rgba(190,255,228,.55);
+  background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 50%), linear-gradient(120deg, #2fe39a 0%, #22c9a6 55%, #3fc3e8 100%);
+  box-shadow:0 12px 22px -12px rgba(47,227,154,.7), inset 0 1px 0 rgba(255,255,255,.45); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .btn-secondary{ color:var(--nv-frost); background:rgba(255,255,255,.03); border:1px solid rgba(150,235,205,.24); box-shadow:none; }
+:root[data-theme="light"]:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .btn-secondary{ background:#fff; border-color:rgba(13,58,39,.18); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .btn-sm{ min-height:40px; font-size:14px; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) :is(.input, .textarea, .select){ min-height:48px; border-radius:10px; background:var(--nv-field); border:1px solid rgba(150,235,205,.16);
+  color:var(--nv-frost); box-shadow:inset 0 2px 6px rgba(0,0,0,.25); }
+:root[data-theme="light"]:not(#nv) #app .screen:not(#screen-home):not(#screen-about) :is(.input, .textarea, .select){ border-color:rgba(13,58,39,.16); box-shadow:inset 0 1px 3px rgba(13,58,39,.06); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) :is(.input, .textarea, .select):focus{ border-color:var(--nv-cyan); box-shadow:0 0 0 3px rgba(76,216,240,.18); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .segmented{ padding:4px; gap:4px; border-radius:10px; background:var(--nv-field); border:1px solid var(--nv-edge); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .segmented button{ min-height:44px; border-radius:7px; color:var(--nv-dim); font-weight:600; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .segmented button[aria-pressed="true"]{ color:#03140d; border:1px solid rgba(190,255,228,.5);
+  background:linear-gradient(120deg, #2fe39a, #3fc3e8); box-shadow:0 6px 14px -8px rgba(47,227,154,.8); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .switch{ width:50px; height:30px; border-radius:15px; background:var(--nv-field); border:1px solid rgba(150,235,205,.22); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .switch[aria-checked="true"]{ background:linear-gradient(120deg, #2fe39a, #3fc3e8); border-color:rgba(190,255,228,.6); box-shadow:0 0 14px rgba(47,227,154,.35); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .switch::after{ width:22px; height:22px; top:3px; left:3px; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .switch[aria-checked="true"]::after{ transform:translateX(20px); }
+:root:not(#nv) #app .pw-wrap{ display:block; }   /* l'œil du mot de passe couvre toute la hauteur du champ */
+
+/* ---------------------------------------------------------------- États ---------- */
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .empty{ padding:28px 18px; border:1px dashed var(--nv-edge); border-radius:6px; color:var(--nv-dim); }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .empty .ic{ color:var(--nv-cyan); opacity:.8; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .empty-title{ font:600 17px/1.3 var(--font-display); color:var(--nv-frost); margin-bottom:4px; }
+:root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) .skeleton{ border-radius:6px; }
+
+/* ============================================================ Compositions par écran ============ */
+
+/* Serveurs : couloirs. Barre d'état à gauche, avatar hexagonal (rappel du logo), le serveur retenu s'illumine. */
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .srv-summary{ margin:0 2px 4px; font:500 13px/1.4 var(--font-body); color:var(--nv-dim); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row{ position:relative; display:flex; align-items:center; gap:14px; width:100%; min-height:72px; margin:0 0 8px; padding:12px 14px 12px 18px;
+  border-radius:6px; border:1px solid var(--nv-edge); background:var(--nv-plate); box-shadow:var(--nv-shadow); color:var(--nv-frost);
+  -webkit-backdrop-filter:none; backdrop-filter:none; text-align:left; transition:transform .15s ease, border-color .2s ease; }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row::before{ content:''; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background:rgba(47,227,154,.45); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-disabled::before{ background:rgba(147,170,163,.35); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row:active{ transform:scale(.985); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row .avatar{ flex:none; width:44px; height:48px; border:0; border-radius:0; color:#7ff0c0; font:700 16px/1 var(--font-display);
+  clip-path:polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); background:linear-gradient(160deg, rgba(47,227,154,.22), rgba(76,216,240,.10)); }
+:root[data-theme="light"]:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row .avatar{ color:#0b7a45; background:linear-gradient(160deg, #dff4ea, #e8f6fb); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row .row-title{ font:600 16px/1.25 var(--font-display); color:var(--nv-frost); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row .row-sub{ color:var(--nv-dim); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row .radio{ flex:none; width:26px; height:26px; border-radius:50%; border:1.5px solid rgba(150,235,205,.3); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-active{ border-color:rgba(47,227,154,.55);
+  background:radial-gradient(120% 160% at 0% 50%, rgba(47,227,154,.22), transparent 60%), var(--nv-plate);
+  box-shadow:0 0 0 1px rgba(47,227,154,.15), 0 18px 30px -18px rgba(47,227,154,.45), var(--nv-shadow); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-active::before{ background:linear-gradient(180deg, var(--nv-emerald), var(--nv-cyan)); width:4px; box-shadow:0 0 12px rgba(47,227,154,.8); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-active .row-title{ color:var(--nv-frost); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-active .row-sub{ color:#a9d6c0; }
+:root[data-theme="light"]:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-active .row-sub{ color:#2f6b52; }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-active .avatar{ background:linear-gradient(160deg, #2fe39a, #3fc3e8); color:#03140d; }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-active .radio{ background:linear-gradient(120deg, #2fe39a, #3fc3e8); border-color:transparent; color:#03140d; }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .server-row.is-disabled{ opacity:.62; filter:saturate(.55); }
+:root:not(#nv) #app .screen#screen-servers:not(#screen-home):not(#screen-about) .search .input{ border-radius:10px; }
+
+/* Services : chaque service est une « passe » — nom en grand, puis ses informations en tuiles */
+:root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-card{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; padding:16px; margin-bottom:12px; }
+:root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-head{ grid-column:1 / -1; display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+:root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-name{ flex:1; min-width:0; font:600 20px/1.2 var(--font-display); color:var(--nv-frost); overflow-wrap:anywhere; }
+:root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-card .info-row{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px; min-width:0;
+  border:1px solid var(--nv-hair); border-radius:4px; background:rgba(255,255,255,.025); }
+:root[data-theme="light"]:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-card .info-row{ background:#f5faf8; }
+:root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-card .info-row:last-child:nth-child(odd){ grid-column:1 / -1; }
+:root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-card .info-row .k{ font-size:12px; color:var(--nv-dim); }
+:root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-card .info-row .v{ font:600 14.5px/1.3 var(--font-body); color:var(--nv-frost); text-align:left; overflow-wrap:anywhere; }
+
+/* Réglages : l'aide devient trois tuiles d'accès rapide ; les réglages restent en plaques groupées */
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; background:none; border:0; box-shadow:none; overflow:visible; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick::before, :root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick::after{ content:none; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick .row{ flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:10px; min-height:124px; padding:14px 12px; border:1px solid var(--nv-edge); border-radius:6px;
+  background:var(--nv-plate); box-shadow:var(--nv-shadow); }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick .row + .row{ border-top:1px solid var(--nv-edge); }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick .row-primary{ border-color:rgba(47,227,154,.45); background:radial-gradient(120% 100% at 0% 0%, rgba(47,227,154,.18), transparent 60%), var(--nv-plate); }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick .row-chev{ display:none; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick .row-title{ font:600 14px/1.25 var(--font-display); }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick .row-sub{ font-size:11.5px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; white-space:normal; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .setting-block{ padding:14px; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .setting-head{ margin-bottom:12px; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .about-block{ padding:18px 14px 14px; text-align:left; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .about-name{ font:600 20px/1.2 var(--font-display); color:var(--nv-frost); }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .about-org{ color:var(--nv-emerald); font-size:13px; }
+:root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .about-text{ color:var(--nv-dim); font-size:13px; line-height:1.55; }
+@media (max-width:360px){ :root:not(#nv) #app .screen#screen-settings:not(#screen-home):not(#screen-about) .list.nv-quick .row-sub{ -webkit-line-clamp:2; } }
+
+/* Historique : grands chiffres, puis une frise par jour */
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .stat-row{ justify-content:space-between; gap:12px; }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .stat-row > div{ flex:1; text-align:left; padding:4px 6px; }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .stat-v{ font:600 34px/1.05 var(--font-display); color:var(--nv-frost); font-variant-numeric:tabular-nums; }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .stat-k{ font-size:12.5px; color:var(--nv-dim); margin-top:4px; }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .day-head{ margin:22px 2px 10px; font:600 13px/1.2 var(--font-display); letter-spacing:0; text-transform:none; color:var(--nv-dim); }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) #histList [role="list"]{ position:relative; padding-left:18px; }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) #histList [role="list"]::before{ content:''; position:absolute; left:5px; top:6px; bottom:6px; width:1.5px; background:linear-gradient(180deg, var(--nv-emerald), var(--nv-cyan) 70%, transparent); opacity:.5; }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .hist-row{ position:relative; display:flex; align-items:center; gap:12px; margin:0 0 8px; padding:12px 14px; border-radius:6px; border:1px solid var(--nv-edge);
+  background:var(--nv-plate); box-shadow:none; }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .hist-dot{ position:absolute; left:-18px; width:11px; height:11px; border:2px solid var(--nv-abyss); background:var(--nv-emerald); box-shadow:0 0 10px rgba(47,227,154,.6); }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .hist-dot.fail{ background:#ff7a8a; box-shadow:0 0 10px rgba(255,122,138,.5); }
+:root:not(#nv) #app .screen#screen-activity:not(#screen-home):not(#screen-about) .status-pill{ border-radius:6px; }
+
+/* Journal : terminal */
+:root:not(#nv) #app .screen#screen-logs:not(#screen-home):not(#screen-about) .log-feed{ border-radius:6px; background:#02060a; border:1px solid var(--nv-edge); box-shadow:inset 0 0 0 1px rgba(47,227,154,.05), var(--nv-shadow); }
+:root:not(#nv) #app .screen#screen-logs:not(#screen-home):not(#screen-about) .log-line{ color:#bfe9d6; font-family:var(--font-mono); }
+:root[data-theme="light"]:not(#nv) #app .screen#screen-logs:not(#screen-home):not(#screen-about) .log-feed{ background:#0b1712; }
+
+/* Communauté : deux grandes portes (dans l'application / Telegram) */
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; background:none; border:0; box-shadow:none; overflow:visible; }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list::before, :root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list::after{ content:none; }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list .row{ flex-direction:column; align-items:flex-start; justify-content:space-between; gap:12px; min-height:136px; padding:16px;
+  border-radius:6px; border:1px solid rgba(47,227,154,.35);
+  background:radial-gradient(120% 120% at 0% 0%, rgba(47,227,154,.20), transparent 60%), var(--nv-plate); box-shadow:var(--nv-shadow); }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list .row + .row{ border-top:1px solid rgba(47,227,154,.35); }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list .row:only-child{ grid-column:1 / -1; min-height:88px; flex-direction:row; align-items:center; }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list.fam-sapphire .row{ border-color:rgba(111,190,245,.40);
+  background:radial-gradient(120% 120% at 0% 0%, rgba(76,170,245,.22), transparent 60%), var(--nv-plate); }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list .row-ico{ width:46px; height:46px; border-radius:12px; }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list .row-chev{ display:none; }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list .row-title{ font:600 16px/1.25 var(--font-display); white-space:normal; }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list .row-sub{ white-space:normal; }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) > .card:first-of-type{ text-align:center; }
+
+/* ---------------------------------------------------------------- Petits écrans ---------- */
+@media (max-width:360px){
+  :root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head h1{ font-size:21px; }
+  :root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list{ grid-template-columns:1fr; }
+  :root:not(#nv) #app .screen#screen-services:not(#screen-home):not(#screen-about) .svc-card{ grid-template-columns:1fr; }
+}
+@media (max-height:640px), (max-width:370px){ :root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) > .screen-head{ margin-right:calc(-1 * var(--sp-3)); } }
+@media (prefers-reduced-motion: reduce){ :root:not(#nv) #app .screen:not(#screen-home):not(#screen-about) *{ transition:none !important; } }
+
+/* Zones tactiles : lien d'intertitre et interrupteur gardent leur apparence, mais se touchent sur au moins 44 px */
+:root:not(#nv) #app .screen:not(#screen-home) .section-title .link-btn{ min-height:44px; padding:12px 6px; margin:-12px -6px; font-size:13px; }
+:root:not(#nv) #app .screen:not(#screen-home) .switch{ position:relative; overflow:visible; }
+:root:not(#nv) #app .screen:not(#screen-home) .switch::before{ content:''; position:absolute; inset:-8px -4px; }
+
+/* ============================================================ Profil : « carte d'accès » ============
+   Données : bloc « profile » de GET /api/user/me (Panel), lu par ProfileContract (js/contract.js) et rendu par renderProfileView
+   (js/account.js). La couleur dépend du TYPE réel (data-kind : free, vip, reseller, admin, super_admin) et le bandeau du STATUT
+   réel (data-st : active, configuring, pending, suspended, expired). Purement visuel : aucun droit n'est déduit d'une couleur,
+   les options autorisées / verrouillées viennent du serveur. */
+:root:not(#nv) #app #accViewProfile{ --pk:#2fe39a; --pk2:#4cd8f0; }
+:root:not(#nv) #app #accViewProfile[data-kind="vip"]{ --pk:#e8c77a; --pk2:#f5e2a8; }
+:root:not(#nv) #app #accViewProfile[data-kind="reseller"]{ --pk:#4cd8f0; --pk2:#8fe8fb; }
+:root:not(#nv) #app #accViewProfile:is([data-kind="admin"], [data-kind="super_admin"]){ --pk:#a98bff; --pk2:#d2c4ff; }
+
+/* en-tête : la carte d'accès */
+:root:not(#nv) #app #accViewProfile .pf-hero{ position:relative; overflow:hidden; display:flex; align-items:center; gap:16px; padding:20px 16px 18px;
+  border-radius:6px; border:1px solid color-mix(in srgb, var(--pk) 40%, transparent);
+  background:radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--pk) 24%, transparent), transparent 60%), var(--nv-plate);
+  box-shadow:var(--nv-shadow); -webkit-backdrop-filter:none; backdrop-filter:none; }
+:root:not(#nv) #app #accViewProfile .pf-hero::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:2px; background:linear-gradient(90deg, var(--pk), var(--pk2) 50%, transparent); }
+:root:not(#nv) #app #accViewProfile .pf-avatar{ flex:none; width:78px; height:84px; border:0; border-radius:0; box-shadow:none;
+  clip-path:polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); background:linear-gradient(160deg, var(--pk), var(--pk2)); padding:3px; }
+:root:not(#nv) #app #accViewProfile .pf-avatar > *{ clip-path:polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); width:100%; height:100%; object-fit:cover; background:#0a1a1e; }
+:root:not(#nv) #app #accViewProfile .pf-name{ font:600 24px/1.15 var(--font-display); letter-spacing:-.015em; color:var(--nv-frost); overflow-wrap:anywhere; }
+:root:not(#nv) #app #accViewProfile .pf-badges{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:8px; }
+:root:not(#nv) #app #accViewProfile .pf-badge{ padding:4px 10px; border-radius:3px; font:700 12px/1.2 var(--font-body); letter-spacing:.02em; text-transform:none;
+  color:#03140d; background:linear-gradient(120deg, var(--pk), var(--pk2)); box-shadow:none; border:0; }
+:root:not(#nv) #app #accViewProfile .pf-badge:empty{ display:none; }
+:root:not(#nv) #app #accViewProfile .pf-role{ font-size:13px; color:var(--nv-dim); }
+
+/* statut : bandeau à barre latérale colorée selon le statut réel */
+:root:not(#nv) #app #accViewProfile .pf-status{ --st:#2fe39a; position:relative; margin-top:12px; padding:14px 16px 14px 20px; border-radius:6px; border:1px solid var(--nv-edge);
+  background:var(--nv-plate); box-shadow:var(--nv-shadow); -webkit-backdrop-filter:none; backdrop-filter:none; }
+:root:not(#nv) #app #accViewProfile .pf-status:is([data-st="configuring"], [data-st="pending"]){ --st:#4cd8f0; }
+:root:not(#nv) #app #accViewProfile .pf-status[data-st="suspended"]{ --st:#f2b65a; }
+:root:not(#nv) #app #accViewProfile .pf-status[data-st="expired"]{ --st:#ff7a8a; }
+:root:not(#nv) #app #accViewProfile .pf-status::before{ content:''; position:absolute; left:0; top:10px; bottom:10px; width:4px; border-radius:0 3px 3px 0; background:var(--st); box-shadow:0 0 12px color-mix(in srgb, var(--st) 70%, transparent); }
+:root:not(#nv) #app #accViewProfile .pf-status-top{ display:flex; align-items:center; gap:8px; }
+:root:not(#nv) #app #accViewProfile .pf-dot{ width:8px; height:8px; border-radius:50%; background:var(--st); box-shadow:none; }
+:root:not(#nv) #app #accViewProfile .pf-cap{ font:500 12px/1.2 var(--font-body); letter-spacing:0; text-transform:none; color:var(--nv-dim); }
+:root:not(#nv) #app #accViewProfile .pf-status-val{ margin-top:6px; font:600 20px/1.2 var(--font-display); color:var(--st); }
+:root:not(#nv) #app #accViewProfile .pf-status-msg{ margin:6px 0 0; color:var(--nv-dim); font-size:13.5px; line-height:1.5; }
+
+/* offre + validité : instrument à deux cases */
+:root:not(#nv) #app #accViewProfile .pf-offer{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0; margin-top:12px; padding:0; border-radius:6px;
+  border:1px solid var(--nv-edge); background:var(--nv-plate); box-shadow:var(--nv-shadow); -webkit-backdrop-filter:none; backdrop-filter:none; overflow:hidden; }
+:root:not(#nv) #app #accViewProfile .pf-cell{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:14px 16px; min-width:0; }
+:root:not(#nv) #app #accViewProfile .pf-cell + .pf-cell{ border-left:1px solid var(--nv-hair); }
+:root:not(#nv) #app #accViewProfile .pf-val{ font:600 17px/1.25 var(--font-display); color:var(--nv-frost); overflow-wrap:anywhere; }
+:root:not(#nv) #app #accViewProfile .pf-sub{ font-size:12px; color:var(--nv-dim); }
+:root:not(#nv) #app #accViewProfile .pf-ring{ width:96px; height:auto; margin:2px 0 -6px; }
+:root:not(#nv) #app #accViewProfile .pf-ring-track{ stroke:rgba(150,235,205,.14); }
+:root:not(#nv) #app #accViewProfile .pf-ring-val{ stroke:var(--pk); }
+
+/* options : grille de jetons, autorisées pleines, verrouillées en pointillé */
+:root:not(#nv) #app #accViewProfile .pf-opts{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
+:root:not(#nv) #app #accViewProfile .pf-opt{ display:flex; align-items:center; gap:10px; min-height:56px; padding:10px 12px; border-radius:6px;
+  border:1px solid var(--nv-edge); background:var(--nv-plate); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+:root:not(#nv) #app #accViewProfile .pf-opt-ok{ border-color:rgba(47,227,154,.35); }
+:root:not(#nv) #app #accViewProfile .pf-opt:is(.pf-opt-lock, .pf-opt-wait){ background:transparent; border-style:dashed; }
+:root:not(#nv) #app #accViewProfile .pf-opt-ico{ flex:none; width:30px; height:30px; display:grid; place-items:center; border-radius:6px; background:rgba(47,227,154,.14); color:#2fe39a; }
+:root:not(#nv) #app #accViewProfile .pf-opt-wait .pf-opt-ico{ background:rgba(76,216,240,.12); color:#4cd8f0; }
+:root:not(#nv) #app #accViewProfile .pf-opt-lock .pf-opt-ico{ background:rgba(147,170,163,.12); color:var(--nv-dim); }
+:root:not(#nv) #app #accViewProfile .pf-opt-body{ display:flex; flex-direction:column; min-width:0; }
+:root:not(#nv) #app #accViewProfile .pf-opt-title{ font:600 13.5px/1.25 var(--font-body); color:var(--nv-frost); overflow-wrap:anywhere; }
+:root:not(#nv) #app #accViewProfile .pf-opt-sub{ font-size:11.5px; color:var(--nv-dim); }
+
+/* informations complémentaires, notice, état d'erreur */
+:root:not(#nv) #app #accViewProfile .pf-extra{ margin-top:16px; padding:4px 0; border-radius:6px; border:1px solid var(--nv-edge); background:var(--nv-plate); -webkit-backdrop-filter:none; backdrop-filter:none; }
+:root:not(#nv) #app #accViewProfile .pf-extra .info-row{ padding:12px 16px; }
+:root:not(#nv) #app #accViewProfile .pf-extra .info-row + .info-row{ border-top:1px solid var(--nv-hair); }
+:root:not(#nv) #app #accViewProfile .pf-notice{ border-radius:6px; }
+:root:not(#nv) #app #accViewProfile .pf-state{ border-radius:6px; border:1px dashed var(--nv-edge); background:transparent; }
+:root:not(#nv) #app #accViewProfile .pf-actions{ margin-top:16px; }
+:root:not(#nv) #app #accViewProfile .pf-skel i{ border-radius:6px; }
+@media (max-width:360px){
+  :root:not(#nv) #app #accViewProfile .pf-opts{ grid-template-columns:1fr; }
+  :root:not(#nv) #app #accViewProfile .pf-avatar{ width:66px; height:72px; }
+}
+
+/* Sous-vues du compte (profil, accès...) : la ligne de retour devient un fil d'Ariane discret sous le pont (le grand titre reste celui du pont) */
+:root:not(#nv) #app .screen#screen-account:not(#screen-home):not(#screen-about) .subhead{ display:flex; align-items:center; gap:8px; margin:-6px 0 14px; }
+:root:not(#nv) #app .screen#screen-account:not(#screen-home):not(#screen-about) .subhead .back-btn{ width:44px; height:44px; border-radius:10px; background:rgba(255,255,255,.03); border:1px solid var(--nv-edge); color:var(--nv-dim); box-shadow:none; }
+:root:not(#nv) #app .screen#screen-account:not(#screen-home):not(#screen-about) .subhead-title{ margin:0; font:500 14px/1.2 var(--font-body); color:var(--nv-dim); letter-spacing:0; }
+/* Telegram : famille saphir nettement distincte (porte ET tuile d'icône) */
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list.fam-sapphire .row{ border-color:rgba(111,190,245,.55); background:radial-gradient(120% 120% at 0% 0%, rgba(76,150,245,.30), transparent 62%), var(--nv-plate); }
+:root:not(#nv) #app .screen#screen-community:not(#screen-home):not(#screen-about) .list.fam-sapphire .row-ico{ color:#9fd8ff; background:linear-gradient(160deg, rgba(76,150,245,.22), rgba(76,216,240,.06)) padding-box, linear-gradient(160deg, rgba(111,190,245,.75), rgba(76,216,240,.3)) border-box; }

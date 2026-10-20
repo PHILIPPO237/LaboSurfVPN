@@ -48,7 +48,9 @@ function errorText(spec){
   return text;
 }
 function setVpnState(state, spec){
+  const prev = VPN.state;
   VPN.state = state;
+  if(state !== prev && (state === 'on' || state === 'error') && typeof Haptics !== 'undefined') Haptics.tap(state === 'on' ? 'confirm' : 'reject');   // résultat réel
   if(state !== 'connecting'){ clearTimeout(VPN.mcTimer); VPN.mcTimer = null; VPN.mcRetries = 0; }
   VPN.errorSpec = state === 'error' ? normalizeErr(spec) : null;
   renderHome();
@@ -144,6 +146,7 @@ function renderHome(){
 
   const elapsed = VPN.session ? (Date.now() - VPN.session.startedAt) / 1000 : 0;
   $('timer').textContent = fmtClock(elapsed);
+  $('tileTimer').textContent = $('timer').textContent;   // même durée réelle dans la barre des compteurs
   renderStats();
 
   // Écran Historique : pastille d'état + infos de connexion réelles
@@ -158,7 +161,7 @@ function renderHome(){
 // L'accueil est UNE page, sans défilement : logo, START, état et action en haut, bannière dans tout l'espace restant.
 // Si l'écran est trop court, seules les commandes sont réduites (jamais en dessous de 62 %) pour garder à la bannière
 // une hauteur minimale ; un message de bannière plus long que la place défile dans la bannière elle-même.
-const HOME_BANNER_MIN = 140, HOME_BANNER_IDEAL = 250;   // hauteur minimale de la bannière, et hauteur au-delà de laquelle un long contenu défile
+const HOME_BANNER_MIN = 176, HOME_BANNER_IDEAL = 205, HOME_BANNER_SHORT = 188;   // SHORT : vitrine sur écran court (< 700 px)   // vitrine publicitaire : hauteur minimale réservée, et hauteur idéale (au-delà, un long contenu défile)
 function fitHomeScreen(){
   const scr = $('screen-home'), main = $('homeMain');
   if(!scr || !main || !scr.classList.contains('active')) return;
@@ -176,7 +179,9 @@ function fitHomeScreen(){
   // bloc par défaut : il se réduit jusqu'à BN_SCALE_MIN, on lui réserve donc 90 % de sa hauteur naturelle (75 % sur écran court, où le logo et START passent avant)
   const dflt = $('homeBannerDefault'), nat = dflt && !dflt.hidden ? parseFloat(dflt.dataset.natural) : 0;
   const natural = (nat ? nat * (innerHeight < 700 ? 0.75 : 0.9) : (inner ? inner.offsetHeight : 0)) + parseFloat(bs.paddingTop) + parseFloat(bs.paddingBottom) || HOME_BANNER_MIN;
-  const reserve = Math.min(Math.max(natural, HOME_BANNER_MIN), HOME_BANNER_IDEAL) + around;
+  // écran court (< 700 px) : la vitrine s'en tient à son minimum, le logo et le bouton de connexion passent avant
+  const ideal = innerHeight < 700 ? HOME_BANNER_SHORT : HOME_BANNER_IDEAL;
+  const reserve = Math.min(Math.max(natural, Math.min(HOME_BANNER_MIN, ideal)), ideal) + around;
   let scale = 1;
   if(need > avail - reserve && avail > 0) scale = Math.max(0.62, (avail - reserve) / need);
   if(scale < 1){
@@ -187,9 +192,15 @@ function fitHomeScreen(){
   const rail = $('rail');
   if(foot && banner && rail){
     const app = getComputedStyle($('app')), num = (v, d) => parseFloat(app.getPropertyValue(v)) || d;
-    const n = num('--rail-n', 4), btn = num('--rail-btn', 48), gap = num('--rail-gap', 8);
-    const railBottom = rail.getBoundingClientRect().top + 5 + n * btn + (n - 1) * gap + 6;   // rail replié
-    foot.classList.toggle('is-inset', railBottom > banner.getBoundingClientRect().top - 6);
+    // boutons réellement affichés (Chat n'apparaît qu'aux abonnés, Communauté a rejoint le rail) : le jeton --rail-n n'est qu'un repli
+    const shown = rail.querySelectorAll('.rail-btn:not([hidden])').length;
+    const n = shown || num('--rail-n', 4), btn = num('--rail-btn', 48), gap = num('--rail-gap', 8);
+    // rail replié : sa vraie boîte (colonne de verre comprise) ; s'il est déplié (raccourcis), l'estimation repliée
+    // vraie boîte du rail (colonne de verre, raccourcis dépliés compris : setRailOpen relance ce calcul après l'animation)
+    const railBottom = Math.max(rail.getBoundingClientRect().bottom, rail.getBoundingClientRect().top + 8 + n * btn + (n - 1) * gap + 8);
+    // le pied commence par l'emplacement publicitaire (puis la bannière) : c'est son premier bloc qui ne doit pas passer sous le rail
+    const firstBlock = foot.firstElementChild || banner;
+    foot.classList.toggle('is-inset', railBottom > firstBlock.getBoundingClientRect().top - 6);
   }
   fitBannerDefault();   // la hauteur finale de la bannière est connue : le contenu s'y ajuste
 }
@@ -198,10 +209,38 @@ window.addEventListener('orientationchange', () => setTimeout(fitHomeScreen, 200
 
 // Trafic : trois états honnêtes. loading = connecté, on attend le moteur ; ready = valeurs réelles ;
 // unavailable = le moteur n'en fournit pas (ou plus). Aucune valeur n'est jamais fabriquée.
+// Courbe du débit : chemins SVG (réception, envoi) tirés des SEULES mesures reçues du moteur. Échelle commune aux deux
+// courbes ; aucune valeur inventée ni lissée. Moins de deux mesures : null (rien n'est dessiné).
+const TRAFFIC_HISTORY_MAX = 40;
+function trafficSparkPaths(samples, w, h){
+  if(!Array.isArray(samples) || samples.length < 2) return null;
+  const max = Math.max(1, ...samples.map((p) => Math.max(p.rx, p.tx)));
+  const step = w / (samples.length - 1);
+  const line = (k) => samples.map((p, i) => (i ? 'L' : 'M') + (i * step).toFixed(1) + ' ' + (h - 2 - (p[k] / max) * (h - 4)).toFixed(1)).join(' ');
+  return { rx: line('rx'), tx: line('tx'), max: max };
+}
+function renderTrafficSpark(){
+  const svg = $('trafficSpark');
+  if(!svg) return;
+  const paths = VPN.state === 'on' && VPN.statsState === 'ready' ? trafficSparkPaths(VPN.trafficHistory, 200, 44) : null;
+  // un <svg> n'a pas de propriété .hidden (élément SVG, pas HTML) : on passe par l'attribut
+  if(paths) svg.removeAttribute('hidden'); else svg.setAttribute('hidden', '');
+  if(!paths) return;
+  $('sparkRx').setAttribute('d', paths.rx);
+  $('sparkTx').setAttribute('d', paths.tx);
+}
+
 function renderStats(){
   const tiles = $('homeTiles');
-  tiles.hidden = VPN.state !== 'on';
-  if(tiles.hidden) return;
+  if(VPN.state !== 'on'){   // hors connexion : la barre reste en place, sans aucune valeur inventée
+    tiles.dataset.state = 'idle';
+    $('statNote').hidden = true;
+    $('statRx').textContent = '—'; $('statTx').textContent = '—';
+    $('statRxSpeed').textContent = ''; $('statTxSpeed').textContent = '';
+    $('tileTimer').textContent = '00:00:00';
+    renderTrafficSpark();
+    return;
+  }
   const state = VPN.stats && VPN.statsState === 'ready' ? 'ready' : VPN.statsState;
   tiles.dataset.state = state;
   $('statNote').textContent = state === 'ready' ? '' : t(state === 'loading' ? 'home.stats.loading' : 'home.stats.unavailable');
@@ -212,11 +251,13 @@ function renderStats(){
   $('statTx').textContent = state === 'ready' ? val(s.tx) : '';
   $('statRxSpeed').textContent = state === 'ready' && typeof s.rxSpeed === 'number' && isFinite(s.rxSpeed) ? fmtBytes(s.rxSpeed) + '/s' : '';
   $('statTxSpeed').textContent = state === 'ready' && typeof s.txSpeed === 'number' && isFinite(s.txSpeed) ? fmtBytes(s.txSpeed) + '/s' : '';
+  renderTrafficSpark();
 }
 function resetStats(){
   clearTimeout(VPN.statsTimer);
   VPN.stats = null;
   VPN.statsState = 'loading';
+  VPN.trafficHistory = [];   // nouvelle session : la courbe repart de zéro mesure
 }
 function armStatsTimer(ms){
   clearTimeout(VPN.statsTimer);
@@ -234,6 +275,7 @@ function startClock(){
     if(!VPN.session) return;
     const elapsed = Math.floor((Date.now() - VPN.session.startedAt) / 1000);
     $('timer').textContent = fmtClock(elapsed);
+    $('tileTimer').textContent = $('timer').textContent;   // même durée réelle dans la barre des compteurs
     $('infoDuration').textContent = fmtClock(elapsed);
 
     // Fin de l'accès : l'expiration RÉELLE de l'Access (access.expires_at du panel) fait foi ; à défaut, la limite d'essai
@@ -456,7 +498,14 @@ window.onNativeVpnStats = function(rx, tx, rxSpeed, txSpeed){
   if(VPN.state !== 'on') return;
   const ok = (n) => typeof n === 'number' && isFinite(n) && n >= 0;
   if(!ok(rx) || !ok(tx)){ VPN.stats = null; VPN.statsState = 'unavailable'; clearTimeout(VPN.statsTimer); }   // null / valeurs invalides = indisponible
-  else { VPN.stats = { rx: rx, tx: tx, rxSpeed: rxSpeed, txSpeed: txSpeed }; VPN.statsState = 'ready'; armStatsTimer(STATS_STALE_MS); }
+  else {
+    VPN.stats = { rx: rx, tx: tx, rxSpeed: rxSpeed, txSpeed: txSpeed }; VPN.statsState = 'ready'; armStatsTimer(STATS_STALE_MS);
+    if(ok(rxSpeed) && ok(txSpeed)){   // la courbe ne retient que des débits réellement mesurés
+      if(!Array.isArray(VPN.trafficHistory)) VPN.trafficHistory = [];
+      VPN.trafficHistory.push({ rx: rxSpeed, tx: txSpeed });
+      if(VPN.trafficHistory.length > TRAFFIC_HISTORY_MAX) VPN.trafficHistory.shift();
+    }
+  }
   renderStats(); fitHomeScreen();
 };
 

@@ -17,6 +17,23 @@ const store = {
   remove(key){ try{ localStorage.removeItem('ls.' + key); }catch(e){} },
 };
 
+// ─── Retour haptique : UN seul mécanisme pour toute l'application ───
+// Dans l'application Android : vibration courte native (LaboSurfNative.haptic -> performHapticFeedback, qui respecte le réglage
+// système). Ailleurs (navigateur de développement) : rien — navigator.vibrate ignorerait ce réglage. Jamais pendant une animation :
+// seulement sur une action de l'utilisateur ou sur le résultat réel d'une connexion ; deux appels rapprochés n'en font qu'un.
+const Haptics = (function(){
+  let last = 0;
+  function tap(kind){
+    const now = Date.now();
+    if(now - last < 80) return;
+    last = now;
+    try{ if(window.LaboSurfNative && typeof window.LaboSurfNative.haptic === 'function') window.LaboSurfNative.haptic(kind || 'tick'); }catch(e){}
+  }
+  // Retour selon l'action : le bouton de connexion est un peu plus marqué ; un choix de serveur ou de profil est confirmé
+  const KIND = { togglePower: 'press', selectServer: 'confirm', selectProfile: 'confirm' };
+  return { tap: tap, forAction: (name) => KIND[name] || 'tick' };
+})();
+
 // ─── Actions déléguées : <button data-action="nom"> -> Actions.nom(el, event) ───
 // <form data-submit="nom"> -> Actions.nom(form, event), Entrée au clavier incluse.
 const Actions = {};
@@ -24,7 +41,9 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if(!el) return;
   const fn = Actions[el.dataset.action];
-  if(fn) fn(el, e);
+  if(!fn) return;
+  if(!el.disabled) Haptics.tap(Haptics.forAction(el.dataset.action));   // une action réellement déclenchée = un retour
+  fn(el, e);
 });
 document.addEventListener('submit', (e) => {
   const form = e.target.closest('form[data-submit]');

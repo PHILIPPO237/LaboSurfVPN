@@ -1,0 +1,607 @@
+/* ==========================================================================
+   Pages secondaires « Orbite » — css/orbite-pages.css (2026-10-20)
+   À charger APRÈS secondary.css (mêmes variables --nv-*, même grammaire : plaques
+   nettes à 6 px avec repères d'angle, intertitres suivis d'un filet, couloirs,
+   thème clair piloté par les variables). Ce fichier ne redéfinit PAS :root.
+
+   Trois compositions neuves, propres à trois écrans :
+
+   1. #screen-legal — DOCUMENT DE LECTURE.
+      Une seule colonne de texte (max-width:68ch), le chapeau puis chaque section
+      séparés par un filet, titres en Space Grotesk avec pastille numérotée,
+      paragraphes Inter 15 px / 1.65, listes à puces émeraude, liens soulignés.
+      Aucune carte, aucun décor qui détourne la lecture.
+
+   2. #screen-clients — TABLEAU DE BORD REVENDEUR.
+      En-têtes de section : titre à gauche, action « charger » poussée à droite,
+      le filet court entre les deux. Chaque demande est une plaque-corridor avec une
+      barre d'état fine à gauche, le nom en évidence (Space Grotesk), le type de
+      demande et le message en petit. Chaque client est une ligne de couloir : même
+      barre d'état (active = dégradé émeraude → cyan), nom en évidence, informations
+      secondaires en petit qui se replient au lieu d'être tronquées. Plaque de
+      création pliante en tête ; états vides à hauteur stable et squelettes nets.
+
+   3. #screen-chat — CONVERSATION.
+      Pont de haut en verre collant au bord (retour 44 px, tuile d'avatar, titre et
+      sous-titre, pastille), bandeau d'annonces en plaque, fil de bulles à angles
+      nets (10 px, coin côté auteur à 3 px) : mes messages à droite en dégradé
+      émeraude → cyan sur texte sombre #03140d, messages reçus à gauche sur plaque
+      var(--nv-plate). Séparateurs de jour en pastille, barre de pièce jointe, puis
+      composeur collé en bas en verre (champ 44 px, bouton d'envoi 46 × 46).
+      Aucun état (lu, envoyé, en cours…) n'est affiché : le DOM produit par le JS
+      n'en contient pas, seuls le rôle et l'heure existent.
+
+   Priorité CSS : chaque sélecteur commence par « :root:not(#nv) #app .screen » suivi
+   de l'identifiant de l'écran, puis « :not(#screen-home):not(#screen-about) » — variante
+   claire : « :root[data-theme="light"]:not(#nv) #app .screen#screen-XXX … ». Cela passe
+   devant premium / ap-global / glass sans !important ; seul le bloc
+   prefers-reduced-motion en emploie (autorisé).
+
+   Aucun texte, aucune donnée, aucun contenu inventé : ::before / ::after sont
+   décoratifs (content:'' ou content:none) ou servent uniquement d'aire tactile.
+   ========================================================================== */
+
+/* ================================================================================
+   COMMUN AUX DEUX ÉCRANS À PONT (légal, clients) — retour et colonne de lecture
+   ================================================================================ */
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) > .screen-head .back-btn,
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) > .screen-head .back-btn{
+  width:44px; height:44px; flex:0 0 44px; border-radius:12px;
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) > .screen-head .back-btn:active,
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) > .screen-head .back-btn:active{
+  transform:scale(.94); background:rgba(47,227,154,.12);
+}
+
+/* ================================================================================
+   1. #screen-legal — mentions / informations légales : une page de document
+   ================================================================================ */
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal{
+  max-width:68ch;            /* colonne de lecture : ~68 caractères, limitée par l'écran sur téléphone */
+  overflow-wrap:break-word;  /* adresse ou URL longue : jamais de débordement horizontal */
+  padding:0 0 var(--sp-6);
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-meta{
+  display:block; margin:0 0 14px;
+  font:500 11.5px/1.5 var(--font-mono); letter-spacing:.04em; color:var(--nv-dim);
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-intro{
+  margin:0 0 4px; padding:0 0 20px;
+  font:400 15.5px/1.65 var(--font-body); color:var(--nv-frost);
+  border-bottom:1px solid rgba(150,235,205,.30);   /* filet franc qui sépare le chapeau des sections */
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-intro{
+  border-bottom-color:rgba(13,58,39,.26);
+}
+/* Sections : un filet fin entre chacune, la première hérite du filet du chapeau */
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec{
+  padding:22px 0 4px; border-top:1px solid var(--nv-edge);
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec:first-of-type{
+  padding-top:20px; border-top:0;
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec h2{
+  display:flex; align-items:center; gap:10px; margin:0 0 12px;
+  font:600 17px/1.3 var(--font-display); letter-spacing:-.01em; color:var(--nv-frost);
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-n{
+  flex:none; width:26px; height:26px; border-radius:8px; display:grid; place-items:center;
+  font:700 12px/1 var(--font-mono); color:#7ff0c0;
+  background:linear-gradient(160deg, rgba(47,227,154,.18), rgba(76,216,240,.06));
+  border:1px solid rgba(47,227,154,.45); box-shadow:none;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-n{
+  color:#0b7a45; background:linear-gradient(160deg, #eaf7f0, #f4fbfd); border-color:rgba(19,168,98,.45);
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec p{
+  margin:0 0 12px; font:400 15px/1.65 var(--font-body); color:var(--nv-frost);
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec p:last-child{
+  margin-bottom:0;
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec ul{
+  margin:8px 0 16px; padding-left:22px; gap:9px;
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec li{
+  font:400 15px/1.65 var(--font-body); color:var(--nv-frost);
+}
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec li::marker{
+  color:var(--nv-emerald);
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec li::marker{
+  color:#0b7a45;
+}
+/* Liens du document : lisibles, soulignés (le JS n'en produit pas aujourd'hui, la règle
+   ne s'applique donc à rien tant qu'aucun lien n'apparaît dans le corps du document) */
+:root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal a{
+  color:var(--nv-cyan); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:2px;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal a{
+  color:#0b7a45;
+}
+
+/* ================================================================================
+   2. #screen-clients — espace revendeur : création, demandes, clients
+   ================================================================================ */
+
+/* --- En-têtes de section : titre · filet · action « charger » à droite -------------
+   Le style en ligne du HTML (display:flex; justify-content:space-between) est conservé ;
+   l'ordre place le filet entre le titre et l'action (l'action passe après le ::after). */
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title{
+  gap:10px; margin:26px 2px 12px; color:var(--nv-frost);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title > span{
+  min-width:0; overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title::after{
+  order:0; flex:1 1 auto; min-width:20px; height:1px;
+  background:linear-gradient(90deg, rgba(150,235,205,.32), rgba(150,235,205,.12));
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title::after{
+  background:linear-gradient(90deg, rgba(13,58,39,.30), rgba(13,58,39,.12));
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title .link-btn{
+  order:2; flex:none; position:relative; display:inline-flex; align-items:center;
+  padding:0; min-height:0; margin:0;          /* neutralisés ici aussi : le style en ligne les impose déjà */
+  line-height:1.2; white-space:nowrap;
+  font:600 13px/1.2 var(--font-body); color:var(--nv-cyan);
+  text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:2px;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title .link-btn{
+  color:#0b7a45;
+}
+/* Aire tactile ≥ 44 px : le style en ligne force min-height:0 et padding:0 sur ce bouton,
+   un fond transparent élargit la zone de toucher sans changer l'apparence. */
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title .link-btn::before{
+  content:''; position:absolute; inset:-14px -6px;
+}
+
+/* --- Plaque de création de client (details pliant) ------------------------------- */
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #createClientCard{
+  padding:0; margin-bottom:4px;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #createClientCard > summary{
+  min-height:52px; margin:0; padding:15px var(--sp-4);
+  gap:10px; cursor:pointer;
+  font:600 15.5px/1.3 var(--font-display); letter-spacing:-.005em; color:var(--nv-frost);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #createClientCard > summary > span{
+  min-width:0; overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #createClientCard > summary .chev{
+  flex:none; width:20px; height:20px; color:var(--nv-cyan);
+  transition:transform .22s ease;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #createClientCard[open] > summary{
+  padding-bottom:6px;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #createClientCard > .collapsible-body{
+  margin-top:0; padding:6px var(--sp-4) var(--sp-4);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .field-label{
+  margin-bottom:7px; font:600 12.5px/1.35 var(--font-body); color:var(--nv-dim);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #createClientCard .btn-block{
+  min-height:48px; margin-top:4px;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .form-error{
+  margin-top:10px; font-size:13px; line-height:1.5;
+}
+
+/* --- États : vides à hauteur stable, squelettes en couloir ----------------------- */
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList > .card,
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList > .card{
+  margin-bottom:10px;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList > .card > .empty,
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList > .card > .empty{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:124px;               /* le style en ligne limite le padding : la hauteur stabilise l'état */
+  text-align:center; overflow-wrap:anywhere;
+  font-size:13.5px; line-height:1.6; color:var(--nv-dim);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .empty .ic{
+  width:34px; height:34px; margin-bottom:6px; color:var(--nv-cyan); opacity:.85;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList > .skeleton,
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList > .skeleton{
+  height:74px; margin-bottom:8px;
+  border:1px solid var(--nv-edge); border-radius:6px;
+  background:linear-gradient(90deg, rgba(150,235,205,.05) 25%, rgba(150,235,205,.16) 50%, rgba(150,235,205,.05) 75%);
+  background-size:200% 100%;      /* conserve le balayage de composants.css */
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList > .skeleton,
+:root[data-theme="light"]:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList > .skeleton{
+  background:linear-gradient(90deg, rgba(13,58,39,.05) 25%, rgba(13,58,39,.13) 50%, rgba(13,58,39,.05) 75%);
+  background-size:200% 100%;
+}
+
+/* --- Demandes en attente : chaque demande est une plaque-corridor ----------------- */
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList > .card.request{
+  display:flex; flex-direction:column; gap:0;
+  margin-bottom:8px; padding:15px var(--sp-4) var(--sp-4) 17px;
+  border-left:3px solid var(--nv-emerald);   /* barre d'état fine à gauche (toutes sont en attente) */
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList .card.request > div:first-child{
+  font-family:var(--font-display); font-size:17px; line-height:1.25; letter-spacing:-.01em;
+  color:var(--nv-frost); overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList .card.request > div:nth-child(2){
+  margin-top:3px; font-family:var(--font-body); font-weight:600; line-height:1.45; overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList .card.request > .badge{
+  align-self:flex-start; font:700 11px/1.6 var(--font-body); letter-spacing:.04em;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList .request-msg{
+  margin-top:9px; padding:9px 11px;
+  border-left:2px solid rgba(76,216,240,.55); border-radius:0 6px 6px 0;
+  background:rgba(76,216,240,.07); color:var(--nv-dim);
+  font:400 13.5px/1.55 var(--font-body); overflow-wrap:anywhere;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList .request-msg{
+  border-left-color:rgba(8,106,150,.5); background:rgba(8,106,150,.06);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList .btn-sm{
+  min-height:44px; border-radius:10px; font-size:14.5px;   /* cible tactile minimale */
+}
+
+/* --- Synthèse (deux grands chiffres) --------------------------------------------- */
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsSummaryCard{
+  padding:16px var(--sp-4) 14px; margin-bottom:12px;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsSummaryCard .stat-row{
+  display:flex; gap:12px; justify-content:flex-start; text-align:left;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsSummaryCard .stat-row > div{
+  flex:1 1 0; min-width:0; padding:2px 0;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsSummaryCard .stat-row > div + div{
+  padding-left:16px; border-left:1px solid var(--nv-hair);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsSummaryCard .stat-v{
+  font:600 32px/1.05 var(--font-display); letter-spacing:-.02em; color:var(--nv-frost);
+  font-variant-numeric:tabular-nums;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsSummaryCard .stat-k{
+  margin-top:5px; font:500 12.5px/1.35 var(--font-body); letter-spacing:0; text-transform:none;
+  color:var(--nv-dim);
+}
+
+/* --- Liste des clients : lignes de couloir --------------------------------------- */
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList .list{
+  margin-bottom:14px;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList .list .row{
+  position:relative; min-height:72px; padding:14px var(--sp-4); gap:0;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList .status-dot{
+  position:absolute; left:0; top:13px; bottom:13px;
+  width:3px; height:auto; border-radius:0 3px 3px 0;   /* le point devient une barre d'état fine */
+  background:rgba(147,170,163,.38); box-shadow:none;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList .status-dot.active{
+  background:linear-gradient(180deg, var(--nv-emerald), var(--nv-cyan));
+  box-shadow:0 0 10px rgba(47,227,154,.55);
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList .row-main{
+  flex:1 1 auto; min-width:0;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList .row-title{
+  font:600 16px/1.3 var(--font-display); letter-spacing:-.01em; color:var(--nv-frost);
+  overflow:visible; text-overflow:clip; white-space:normal; overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #clientsList .row-sub{
+  margin-top:4px; font:400 12.5px/1.5 var(--font-body); color:var(--nv-dim);
+  overflow:visible; text-overflow:clip; white-space:normal; overflow-wrap:anywhere;
+}
+
+/* ================================================================================
+   3. #screen-chat — messages avec le revendeur / l'administrateur
+   ================================================================================ */
+
+/* --- Pont de haut ----------------------------------------------------------------- */
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head{
+  position:relative; flex:none; display:flex; align-items:center; gap:12px;
+  margin:calc(-1 * var(--sp-3)) calc(-1 * var(--sp-4)) 0;
+  padding:13px var(--sp-4);
+  border-radius:0; background:var(--nv-head);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--nv-edge);
+  box-shadow:0 10px 24px -18px rgba(0,0,0,.9); overflow:hidden;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head{
+  box-shadow:0 10px 24px -18px rgba(13,58,39,.45);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head::after{
+  content:''; position:absolute; left:var(--sp-4); bottom:0; width:120px; height:1.5px; pointer-events:none;
+  background:linear-gradient(90deg, var(--nv-emerald), var(--nv-cyan) 60%, transparent);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head .back-btn{
+  flex:none; width:44px; height:44px; border-radius:12px; display:grid; place-items:center;
+  color:#7ff0c0; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border:1px solid rgba(47,227,154,.35); box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+  transition:background .18s ease, transform .15s ease;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head .back-btn{
+  color:#0b7a45; background:#fff; border-color:rgba(19,168,98,.4); box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head .back-btn:active{
+  transform:scale(.94); background:rgba(47,227,154,.12);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-ava{
+  flex:none; width:44px; height:44px; border-radius:12px; display:grid; place-items:center;
+  border:1px solid transparent; box-shadow:none; color:#7ff0c0;
+  background:linear-gradient(160deg, rgba(47,227,154,.16), rgba(76,216,240,.06)) padding-box,
+             linear-gradient(160deg, rgba(47,227,154,.55), rgba(76,216,240,.22)) border-box;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-ava{
+  color:#0b7a45;
+  background:linear-gradient(160deg, #eaf7f0, #f4fbfd) padding-box,
+             linear-gradient(160deg, rgba(19,168,98,.5), rgba(46,170,210,.3)) border-box;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-id{
+  flex:1 1 auto; min-width:0;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-id h1{
+  margin:0; font:600 17px/1.25 var(--font-display); letter-spacing:-.01em;
+  color:var(--nv-frost); overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-id p{
+  margin:3px 0 0; font:400 12.5px/1.4 var(--font-body); color:var(--nv-dim); overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head .badge-dot{
+  flex:none;
+}
+
+/* --- Bandeau d'annonces ----------------------------------------------------------- */
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-announce{
+  flex:none; margin-top:10px; overflow:hidden;
+  border:1px solid var(--nv-edge); border-radius:6px;
+  background:var(--nv-plate); box-shadow:var(--nv-shadow);
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-announce-head{
+  width:100%; min-height:44px; display:flex; align-items:center; gap:8px;
+  padding:8px 12px; background:none; border:0; text-align:left; cursor:pointer;
+  color:var(--nv-frost); font:600 14px/1.35 var(--font-body);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-announce-head .ic{
+  width:18px; height:18px; color:var(--nv-emerald);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-announce-head .chev{
+  margin-left:auto; width:18px; height:18px; color:var(--nv-dim);
+  transition:transform .22s ease;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-announce-head[aria-expanded="true"] .chev{
+  transform:rotate(180deg);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-announce-list{
+  max-height:230px; overflow-y:auto; padding:0 12px 8px;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an{
+  padding:11px 2px 12px; border-bottom:1px solid var(--nv-hair);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an:last-child{
+  border-bottom:0; padding-bottom:4px;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an-head{
+  display:flex; align-items:center; gap:8px; min-width:0;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an-ico{
+  flex:none; width:26px; height:26px; border-radius:8px; display:grid; place-items:center;
+  color:#7ff0c0; background:linear-gradient(160deg, rgba(47,227,154,.18), rgba(76,216,240,.06));
+  border:1px solid rgba(47,227,154,.32);
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an-ico{
+  color:#0b7a45; background:linear-gradient(160deg, #eaf7f0, #f4fbfd); border-color:rgba(19,168,98,.35);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an-title{
+  min-width:0; font:600 14px/1.4 var(--font-body); color:var(--nv-frost); overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an-text{
+  margin:5px 0 0; font:400 13px/1.55 var(--font-body); color:var(--nv-dim); overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an.is-read .acc-an-ico{
+  color:var(--nv-dim); background:rgba(150,235,205,.07); border-color:var(--nv-hair);
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an.is-read .acc-an-ico{
+  background:rgba(13,58,39,.05); border-color:var(--nv-hair);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an.is-read .acc-an-title{
+  font-weight:500; color:var(--nv-dim);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .acc-an.is-read .acc-an-text{
+  opacity:.8;
+}
+
+/* --- Fil de messages -------------------------------------------------------------- */
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread{
+  flex:1 1 auto; min-height:0; overflow-x:hidden; overflow-y:auto;
+  padding:14px 2px 16px; display:flex; flex-direction:column;
+  -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread > .empty{
+  align-self:center; max-width:36ch; margin:auto 0;   /* état vide centré dans le fil */
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-day{
+  align-self:center; margin:14px 0 8px;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-day span{
+  display:inline-block; padding:4px 11px; border-radius:999px;
+  font:600 11px/1.45 var(--font-body); letter-spacing:.02em; color:var(--nv-dim);
+  background:rgba(150,235,205,.09); border:1px solid var(--nv-hair);
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-day span{
+  background:rgba(13,58,39,.05);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble-row{
+  position:relative; display:flex; align-items:flex-end; gap:8px; margin-bottom:8px;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble-row.mine{
+  justify-content:flex-end;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble{
+  max-width:84%; padding:10px 13px 8px;
+  border-radius:10px 10px 10px 3px;            /* angles nets, coin auteur (gauche) à 3 px */
+  font:400 15px/1.5 var(--font-body); color:var(--nv-frost);
+  background:var(--nv-plate); border:1px solid var(--nv-edge);
+  box-shadow:0 8px 18px -14px rgba(0,0,0,.9);
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble{
+  box-shadow:0 8px 18px -14px rgba(13,58,39,.45);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .mine .bubble{
+  border-radius:10px 10px 3px 10px;            /* coin auteur (droite) à 3 px */
+  border:1px solid rgba(190,255,228,.45);
+  background:linear-gradient(120deg, var(--nv-emerald) 0%, var(--nv-cyan) 100%);
+  color:#03140d;
+  box-shadow:0 10px 22px -14px rgba(47,227,154,.7);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble-meta{
+  margin-top:3px; font:500 11px/1.35 var(--font-mono); text-align:left; opacity:.85; color:var(--nv-dim);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .mine .bubble-meta{
+  text-align:right; color:#03140d; opacity:.72;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble img{
+  display:block; max-width:100%; margin-top:8px;
+  border:1px solid var(--nv-edge); border-radius:8px;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .bubble-file{
+  display:inline-flex; align-items:center; gap:6px; min-height:44px;
+  margin-top:8px; padding:10px 11px; border-radius:6px;
+  font:500 12.5px/1.35 var(--font-body); overflow-wrap:anywhere;
+  color:var(--nv-cyan); background:rgba(76,216,240,.10); border:1px solid rgba(76,216,240,.30);
+  text-decoration:underline; text-underline-offset:2px;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .bubble-file{
+  color:#086a96; background:rgba(8,106,150,.07); border-color:rgba(8,106,150,.3);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .mine .bubble-file{
+  color:#03140d; background:rgba(3,20,13,.12); border-color:rgba(3,20,13,.28);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble.token-offer{
+  padding-bottom:13px;
+}
+
+/* --- Pièce jointe en attente d'envoi ----------------------------------------------- */
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-attach{
+  flex:none; display:flex; align-items:center; gap:8px; min-height:44px;
+  padding:6px 6px; margin:0;
+  border-radius:6px; border:1px solid var(--nv-hair);
+  background:rgba(150,235,205,.06);
+  font:500 13px/1.4 var(--font-body); color:var(--nv-dim);
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-attach{
+  background:rgba(13,58,39,.04);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-attach .ic{
+  width:18px; height:18px; color:var(--nv-emerald);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-attach > span{
+  flex:1 1 auto; min-width:0; overflow-wrap:anywhere;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-attach .link-btn{
+  flex:none; color:var(--nv-cyan); text-decoration:underline; text-underline-offset:2px;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-attach .link-btn{
+  color:#0b7a45;
+}
+
+/* --- Composeur collé en bas, en verre ---------------------------------------------- */
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-composer{
+  position:relative; flex:none; display:flex; align-items:flex-end; gap:8px;
+  margin:0 calc(-1 * var(--sp-4));
+  padding:10px var(--sp-4) calc(10px + env(safe-area-inset-bottom));
+  background:var(--nv-head);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  border-top:1px solid var(--nv-edge); border-radius:0;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-composer::before{
+  content:''; position:absolute; left:var(--sp-4); top:-1px; width:110px; height:1.5px; pointer-events:none;
+  background:linear-gradient(90deg, var(--nv-emerald), var(--nv-cyan) 60%, transparent);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-clip{
+  flex:none; width:44px; height:44px; border-radius:12px; display:grid; place-items:center;
+  cursor:pointer; color:var(--nv-dim);
+  background:rgba(150,235,205,.07); border:1px solid rgba(150,235,205,.20);
+  transition:background .16s ease, transform .14s ease;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-clip{
+  background:#fff; border-color:rgba(13,58,39,.16);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-clip:active{
+  transform:scale(.95); background:rgba(47,227,154,.14);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-input{
+  flex:1 1 auto; min-width:0; max-height:120px; resize:none;
+  min-height:44px; padding:11px 13px; border-radius:10px;
+  background:var(--nv-field); border:1px solid rgba(150,235,205,.18); color:var(--nv-frost);
+  font:400 15px/1.45 var(--font-body);
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.25);
+  transition:border-color .16s ease, box-shadow .16s ease;
+}
+:root[data-theme="light"]:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-input{
+  border-color:rgba(13,58,39,.16); box-shadow:inset 0 1px 3px rgba(13,58,39,.07);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-input::placeholder{
+  color:var(--nv-dim); opacity:1;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-input:focus{
+  outline:none; border-color:var(--nv-cyan); box-shadow:0 0 0 3px rgba(76,216,240,.18);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-send{
+  flex:none; width:46px; height:46px; border-radius:12px; display:grid; place-items:center;
+  cursor:pointer; border:1px solid rgba(190,255,228,.55); color:#03140d;
+  background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 50%),
+             linear-gradient(120deg, #2fe39a 0%, #22c9a6 55%, #3fc3e8 100%);
+  box-shadow:0 10px 20px -12px rgba(47,227,154,.75), inset 0 1px 0 rgba(255,255,255,.45);
+  transition:transform .14s ease, filter .14s ease;
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-send:active{
+  transform:scale(.94); filter:brightness(.96);
+}
+:root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-send .ic{
+  width:20px; height:20px;
+}
+
+/* ================================================================================
+   Petits écrans (360 px de large : aucun débordement, rien de tronqué)
+   ================================================================================ */
+@media (max-width:370px){
+  :root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-head{
+    margin-right:calc(-1 * var(--sp-3));
+  }
+  :root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-composer{
+    margin-right:calc(-1 * var(--sp-3));
+  }
+}
+@media (max-width:360px){
+  :root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) .section-title{
+    margin-left:0; margin-right:0; font-size:13.5px;
+  }
+  :root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) #pendingRequestsList .card.request > div:first-child{
+    font-size:16px;
+  }
+  :root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-id h1{
+    font-size:16px;
+  }
+  :root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) .chat-thread .bubble{
+    max-width:88%; font-size:14.5px;
+  }
+  :root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) .legal-sec h2{
+    font-size:16px;
+  }
+}
+
+/* ================================================================================
+   Mouvement réduit : aucune transition ni animation sur ces trois écrans
+   ================================================================================ */
+@media (prefers-reduced-motion: reduce){
+  :root:not(#nv) #app .screen#screen-legal:not(#screen-home):not(#screen-about) *,
+  :root:not(#nv) #app .screen#screen-clients:not(#screen-home):not(#screen-about) *,
+  :root:not(#nv) #app .screen#screen-chat:not(#screen-home):not(#screen-about) *{
+    transition:none !important; animation:none !important;
+  }
+}

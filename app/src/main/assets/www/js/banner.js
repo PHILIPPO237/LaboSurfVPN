@@ -95,7 +95,9 @@ if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitHo
 // Accroche de la bannière : effet machine à écrire en boucle (frappe, pause, effacement) ; la couleur change à chaque fin de boucle :
 // blanc, émeraude, or (palette de la marque). Chaque caractère est déjà dans la page (masqué), on ne fait que les révéler : aucune
 // variation de hauteur. Suspendu hors de l'accueil ou quand l'app est en arrière-plan ; texte fixe si « réduire les animations ».
-const TW_COLORS = [['#f5f8f6', 'rgba(255,255,255,.22)'], ['#3fdc80', 'rgba(25,199,99,.35)'], ['#d8b45a', 'rgba(216,180,90,.35)']];   // palette de la marque : blanc, émeraude, or
+// palette : blanc lumineux, émeraude, vert néon, cyan, rouge élégant, or — toutes lisibles sur la vitre sombre
+const TW_COLORS = [['#f5f8f6', 'rgba(255,255,255,.22)'], ['#3fdc80', 'rgba(25,199,99,.35)'], ['#8dffb2', 'rgba(110,255,170,.32)'],
+  ['#6fdcf5', 'rgba(70,200,240,.32)'], ['#ff8a96', 'rgba(255,110,130,.30)'], ['#e8c77a', 'rgba(216,180,90,.35)']];
 const TW = { chars: [], n: 0, dir: 1, loop: 0, timer: 0, started: false };
 const TW_TYPE = 62, TW_ERASE = 26, TW_HOLD = 2000, TW_GAP = 450;
 
@@ -161,7 +163,7 @@ Splash.whenDone(twStart);   // la frappe commence quand l'animation d'ouverture 
 // tant qu'aucun fichier n'existe, le macaron avec le nom de l'opérateur reste affiché.
 // À n'utiliser qu'avec le droit d'afficher ces logos et si le service fonctionne réellement sur ces réseaux.
 const OPERATOR_LOGO_DIR = 'img/operators/', OPERATOR_LOGO_EXT = ['svg', 'png', 'webp', 'jpg'];
-document.querySelectorAll('.bn-op').forEach((el) => {
+document.querySelectorAll('.bn-op, .bd-op').forEach((el) => {
   const name = el.dataset.op, label = el.querySelector('b');
   const tryExt = (i) => {
     if(i >= OPERATOR_LOGO_EXT.length) return;   // aucun fichier : on garde le macaron
