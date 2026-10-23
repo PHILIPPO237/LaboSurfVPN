@@ -1,0 +1,57 @@
+/* ==========================================================================
+   Style de l'Avant-propos étendu à toutes les options du rail (services, serveurs, compte, activité, communauté, clients, journal,
+   réglages, mentions légales…) : grille cyber discrète en fond, titre néon avec filet lumineux, titres de section en capitales espacées,
+   panneaux de verre sombre à bordure d'accent colorée (vert néon, cyan, or, violet — les accents du Panel), icônes teintées.
+   Couleurs, bordures, ombres et fonds uniquement : aucune structure, aucun comportement. L'écran « À propos » a sa propre feuille (apropos.css).
+   ========================================================================== */
+:root{ --ap-neon:#39ff14; --ap-cyan:#00f2ff; --ap-gold:#ffd700; --ap-purple:#b44dff; }
+
+/* grille cyber en fond de chaque écran secondaire */
+.screen:not(#screen-home):not(#screen-about){
+  background-image:linear-gradient(rgba(57,255,20,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,20,.035) 1px, transparent 1px);
+  background-size:60px 60px; background-attachment:local;
+}
+
+/* titre de l'écran : néon + filet lumineux dessous (comme « AVANT-PROPOS ») */
+.screen:not(#screen-home):not(#screen-about) .screen-head h1{
+  position:relative; padding-bottom:10px; font:900 17px/1.15 var(--font-display); letter-spacing:.07em; text-transform:uppercase; color:var(--ap-neon);
+  text-shadow:0 0 12px rgba(57,255,20,.5), 0 0 30px rgba(57,255,20,.15);
+}
+.screen:not(#screen-home):not(#screen-about) .screen-head h1::after{
+  content:''; position:absolute; left:0; bottom:0; width:min(70%, 220px); height:3px; border-radius:3px;
+  background:linear-gradient(90deg, var(--ap-neon), transparent); box-shadow:0 0 14px rgba(57,255,20,.4);
+}
+/* titres de section : capitales espacées */
+.screen:not(#screen-home):not(#screen-about) .section-title{ font:800 12px/1.3 var(--font-display); letter-spacing:.16em; color:var(--ap-neon); }
+
+/* ---------- panneaux : verre sombre + bordure d'accent à gauche (cycle de 5 : vert, cyan, or, violet, vert) ---------- */
+.screen:not(#screen-home):not(#screen-about) > :is(.card,.list,.accordion,.svc-card){ --acc:var(--ap-neon); }
+.screen:not(#screen-home):not(#screen-about) > :is(.card,.list,.accordion,.svc-card):nth-child(5n+1){ --acc:var(--ap-neon); }
+.screen:not(#screen-home):not(#screen-about) > :is(.card,.list,.accordion,.svc-card):nth-child(5n+2){ --acc:var(--ap-cyan); }
+.screen:not(#screen-home):not(#screen-about) > :is(.card,.list,.accordion,.svc-card):nth-child(5n+3){ --acc:var(--ap-gold); }
+.screen:not(#screen-home):not(#screen-about) > :is(.card,.list,.accordion,.svc-card):nth-child(5n+4){ --acc:var(--ap-purple); }
+.screen:not(#screen-home):not(#screen-about) > :is(.card,.list,.accordion,.svc-card):nth-child(5n+5){ --acc:var(--ap-neon); }
+
+:root:not([data-theme="light"]) .screen:not(#screen-home):not(#screen-about) :is(.card,.list,.accordion,.svc-card){
+  background:
+    linear-gradient(150deg, rgba(255,255,255,.055), rgba(255,255,255,.012) 55%),
+    color-mix(in srgb, var(--acc, #39ff14) 5%, rgba(12,14,16,.74));
+  border:1px solid rgba(255,255,255,.08); border-top-color:rgba(255,255,255,.16);
+  border-left:3px solid var(--acc, #39ff14); border-radius:18px;
+  box-shadow:0 10px 26px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08);
+}
+/* thème clair : même accent, surface claire d'origine */
+:root[data-theme="light"] .screen:not(#screen-home):not(#screen-about) :is(.card,.list,.accordion,.svc-card){ border-left:3px solid var(--acc, #0a7a3d); }
+
+/* titres de carte et icônes de ligne : teinte de l'accent */
+.screen:not(#screen-home):not(#screen-about) .card-title{ font:800 12px/1.35 var(--font-display); letter-spacing:.08em; text-transform:uppercase; color:var(--acc, var(--ap-neon)); }
+.screen:not(#screen-home):not(#screen-about) .row-ico{ color:var(--acc, var(--ap-neon)); background:color-mix(in srgb, var(--acc, #39ff14) 14%, transparent); border:1px solid color-mix(in srgb, var(--acc, #39ff14) 38%, transparent); }
+.screen:not(#screen-home):not(#screen-about) .row-primary .row-ico, .screen:not(#screen-home):not(#screen-about) .assistant-head .row-ico{ background:var(--btn-fill); color:var(--on-btn); border-color:transparent; }
+.screen:not(#screen-home):not(#screen-about) .list .row + .row, .screen:not(#screen-home):not(#screen-about) .list .setting-block + .setting-block{ border-top:1px solid color-mix(in srgb, var(--acc, #39ff14) 18%, rgba(255,255,255,.04)); }
+.screen:not(#screen-home):not(#screen-about) .accordion[open]{ border-color:color-mix(in srgb, var(--acc, #39ff14) 45%, transparent); }
+.screen:not(#screen-home):not(#screen-about) .accordion > summary .ic:first-child{ color:var(--acc, var(--ap-neon)); }
+
+/* reflet de verre : repris de premium.css, teinté par l'accent */
+.screen:not(#screen-home):not(#screen-about) :is(.card,.list,.accordion,.svc-card)::after{
+  background:linear-gradient(100deg, transparent 0%, color-mix(in srgb, var(--acc, #fff) 7%, transparent) 38%, rgba(255,255,255,.16) 50%, color-mix(in srgb, var(--acc, #fff) 7%, transparent) 62%, transparent 100%);
+}

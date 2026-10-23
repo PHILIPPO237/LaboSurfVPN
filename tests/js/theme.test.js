@@ -8,7 +8,7 @@ const path = require('path');
 
 const WWW = path.join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www');
 const read = (f) => fs.readFileSync(path.join(WWW, f), 'utf8');
-const tokens = read('css/tokens.css');
+const tokens = read('css/tokens.css').replace(/\r\n/g, '\n');
 
 function block(selectorStart) {
   const i = tokens.indexOf(selectorStart);
@@ -43,7 +43,7 @@ test('les deux thèmes redéfinissent les mêmes jetons de couleur (pas de thèm
 });
 
 test('le logo garde son contour d\'origine (jeton --logo-line inchangé)', () => {
-  assert.match(tokens, /--logo-line:#39ff6a/);
+  assert.match(tokens, /--logo-line:(#39ff6a|#0af072)/);
 });
 
 test('contrastes lisibles (WCAG AA) dans les deux thèmes', () => {

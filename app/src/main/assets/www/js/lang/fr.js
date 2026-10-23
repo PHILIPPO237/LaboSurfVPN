@@ -303,6 +303,7 @@ I18N.register('fr', {
   'set.joinTitle': 'Rejoins la communauté', 'set.joinText': "Astuces, nouveaux serveurs et retours d'expérience entre membres.",
   'set.accountSection': 'Compte', 'set.remember': 'Rester connecté',
   'set.rememberSub': "Plus besoin de ressaisir tes identifiants : ta session (jamais ton mot de passe) est gardée chiffrée sur ce téléphone, 30 jours au plus. « Se déconnecter » l'efface.",
+  'set.comApp': "Dans l'application", 'set.comTelegram': 'Sur Telegram', 'set.tgChannel': 'Canal Telegram LABOSURF',
   'set.labCommunity': 'Communauté LABOSURF', 'set.labCommunitySub': "Salons officiel et communauté, en direct sur le Laboratoire",
   'set.support': 'Messages et support', 'set.supportSub': "Écrire à ton revendeur ou à l'administrateur",
   'act.connState': 'État de la connexion', 'act.connInfo': 'Informations de connexion', 'act.duration': 'Durée',

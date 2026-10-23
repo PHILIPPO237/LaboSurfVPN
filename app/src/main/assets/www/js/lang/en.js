@@ -303,6 +303,7 @@ I18N.register('en', {
   'set.joinTitle': 'Join the community', 'set.joinText': 'Tips, new servers and feedback from other members.',
   'set.accountSection': 'Account', 'set.remember': 'Stay signed in',
   'set.rememberSub': "No need to type your credentials again: your session (never your password) is kept encrypted on this phone, 30 days at most. “Sign out” erases it.",
+  'set.comApp': 'In the app', 'set.comTelegram': 'On Telegram', 'set.tgChannel': 'LABOSURF Telegram channel',
   'set.labCommunity': 'LABOSURF community', 'set.labCommunitySub': 'Official and community rooms, live on the Laboratory',
   'set.support': 'Messages and support', 'set.supportSub': 'Write to your reseller or to the administrator',
   'banner.community': 'Community', 'banner.help': 'Help',

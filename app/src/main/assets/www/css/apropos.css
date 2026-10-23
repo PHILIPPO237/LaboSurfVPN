@@ -1,0 +1,115 @@
+/* « À propos » : l'Avant-propos du Panel (templates/avant-propos.html) reproduit dans son style — grille cyber discrète, titre néon,
+   séparateurs lumineux, frise à points colorés (vert / cyan / or / violet), panneaux de verre, cartes colorées, FAQ repliable.
+   Les couleurs d'accent sont celles du Panel (néon #39ff14, cyan #00f2ff, or #ffd700, violet #b44dff). Texte FR / EN : seule la langue active est affichée. */
+#screen-about{
+  --ap-neon:#39ff14; --ap-cyan:#00f2ff; --ap-gold:#ffd700; --ap-purple:#b44dff;
+  background-image:linear-gradient(rgba(57,255,20,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,20,.035) 1px, transparent 1px);
+  background-size:60px 60px; background-attachment:local;
+}
+.ap-lang{ display:none; }
+html:not([lang="en"]) .ap-fr, html[lang="en"] .ap-en{ display:block; }
+
+/* apparition au défilement (activée seulement si le script tourne : sans lui, tout reste visible) */
+html.ap-js .ap-reveal{ opacity:0; transform:translateY(26px); transition:opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1); }
+html.ap-js .ap-reveal.visible{ opacity:1; transform:none; }
+@media (prefers-reduced-motion: reduce){ html.ap-js .ap-reveal{ opacity:1; transform:none; transition:none; } }
+
+.ap-lang section, .ap-lang header{ margin:0 0 var(--sp-5); }
+
+/* en-tête */
+.ap-head{ text-align:center; padding-top:var(--sp-2); }
+.ap-pill{ display:inline-flex; align-items:center; gap:6px; font:600 10px/1 var(--font-mono); letter-spacing:.2em; text-transform:uppercase; color:var(--ap-neon);
+  border:1px solid rgba(57,255,20,.3); background:rgba(57,255,20,.06); border-radius:999px; padding:6px 12px; }
+.ap-pill::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--ap-neon); box-shadow:0 0 8px var(--ap-neon); }
+.ap-title{ font:900 28px/1.1 var(--font-display); letter-spacing:.06em; text-transform:uppercase; color:var(--ap-neon); text-shadow:0 0 12px rgba(57,255,20,.5), 0 0 30px rgba(57,255,20,.15); margin:var(--sp-3) 0 var(--sp-3); }
+.ap-line{ display:block; height:3px; width:72%; margin:0 auto var(--sp-3); background:linear-gradient(90deg, transparent, var(--ap-neon), transparent); box-shadow:0 0 16px rgba(57,255,20,.4); border-radius:3px; }
+.ap-quote{ font:italic 500 var(--fs-md)/1.55 var(--font-body); color:var(--text-muted); max-width:30ch; margin:0 auto; }
+
+/* titres de section : style « Orbitron » du Panel (capitales espacées) */
+.ap-h{ font:800 12px/1.3 var(--font-display); letter-spacing:.16em; text-transform:uppercase; color:var(--ap-neon); margin:0 0 var(--sp-3); display:flex; align-items:center; gap:8px; }
+.ap-h-gold{ color:var(--ap-gold); }
+.ap-lang p{ font-size:var(--fs-sm); line-height:1.7; color:var(--text-muted); margin:0 0 var(--sp-2); }
+.ap-lang strong{ color:var(--text); font-weight:700; }
+.ap-lang h4{ font:800 12px/1.35 var(--font-display); letter-spacing:.06em; text-transform:uppercase; margin:0 0 6px; color:var(--text); }
+.hl-neon{ color:var(--ap-neon); font-weight:700; } .hl-cyan{ color:var(--ap-cyan); font-weight:700; } .hl-gold{ color:var(--ap-gold); font-weight:700; } .hl-purple{ color:var(--ap-purple); font-weight:700; }
+
+/* panneaux de verre */
+.ap-panel, .ap-stack, .ap-adv, .ap-rev, .ap-faq, .ap-vipq{
+  background:linear-gradient(150deg, rgba(255,255,255,.055), rgba(255,255,255,.012) 55%), rgba(12,14,16,.72);
+  border:1px solid rgba(255,255,255,.08); border-top-color:rgba(255,255,255,.16); border-radius:18px; box-shadow:0 10px 26px rgba(0,0,0,.38);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+.ap-panel{ padding:var(--sp-4); }
+.ap-grid{ display:grid; grid-template-columns:1fr; gap:var(--sp-3); }
+.ap-mini{ padding:var(--sp-3) var(--sp-4); } .ap-mini p, .ap-stack p, .ap-adv p, .ap-rev p{ margin:0; }
+.ap-panel .ap-grid{ margin-top:var(--sp-3); }
+.ap-stack{ padding:var(--sp-4); }
+.ap-tag{ font:700 10px/1 var(--font-mono) !important; letter-spacing:.2em; text-transform:uppercase; color:var(--ap-neon) !important; margin:0 0 6px !important; }
+
+/* frise « Comment ça marche ? » */
+.ap-timeline{ position:relative; padding-left:44px; }
+.ap-timeline::before{ content:''; position:absolute; left:17px; top:6px; bottom:6px; width:2px; background:linear-gradient(180deg, var(--ap-neon), var(--ap-cyan), var(--ap-gold), var(--ap-purple)); opacity:.55; border-radius:2px; }
+.ap-step{ position:relative; margin-bottom:var(--sp-3); }
+.ap-dot{ position:absolute; left:-44px; top:8px; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font:900 13px/1 var(--font-display); border:2px solid currentColor; background:color-mix(in srgb, currentColor 15%, transparent); box-shadow:0 0 14px color-mix(in srgb, currentColor 45%, transparent); }
+.ap-c1{ color:var(--ap-neon); } .ap-c2{ color:var(--ap-cyan); } .ap-c3{ color:var(--ap-gold); } .ap-c4{ color:var(--ap-purple); }
+.ap-step-card{ padding:var(--sp-3) var(--sp-4); border-radius:16px; border:1px solid rgba(255,255,255,.06); border-left:3px solid currentColor; background:color-mix(in srgb, currentColor 5%, rgba(12,14,16,.7)); }
+.ap-step-card h4{ color:inherit; } .ap-step-card p{ color:var(--text-muted); margin:0; }
+.ap-step-card h4.hl-neon{ color:var(--ap-neon); } .ap-step-card h4.hl-cyan{ color:var(--ap-cyan); } .ap-step-card h4.hl-gold{ color:var(--ap-gold); }
+
+/* règles d'or */
+.ap-rules{ border-color:rgba(255,215,0,.22); }
+.ap-rule{ display:flex; gap:var(--sp-3); align-items:flex-start; } .ap-rule + .ap-rule{ margin-top:var(--sp-3); }
+.ap-rule-ico, .ap-ico{ font-size:26px; line-height:1; flex-shrink:0; } .ap-rule h4{ color:var(--text); } .ap-rule p{ margin:0; }
+
+/* démarrage rapide */
+.ap-quick p{ margin:0 0 var(--sp-2); }
+
+/* FAQ repliable */
+.ap-faqs{ display:grid; gap:var(--sp-2); }
+.ap-faq{ padding:12px 14px; }
+.ap-faq summary{ cursor:pointer; list-style:none; font:700 11px/1.4 var(--font-display); letter-spacing:.07em; text-transform:uppercase; color:var(--text); }
+.ap-faq summary::-webkit-details-marker{ display:none; }
+.ap-faq[open]{ border-color:rgba(57,255,20,.3); } .ap-faq p{ margin:var(--sp-2) 0 0; }
+
+/* VIP / Revendeur */
+.ap-vip{ position:relative; border-radius:20px; padding:var(--sp-4); background:linear-gradient(150deg, rgba(255,215,0,.07), rgba(255,215,0,.01) 60%), rgba(12,14,16,.6); border:1px solid rgba(255,215,0,.2); }
+.ap-adv{ padding:var(--sp-4); } .ap-adv:active{ border-color:rgba(255,215,0,.35); }
+.ap-rev{ padding:var(--sp-4); background:rgba(0,242,255,.04); border-color:rgba(0,242,255,.14); }
+.ap-ico{ margin-bottom:var(--sp-2); }
+.ap-vipq{ display:flex; gap:var(--sp-3); align-items:center; padding:var(--sp-3) var(--sp-4); margin-top:var(--sp-3); border-color:rgba(255,215,0,.22); }
+.ap-vipq p{ font-style:italic; margin:0; }
+.ap-cta-row{ display:flex; justify-content:center; margin-top:var(--sp-4); }
+.ap-cta{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 26px; border:2px solid currentColor; border-radius:999px; font:900 11px/1 var(--font-display); letter-spacing:.16em; text-transform:uppercase; cursor:pointer; background:transparent; -webkit-tap-highlight-color:transparent; transition:transform var(--dur-fast), box-shadow var(--dur), background var(--dur), color var(--dur); }
+.ap-cta:active{ transform:scale(.96); }
+.ap-cta-neon{ color:var(--ap-neon); box-shadow:0 0 16px rgba(57,255,20,.2); } .ap-cta-neon:active{ background:var(--ap-neon); color:#000; }
+.ap-cta-gold{ color:var(--ap-gold); background:rgba(255,215,0,.05); box-shadow:0 0 16px rgba(255,215,0,.15); } .ap-cta-gold:active{ background:var(--ap-gold); color:#000; }
+.ap-cta-cyan{ color:var(--ap-cyan); box-shadow:0 0 16px rgba(0,242,255,.15); } .ap-cta-cyan:active{ background:var(--ap-cyan); color:#000; }
+
+/* évolution du projet */
+.ap-evo-row{ display:flex; gap:var(--sp-3); } .ap-evo-row + .ap-evo-row{ margin-top:var(--sp-3); padding-top:var(--sp-3); border-top:1px solid rgba(255,255,255,.07); }
+.ap-ver{ flex:0 0 74px; font:900 11px/1.5 var(--font-display); letter-spacing:.02em; }
+.ap-evo-row h4{ margin-bottom:2px; } .ap-evo-row p{ margin:0; }
+
+.ap-foot{ text-align:center; font:700 10px/1.4 var(--font-display); letter-spacing:.3em; text-transform:uppercase; color:var(--text-faint); padding:var(--sp-3) 0 var(--sp-2); }
+
+/* ===== Logo latéral (carte d'en-tête de « À propos ») : emblème animé à gauche ; à droite, le texte DU VRAI LOGO (LABOSURF / VPN / slogan)
+   découpé dans l'image d'origine : même écriture. L'emblème est la partie haute du logo complet, rognée par le cadre. ===== */
+.about-hero{ text-align:center; padding:var(--sp-3) var(--sp-3) var(--sp-4); }
+.about-lockup{ display:flex; align-items:center; gap:4px; text-align:left; }
+.lk-emblem{ position:relative; flex:0 0 76px; width:76px; aspect-ratio:1; overflow:hidden; border-radius:14px; }
+.lk-emblem .logo3d{ position:absolute; width:158%; left:-29.4%; top:0; }
+.lk-text{ min-width:0; flex:1; display:flex; align-items:center; }
+.lk-word{ display:block; width:100%; height:auto; filter:drop-shadow(0 0 8px rgba(10,240,114,.18)); }
+:root[data-theme="light"] .lk-emblem, :root[data-theme="light"] .lk-text{ background:#02070a; }
+:root[data-theme="light"] .lk-emblem{ border-radius:14px 0 0 14px; }
+:root[data-theme="light"] .lk-text{ border-radius:0 14px 14px 0; align-self:stretch; padding:0 6px; }
+:root[data-theme="light"] .lk-emblem .logo3d{ background:none; border-radius:0; }
+.about-hero .about-tagline{ margin:var(--sp-3) auto var(--sp-2); font-size:var(--fs-xs); max-width:34ch; }
+
+/* ===== Boutons de redirection : largeur = contenu, icône propre à la destination, cible tactile confortable ===== */
+.ap-cta{ min-height:44px; max-width:100%; width:auto; font-size:10.5px; letter-spacing:.07em; line-height:1.2; padding:10px 14px; gap:6px; text-align:center; flex-wrap:wrap; row-gap:2px; }
+.ap-cta span{ min-width:0; overflow-wrap:anywhere; }
+.ap-cta .ap-ci{ width:17px; height:17px; flex:none; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.ap-cta .ap-ext{ width:13px; height:13px; flex:none; opacity:.65; fill:none; stroke:currentColor; stroke-width:2.2; }   /* ouvre le Panel */
+.ap-cta-gold .ap-ci{ filter:drop-shadow(0 0 4px rgba(255,215,0,.5)); }
+.ap-cta-row{ gap:var(--sp-2); flex-wrap:wrap; }

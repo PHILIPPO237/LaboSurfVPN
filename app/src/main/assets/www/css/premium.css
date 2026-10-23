@@ -1,0 +1,124 @@
+/* ==========================================================================
+   Habillage « cartes en verre » des écrans secondaires (rail : services, serveurs, compte, réglages, à propos…).
+   Uniquement couleurs, fonds, bordures, ombres, flou et animations : aucune structure, aucun comportement.
+
+   Le fond de l'application reste noir (thème du logo) et le vert reste la signature ; les cartes se répartissent
+   en plusieurs familles de teintes profondes pour éviter l'effet « tout est noir et vert » :
+     bleu nuit #172A46 · saphir #173D65 · bleu acier #29465D · glacier assombri #315B70
+     vert forêt #124333 · émeraude #075E49 · turquoise #146B70
+     graphite #141C25 · ardoise #34414E · accents ponctuels : violet nuit #302448, prune #48283F, bronze #59432B
+   Chaque famille = deux teintes voisines (dégradé), un reflet, une bordure fine et une teinte d'icône.
+   ========================================================================== */
+
+:root{
+  --surface:rgba(20,28,37,.70);
+  --surface-2:rgba(41,70,93,.40);
+  --border:rgba(170,200,222,.12);
+  --border-strong:rgba(170,200,222,.24);
+  --glass-edge:rgba(255,255,255,.16);
+  --card-halo:0 12px 30px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.07);
+  --text-muted:#a7b6c3;
+  --text-faint:#7a8c9b;
+}
+
+/* ---------- Familles (utilisables par classe : <div class="card fam-sapphire">) ---------- */
+.fam-night,.fam-sapphire,.fam-steel,.fam-glacier,.fam-forest,.fam-emerald,.fam-turquoise,
+.fam-graphite,.fam-slate,.fam-violet,.fam-plum,.fam-bronze{ --a:#141C25; --b:#1f2a36; --edge:rgba(160,185,205,.22); --ink:#a9bccb; --shine:rgba(255,255,255,.07); }
+.fam-night{    --a:#172A46; --b:#1f3a63; --edge:rgba(110,150,215,.30); --ink:#8fb0ea; }
+.fam-sapphire{ --a:#173D65; --b:#1c5a86; --edge:rgba(80,170,225,.34);  --ink:#7cc3ef; --shine:rgba(80,210,230,.13); }
+.fam-steel{    --a:#29465D; --b:#315B70; --edge:rgba(130,185,215,.30); --ink:#9fcde3; }
+.fam-glacier{  --a:#315B70; --b:#3a7088; --edge:rgba(140,205,225,.32); --ink:#a7dceb; }
+.fam-forest{   --a:#124333; --b:#176B59; --edge:rgba(70,185,150,.30);  --ink:#6fd3b3; }
+.fam-emerald{  --a:#075E49; --b:#0a7a5c; --edge:rgba(60,215,165,.38);  --ink:#58e0b4; }
+.fam-turquoise{--a:#146B70; --b:#1b858a; --edge:rgba(80,210,210,.32);  --ink:#6fe0df; }
+.fam-graphite{ --a:#141C25; --b:#1f2a36; --edge:rgba(150,175,195,.22); --ink:#a9bccb; }
+.fam-slate{    --a:#34414E; --b:#3d4c5b; --edge:rgba(160,185,205,.24); --ink:#b4c4d1; }
+.fam-violet{   --a:#302448; --b:#3a2d5c; --edge:rgba(150,125,220,.30); --ink:#b7a2ee; --shine:rgba(110,150,230,.12); }
+.fam-plum{     --a:#48283F; --b:#5b3250; --edge:rgba(205,130,180,.30); --ink:#e0a3cb; }
+.fam-bronze{   --a:#59432B; --b:#6b5334; --edge:rgba(215,170,110,.32); --ink:#e0bd8a; }
+
+/* ---------- Verre dépoli : teinte translucide + dégradé + reflet doux ; flou modéré (10 px) pour les téléphones modestes ---------- */
+.screen:not(#screen-home) :is(.card,.list,.accordion,.svc-card){
+  background:
+    radial-gradient(120% 70% at 0% 0%, var(--shine, rgba(255,255,255,.07)), transparent 55%),
+    linear-gradient(145deg, color-mix(in srgb, var(--a, #141C25) 86%, transparent), color-mix(in srgb, var(--b, #1f2a36) 74%, transparent));
+  -webkit-backdrop-filter:blur(6px) saturate(1.2); backdrop-filter:blur(6px) saturate(1.2);
+  border:1px solid var(--edge, rgba(150,175,195,.22)); border-top-color:color-mix(in srgb, var(--edge, rgba(150,175,195,.22)) 55%, white);
+  border-radius:18px; box-shadow:var(--card-halo);
+}
+.screen:not(#screen-home) .list .row, .screen:not(#screen-home) .list .setting-block, .screen:not(#screen-home) .accordion .accordion-body{ background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; }
+.screen:not(#screen-home) .list .row + .row, .screen:not(#screen-home) .list .setting-block + .setting-block{ border-top:1px solid color-mix(in srgb, var(--edge, #fff3) 60%, transparent); }
+
+/* ---------- Répartition automatique par écran (ordre fixe, jamais aléatoire), cycle de 7 sur la position dans l'écran :
+   1 bleu nuit · 2 vert forêt · 3 saphir · 4 graphite · 5 glacier · 6 violet nuit · 7 émeraude ----------
+   Une classe .fam-… posée sur la carte (voir ci-dessus) passe devant : voir le bloc « forcé » plus bas. */
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+1){ --a:#172A46; --b:#1f3a63; --edge:rgba(110,150,215,.30); --ink:#8fb0ea; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+2){ --a:#124333; --b:#176B59; --edge:rgba(70,185,150,.30);  --ink:#6fd3b3; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+3){ --a:#173D65; --b:#1c5a86; --edge:rgba(80,170,225,.34);  --ink:#7cc3ef; --shine:rgba(80,210,230,.13); }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+4){ --a:#141C25; --b:#26313f; --edge:rgba(150,175,195,.24); --ink:#b4c4d1; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+5){ --a:#315B70; --b:#3a7088; --edge:rgba(140,205,225,.32); --ink:#a7dceb; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+6){ --a:#302448; --b:#3a2d5c; --edge:rgba(150,125,220,.30); --ink:#b7a2ee; --shine:rgba(110,150,230,.12); }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+7){ --a:#075E49; --b:#0a7a5c; --edge:rgba(60,215,165,.38);  --ink:#58e0b4; }
+/* forcé par classe (même spécificité que la répartition, placé après) */
+.screen:not(#screen-home) > .fam-night.fam-night{ --a:#172A46; --b:#1f3a63; --edge:rgba(110,150,215,.30); --ink:#8fb0ea; }
+.screen:not(#screen-home) > .fam-sapphire.fam-sapphire{ --a:#173D65; --b:#1c5a86; --edge:rgba(80,170,225,.34); --ink:#7cc3ef; }
+.screen:not(#screen-home) > .fam-forest.fam-forest{ --a:#124333; --b:#176B59; --edge:rgba(70,185,150,.30); --ink:#6fd3b3; }
+.screen:not(#screen-home) > .fam-emerald.fam-emerald{ --a:#075E49; --b:#0a7a5c; --edge:rgba(60,215,165,.38); --ink:#58e0b4; }
+.screen:not(#screen-home) > .fam-bronze.fam-bronze{ --a:#59432B; --b:#6b5334; --edge:rgba(215,170,110,.32); --ink:#e0bd8a; }
+.screen:not(#screen-home) > .fam-plum.fam-plum{ --a:#48283F; --b:#5b3250; --edge:rgba(205,130,180,.30); --ink:#e0a3cb; }
+
+/* Icônes de ligne : teinte de la famille de la carte (plus tout vert) */
+.screen:not(#screen-home) .row-ico{ background:rgba(255,255,255,.08); color:var(--ink, #a9bccb); border:1px solid color-mix(in srgb, var(--edge, #fff3) 70%, transparent); border-radius:12px; }
+.screen:not(#screen-home) .row-primary .row-ico, .screen:not(#screen-home) .assistant-head .row-ico{ background:var(--btn-fill); color:var(--on-btn); border-color:transparent; }
+
+/* États : sélectionné (émeraude + lueur discrète), désactivé */
+.screen:not(#screen-home) .is-selected{ --a:#075E49 !important; --b:#0a7a5c !important; --edge:rgba(60,215,165,.55) !important; box-shadow:var(--card-halo), 0 0 0 1px rgba(60,215,165,.25), 0 0 22px rgba(10,240,114,.14) !important; }
+.screen:not(#screen-home) .is-disabled{ opacity:.5; filter:saturate(.3); pointer-events:none; }
+
+/* Rail : verre ; l'élément actif garde la signature verte */
+.rail-btn:not(.active), .rail-caret, .rail-mini{
+  background:linear-gradient(150deg, rgba(255,255,255,.07), rgba(255,255,255,0) 60%), var(--rail-bg);
+  -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px);
+  border:1px solid var(--rail-line); border-top-color:var(--glass-edge);
+  box-shadow:0 8px 18px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ---------- Mouvement : léger, transform / opacity uniquement ---------- */
+@keyframes cardRise{ from{ opacity:0; transform:translateY(10px) scale(.985); } to{ opacity:1; transform:none; } }
+.screen.active:not(#screen-home) :is(.card,.list,.svc-card){ animation:cardRise .42s var(--ease) backwards; }
+.screen.active:not(#screen-home) :is(.card,.list,.svc-card):nth-of-type(2){ animation-delay:.06s; }
+.screen.active:not(#screen-home) :is(.card,.list,.svc-card):nth-of-type(3){ animation-delay:.12s; }
+@media (prefers-reduced-motion: reduce){ .screen.active:not(#screen-home) :is(.card,.list,.svc-card){ animation:none; } }
+
+/* ---------- Reflet de verre : un éclat lumineux traverse chaque carte, de temps en temps, décalé d'une carte à l'autre ----------
+   Pseudo-élément + transform seulement (aucun recalcul de mise en page) ; coupé si « réduire les animations ». */
+.screen:not(#screen-home) :is(.card,.list,.accordion,.svc-card){ position:relative; overflow:hidden; --sd:0s; }
+.screen:not(#screen-home) :is(.card,.list,.accordion,.svc-card)::after{
+  content:''; position:absolute; top:-30%; bottom:-30%; left:0; width:42%; pointer-events:none; z-index:2;
+  background:linear-gradient(100deg, transparent 0%, rgba(255,255,255,.05) 38%, rgba(255,255,255,.20) 50%, rgba(255,255,255,.05) 62%, transparent 100%);
+  transform:translateX(-170%) skewX(-18deg); opacity:.9;
+  animation:glassShine 9s ease-in-out var(--sd) infinite;
+}
+@keyframes glassShine{ 0%{ transform:translateX(-170%) skewX(-18deg); } 16%{ transform:translateX(440%) skewX(-18deg); } 100%{ transform:translateX(440%) skewX(-18deg); } }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+1){ --sd:.6s; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+2){ --sd:2.2s; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+3){ --sd:4.1s; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+4){ --sd:1.4s; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+5){ --sd:5.6s; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+6){ --sd:3.2s; }
+.screen:not(#screen-home) > :is(.card,.list,.accordion,.svc-card):nth-child(7n+7){ --sd:6.8s; }
+/* reflet fixe : fine ligne claire en haut du verre */
+.screen:not(#screen-home) :is(.card,.list,.accordion,.svc-card){ box-shadow:var(--card-halo), inset 0 1px 0 rgba(255,255,255,.14), inset 0 -18px 28px -22px rgba(255,255,255,.06); }
+@media (prefers-reduced-motion: reduce){ .screen:not(#screen-home) :is(.card,.list,.accordion,.svc-card)::after{ animation:none; opacity:0; } }
+
+/* Familles supplémentaires forcées par classe (écran « À propos » : chaque bloc a sa teinte) */
+.screen:not(#screen-home) > .fam-steel.fam-steel{ --a:#29465D; --b:#315B70; --edge:rgba(130,185,215,.30); --ink:#9fcde3; }
+.screen:not(#screen-home) > .fam-glacier.fam-glacier{ --a:#315B70; --b:#3a7088; --edge:rgba(140,205,225,.32); --ink:#a7dceb; }
+.screen:not(#screen-home) > .fam-violet.fam-violet{ --a:#302448; --b:#3a2d5c; --edge:rgba(150,125,220,.30); --ink:#b7a2ee; --shine:rgba(110,150,230,.12); }
+.screen:not(#screen-home) > .fam-graphite.fam-graphite{ --a:#141C25; --b:#1f2a36; --edge:rgba(150,175,195,.22); --ink:#a9bccb; }
+.screen:not(#screen-home) > .fam-turquoise.fam-turquoise{ --a:#146B70; --b:#1b858a; --edge:rgba(80,210,210,.32); --ink:#6fe0df; }
+
+/* À propos : pastille numérotée / version dans l'icône de ligne, citation du Panel */
+.ap-num{ font:800 13px/1 var(--font-mono); letter-spacing:.02em; }
+.about-quote{ font:500 var(--fs-sm)/1.5 var(--font-display); font-style:italic; color:var(--text-muted); margin:var(--sp-2) 0 var(--sp-3); }
+.ap-welcome .about-p + .about-p{ margin-top:var(--sp-2); }
