@@ -97,10 +97,10 @@
 /* Couche 1 : Globe 3D rotatif sous l'ouverture (seul élément mobile) */
 .sp-globe-canvas {
   position: absolute;
-  left: 23.24%;
-  top: 13.48%;
-  width: 53.91%;
-  height: 53.91%;
+  left: 23.44%;
+  top: 13.87%;
+  width: 53.125%;
+  height: 53.125%;
   border-radius: 50%;
   pointer-events: none;
   z-index: 1;

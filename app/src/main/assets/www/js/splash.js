@@ -28,7 +28,7 @@
   var ROT_END = 5000;        // 5.0s : arrêt complet à position initiale
   var SHEEN_TIME = 5020;     // 5.02s : éclat spéculaire vert émeraude
 
-  var N = 552;
+  var N = 544;
   var texImg = new Image();
   texImg.src = 'img/globe-earth-tex.png';
   var texReady = false;
