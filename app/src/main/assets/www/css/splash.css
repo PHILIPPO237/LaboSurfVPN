@@ -1,108 +1,177 @@
 /* ==========================================================================
-   LABOSURFVPN — SPLASH SCREEN 3D CINÉMATIQUE OFFICIEL
-   Utilise l'exact motif « LOGO SPLASH SCREEN (MODE SOMBRE) » de la planche
-   officielle C:\Users\atsan\OneDrive\Bureau\LABOSURF_INTERFACES.
-   
-   Cinématique 3D en 5 phases :
-   Phase 1 (0.0s-0.7s) : Genèse spatiale, éveil du halo radial émeraude et poussières cyber
-   Phase 2 (0.7s-1.8s) : Descente 3D du motif officiel (socle holographique + bouclier), balayage spéculaire
-   Phase 3 (1.8s-2.8s) : Émission des ondes radar et pulsation néon émeraude
-   Phase 4 (2.8s-4.6s) : Lévitation 3D contemplative, respiration lumineuse
-   Phase 5 (4.6s-5.05s) : Transition fluide vers l'écran d'accueil avec flou cinématique
+   LABOSURFVPN — SPLASH SCREEN 3D ANIMÉ OFFICIEL (DURÉE EXACTE 6 SECONDES)
+   Format : Vertical 9:16 (adapté à Android)
+   Fidélité : Référence visuelle officielle LABOSURF (globe terrestre avec Afrique
+             visible, océans bleus, hexagone métallique, clé Tech Élite,
+             typographie LABOSURF en vert émeraude et argent,
+             sous-titre LABORATOIRE DU FREE-SURF).
+   Règles impératives :
+   - FAIRE TOURNER UNIQUEMENT LE GLOBE.
+   - GARDER LA CLÉ, L'HEXAGONE, LE TEXTE ET LE SOUS-TITRE STRICTEMENT IMMOBILES.
+   - Éclairage vert discret, sans fumée ni décor parasite.
    ========================================================================== */
 
-.splash{
-  position:fixed; inset:0; z-index:var(--z-splash, 1000);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  background:radial-gradient(circle at 50% 48%, #041f11 0%, #020a05 50%, #010403 90%);
-  perspective:1000px; overflow:hidden; cursor:pointer;
-  animation:spOut .45s cubic-bezier(0.4, 0, 0.2, 1) 4.6s forwards;
-}
-.splash.is-skipped{ animation:spOut .22s ease forwards !important; }
-@keyframes spOut{
-  0%{ opacity:1; transform:scale(1); filter:blur(0px); }
-  100%{ opacity:0; transform:scale(1.08) translateZ(40px); filter:blur(4px); visibility:hidden; }
-}
-
-/* Particules d'ambiance spatiale */
-.sp-stars{
-  position:absolute; inset:0; width:100%; height:100%;
-  pointer-events:none; opacity:0.75;
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-splash, 1000);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  perspective: 1000px;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  animation: spOut 0.45s cubic-bezier(0.4, 0, 0.2, 1) 5.6s forwards;
 }
 
-/* Racine de la scène 3D avec lévitation fluide */
-.sp-scene-3d{
-  position:relative; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  transform-style:preserve-3d;
-  animation:spLevitate 4s ease-in-out 1.2s infinite alternate;
-}
-@keyframes spLevitate{
-  0%{ transform:translateY(0) rotateX(3deg) rotateY(-2deg); }
-  100%{ transform:translateY(-10px) rotateX(-3deg) rotateY(2deg); }
+.splash.is-skipped {
+  animation: spOut 0.2s ease forwards !important;
 }
 
-/* Halo rayonnant central & respiration volumétrique */
-.sp-glow, .sp-aura-core{
-  position:absolute; width:min(70vw, 240px); aspect-ratio:1; border-radius:50%;
-  background:radial-gradient(circle, rgba(10, 240, 114, 0.4) 0%, rgba(6, 182, 212, 0.12) 45%, transparent 72%);
-  filter:blur(18px); transform:translateZ(-30px); opacity:0;
-  animation:spAuraWake 1.6s ease-out 0.2s forwards, spAuraPulse 2.8s ease-in-out 1.8s infinite alternate;
-}
-@keyframes spAuraWake{
-  0%{ opacity:0; transform:translateZ(-30px) scale(0.4); }
-  100%{ opacity:0.9; transform:translateZ(-30px) scale(1.1); }
-}
-@keyframes spAuraPulse{
-  0%{ transform:translateZ(-30px) scale(1.05); opacity:0.65; }
-  100%{ transform:translateZ(-30px) scale(1.3); opacity:0.95; }
+@keyframes spOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.05);
+    filter: blur(4px);
+    visibility: hidden;
+  }
 }
 
-/* Ondes radar holographiques 3D autour du socle */
-.sp-ring, .sp-holo-ring{
-  position:absolute; width:min(66vw, 220px); aspect-ratio:1; border-radius:50%;
-  border:1.5px solid rgba(10, 240, 114, 0.45);
-  box-shadow:0 0 16px rgba(10, 240, 114, 0.3);
-  transform:translateZ(-15px) rotateX(68deg) scale(0.6); opacity:0;
-  animation:spRingExpand 2.4s cubic-bezier(0.1, 0.8, 0.3, 1) 0.8s infinite;
-}
-.sp-ring-2, .sp-holo-ring-2{ animation-delay:1.9s !important; }
-@keyframes spRingExpand{
-  0%{ transform:translateZ(-15px) rotateX(68deg) scale(0.6); opacity:0.8; }
-  100%{ transform:translateZ(-15px) rotateX(68deg) scale(1.85); opacity:0; }
-}
-
-/* Conteneur 3D du LOGO SPLASH SCREEN officiel de la planche */
-.sp-splash-logo-wrap{
-  position:relative; width:min(78vw, 300px); max-height:min(50vh, 185px);
-  aspect-ratio:346/214; transform-style:preserve-3d;
-  opacity:0; transform:translateZ(30px) scale(0.7) rotateX(20deg) rotateY(-15deg);
-  animation:spLogoAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
-}
-@keyframes spLogoAppear{
-  0%{ opacity:0; transform:translateZ(70px) scale(0.55) rotateX(30deg) rotateY(-25deg); filter:blur(8px); }
-  70%{ filter:blur(0px); }
-  100%{ opacity:1; transform:translateZ(30px) scale(1.0) rotateX(0deg) rotateY(0deg); }
+/* Éclairage vert discret d'arrière-plan (halo volumétrique doux) */
+.sp-ambient-glow {
+  position: absolute;
+  width: min(85vw, 360px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 41%, rgba(10, 240, 114, 0.16) 0%, rgba(6, 182, 212, 0.05) 45%, transparent 70%);
+  filter: blur(35px);
+  transform: translateZ(-20px);
+  pointer-events: none;
+  opacity: 0;
+  animation: spGlowFadeIn 1.4s ease-out 0.2s forwards;
 }
 
-.sp-splash-logo-img{
-  width:100%; height:100%; object-fit:contain;
-  filter:drop-shadow(0 15px 30px rgba(0,0,0,0.9)) drop-shadow(0 0 25px rgba(10, 240, 114, 0.45));
+@keyframes spGlowFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateZ(-20px) scale(0.65);
+  }
+  100% {
+    opacity: 0.95;
+    transform: translateZ(-20px) scale(1.1);
+  }
 }
 
-/* Éclat spéculaire chromé traversant le bouclier et le texte */
-.sp-emblem-shine{
-  position:absolute; inset:0;
-  background:linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.65) 50%, transparent 70%);
-  background-size:250% 250%; background-position:150% 150%;
-  mix-blend-mode:overlay; pointer-events:none;
-  animation:spShineSweep 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s forwards;
-}
-@keyframes spShineSweep{
-  0%{ background-position:-50% -50%; opacity:0; }
-  30%{ opacity:1; }
-  100%{ background-position:150% 150%; opacity:0; }
+/* Scène centrale : ratio 1:1, proportions de l'image de référence */
+.sp-stage {
+  position: relative;
+  width: min(84vw, 340px);
+  aspect-ratio: 1;
+  opacity: 0;
+  transform: scale(0.96);
+  animation: spStageAppear 1.0s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards;
 }
 
-@media (max-height:540px){
-  .sp-splash-logo-wrap{ width:220px; }
+@keyframes spStageAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.0);
+    filter: blur(0px);
+  }
+}
+
+/* Couche 1 : Globe 3D rotatif sous l'ouverture (seul élément mobile) */
+.sp-globe-canvas {
+  position: absolute;
+  left: 23.24%;
+  top: 13.48%;
+  width: 53.91%;
+  height: 53.91%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  display: block;
+}
+
+/* Couche 2 : Masque d'avant-plan (Hexagone chromé, Clé Tech Élite, texte et sous-titre) */
+.sp-overlay-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 2;
+  display: block;
+}
+
+/* Couche 3 : Master original (fondu 0..1s et stabilité parfaite 5..6s) */
+.sp-master-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.sp-master-img.is-rotating {
+  opacity: 0;
+}
+
+/* Couche 4 : Reflet vert spéculaire subtil (5s..6s) sur les contours métalliques */
+.sp-metal-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: linear-gradient(125deg, transparent 35%, rgba(10, 240, 114, 0.42) 50%, rgba(255, 255, 255, 0.22) 53%, transparent 68%);
+  background-size: 260% 260%;
+  background-position: -80% -80%;
+}
+
+.sp-metal-sheen.is-active {
+  animation: spSheenSweep 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes spSheenSweep {
+  0% {
+    opacity: 0;
+    background-position: -80% -80%;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    background-position: 180% 180%;
+  }
+}
+
+@media (max-height: 560px) {
+  .sp-stage {
+    width: 260px;
+  }
 }

@@ -27,18 +27,18 @@
 </head>
 <body>
 
-<!-- Animation d'ouverture 3D Premium (css/splash.css, js/splash.js) -->
+<!-- Animation d'ouverture 3D Premium (6s, CSS/WebGL/Canvas, css/splash.css, js/splash.js) -->
 <div class="splash" id="splash" aria-hidden="true">
-  <canvas class="sp-stars" id="spStars"></canvas>
-  <div class="sp-scene-3d">
-    <div class="sp-aura-core"></div>
-    <div class="sp-holo-ring"></div>
-    <div class="sp-holo-ring sp-holo-ring-2"></div>
-
-    <div class="sp-splash-logo-wrap">
-      <img class="sp-splash-logo-img" src="img/logo-splash-official-hd.png" alt="" decoding="async">
-      <div class="sp-emblem-shine"></div>
-    </div>
+  <div class="sp-ambient-glow"></div>
+  <div class="sp-stage" id="spStage">
+    <!-- Couche 1 : Globe 3D rotatif réaliste (seul élément mobile) -->
+    <canvas class="sp-globe-canvas" id="spGlobeCanvas" width="552" height="552"></canvas>
+    <!-- Couche 2 : Masque d'avant-plan (Hexagone chromé, Clé Tech Élite, typographie LABOSURF et sous-titre) -->
+    <img class="sp-overlay-img" id="spOverlay" src="img/logo-overlay-static.png" alt="LABOSURF" decoding="async">
+    <!-- Couche 3 : Base master officielle au repos (fondu 0..1s et stabilité 5..6s) -->
+    <img class="sp-master-img" id="spMaster" src="img/logo-master-1024.jpg" alt="" decoding="async">
+    <!-- Couche 4 : Reflet vert spéculaire subtil (5s..6s) sur les contours métalliques -->
+    <div class="sp-metal-sheen" id="spSheen"></div>
   </div>
 </div>
 <script src="js/splash.js"></script>
