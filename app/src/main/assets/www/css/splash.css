@@ -2,13 +2,13 @@
    Ouverture « Orbite » (2026-10-20) — nouvelle séquence de démarrage LABOSURF.
    Ressources officielles uniquement : symbole seul (img/brand-symbol.png) et titre simple (img/official-wordmark.png),
    découpés dans la planche « LABISURF INTERFACES/02_Planches_completes/Planche_logos_mode_sombre.png ».
-   Séquence (~3,9 s, un tap la passe) :
+   Séquence (5,0 s, un tap la passe) :
      0,0 s  ciel bleu-noir, nébuleuses émeraude et cyan, étoiles
-     0,2 s  halo qui s'ouvre ; deux orbites inclinées où courent des comètes de lumière
-     0,4 s  le symbole naît de la lumière (flou + éclat -> net)
-     1,3 s  un reflet traverse le symbole (masqué à sa forme exacte)
-     1,3 s  le titre officiel se révèle de gauche à droite, puis la devise et un filet émeraude/cyan
-     3,4 s  fondu vers l'accueil (spOut : nom attendu par js/splash.js)
+     0,25 s halo qui s'ouvre ; deux orbites inclinées où courent des comètes de lumière
+     0,5 s  le symbole naît de la lumière (flou + éclat -> net)
+     1,7 s  un reflet traverse le symbole (masqué à sa forme exacte)
+     1,7 s  le titre officiel se révèle de gauche à droite, puis la devise et un filet émeraude/cyan
+     4,5 s  fondu vers l'accueil (jusqu'à 5,0 s) (spOut : nom attendu par js/splash.js)
    Toujours sombre (identité de marque), transform / opacity / filter sur de petits éléments, aucune boucle après la sortie.
    « Réduire les animations » : tout est affiché immédiatement et l'écran s'efface vite.
    ========================================================================== */
@@ -20,7 +20,7 @@
     radial-gradient(60% 40% at 18% 82%, rgba(24,170,110,.30), transparent 70%),
     radial-gradient(55% 38% at 86% 14%, rgba(46,180,230,.22), transparent 70%),
     radial-gradient(90% 60% at 50% 50%, #0a1d20 0%, #050c14 55%, #02060b 100%);
-  animation:spOut .5s ease 3.4s forwards;
+  animation:spOut .5s ease 4.5s forwards;
 }
 .splash.is-skipped{ animation:spOut .22s ease forwards; }
 @keyframes spOut{ to{ opacity:0; visibility:hidden; transform:scale(1.03); } }
@@ -40,45 +40,45 @@
 .ns-stage{ position:relative; width:min(62vw, 250px); aspect-ratio:1; display:grid; place-items:center; }
 .ns-halo{ position:absolute; inset:-38%; border-radius:50%; pointer-events:none;
   background:radial-gradient(circle, rgba(47,227,154,.42) 0%, rgba(76,216,240,.16) 34%, transparent 64%);
-  opacity:0; transform:scale(.4); animation:nsHalo 1.2s cubic-bezier(.2,.8,.2,1) .2s forwards; }
+  opacity:0; transform:scale(.4); animation:nsHalo 1.5s cubic-bezier(.2,.8,.2,1) .25s forwards; }
 @keyframes nsHalo{ to{ opacity:1; transform:scale(1); } }
 
 /* Orbites : anneaux elliptiques fins ; une comète de lumière court sur chacune (rotation d'un dégradé conique masqué) */
-.ns-orbit{ position:absolute; inset:-14%; pointer-events:none; opacity:0; animation:nsFade .8s ease .25s forwards; }
+.ns-orbit{ position:absolute; inset:-14%; pointer-events:none; opacity:0; animation:nsFade 1s ease .3s forwards; }
 .ns-orbit-a{ transform:rotate(-16deg) scaleY(.34); }
-.ns-orbit-b{ inset:-4%; transform:rotate(24deg) scaleY(.26); animation-delay:.45s; }
+.ns-orbit-b{ inset:-4%; transform:rotate(24deg) scaleY(.26); animation-delay:.55s; }
 .ns-orbit i{ position:absolute; inset:0; border-radius:50%;
   -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); mask:radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); }
 .ns-orbit i:first-child{ background:rgba(160,240,210,.16); }
 .ns-orbit i:last-child{ background:conic-gradient(from 0deg, transparent 0 62%, rgba(47,227,154,.15) 75%, rgba(76,216,240,.95) 97%, #ffffff 100%);
-  animation:nsSpin 2.4s linear .25s infinite; }
+  animation:nsSpin 3s linear .3s infinite; }
 .ns-orbit-b i:last-child{ background:conic-gradient(from 180deg, transparent 0 66%, rgba(76,216,240,.15) 78%, rgba(47,227,154,.95) 97%, #ffffff 100%);
-  animation-duration:3.1s; animation-direction:reverse; }
+  animation-duration:3.9s; animation-direction:reverse; }
 @keyframes nsSpin{ to{ transform:rotate(360deg); } }
 
 /* Symbole officiel : naît de la lumière */
 .ns-sym{ position:relative; width:88%; display:block; }
 .ns-symbol{ position:relative; width:100%; height:auto; display:block;
   opacity:0; transform:scale(.78); filter:blur(10px) brightness(1.9);
-  animation:nsBorn 1s cubic-bezier(.2,.9,.25,1) .4s forwards; }
+  animation:nsBorn 1.3s cubic-bezier(.2,.9,.25,1) .5s forwards; }
 @keyframes nsBorn{ 60%{ opacity:1; filter:blur(1px) brightness(1.25); } to{ opacity:1; transform:none; filter:drop-shadow(0 0 18px rgba(47,227,154,.35)); } }
 /* Reflet : une bande de lumière traverse le symbole, découpée à sa forme exacte (masque = l'image elle-même) */
 .ns-sweep{ position:absolute; inset:0; pointer-events:none;
   -webkit-mask:url("../img/official-symbol.png") center / contain no-repeat; mask:url("../img/official-symbol.png") center / contain no-repeat;
   background:linear-gradient(105deg, transparent 38%, rgba(255,255,255,.75) 50%, transparent 62%) no-repeat; background-size:260% 100%;
-  background-position:140% 0; opacity:0; animation:nsSweep 1s ease-in-out 1.3s forwards; }
+  background-position:140% 0; opacity:0; animation:nsSweep 1.3s ease-in-out 1.7s forwards; }
 @keyframes nsSweep{ 0%{ opacity:1; background-position:140% 0; } 100%{ opacity:1; background-position:-40% 0; } }
 
 /* Titre officiel, devise et filet */
 .ns-word{ width:min(70vw, 290px); height:auto; display:block; margin-top:6px;
-  clip-path:inset(0 100% 0 0); opacity:.2; animation:nsWord .8s cubic-bezier(.6,.05,.25,1) 1.3s forwards; }
+  clip-path:inset(0 100% 0 0); opacity:.2; animation:nsWord 1s cubic-bezier(.6,.05,.25,1) 1.7s forwards; }
 @keyframes nsWord{ to{ clip-path:inset(0 0 0 0); opacity:1; } }
 .ns-tag{ font:500 14px/1.3 var(--font-body); letter-spacing:.03em; color:#cfe3db; opacity:0; transform:translateY(6px);
-  animation:nsUp .6s ease 2s forwards; }
+  animation:nsUp .8s ease 2.6s forwards; }
 .ns-tag b{ font-weight:600; color:#5ff0ae; }
 @keyframes nsUp{ to{ opacity:1; transform:none; } }
 .ns-line{ width:132px; height:1.5px; border-radius:2px; background:linear-gradient(90deg, transparent, #2fe39a 30%, #4cd8f0 70%, transparent);
-  transform:scaleX(0); animation:nsLine .8s ease 2.15s forwards; }
+  transform:scaleX(0); animation:nsLine 1s ease 2.8s forwards; }
 @keyframes nsLine{ to{ transform:scaleX(1); } }
 
 @media (max-height:600px){ .splash{ gap:12px; } .ns-stage{ width:min(40vw, 150px); } .ns-word{ width:min(60vw, 230px); } }
