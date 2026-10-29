@@ -9,7 +9,7 @@
  "connect_rapide": {
   "body": {
    "access": {
-    "expires_at": "2026-10-28T00:00:00Z",
+    "expires_at": "2026-11-30T00:00:00Z",
     "state": "active"
    },
    "configs": [
@@ -17,7 +17,7 @@
      "format": "uri",
      "protocol": "tuic",
      "remark": "VIP - tuic",
-     "uri": "tuic://11eef689a2a84c3c81b27d1321a64ab6:pw-11eef689@vpn.example.tld:40443?alpn=h3"
+     "uri": "tuic://ff31b79a6a00417eaf40f6ee90fca1ec:pw-ff31b79a@vpn.example.tld:40443?alpn=h3"
     }
    ],
    "hosted_profile_id": 1,
@@ -39,7 +39,7 @@
  "connect_stable": {
   "body": {
    "access": {
-    "expires_at": "2026-10-28T00:00:00Z",
+    "expires_at": "2026-11-30T00:00:00Z",
     "state": "active"
    },
    "configs": [
@@ -47,7 +47,7 @@
      "format": "uri",
      "protocol": "xray",
      "remark": "VIP - xray",
-     "uri": "tuic://227631ad508341ac9a4c9cdf41ea69a5:pw-227631ad@vpn.example.tld:8443?alpn=h3"
+     "uri": "tuic://8de94eba64cf4e2bbaf1d05aa0ccad37:pw-8de94eba@vpn.example.tld:8443?alpn=h3"
     }
    ],
    "hosted_profile_id": 2,
@@ -60,7 +60,7 @@
  "connect_without_choice": {
   "body": {
    "access": {
-    "expires_at": "2026-10-28T00:00:00Z",
+    "expires_at": "2026-11-30T00:00:00Z",
     "state": "active"
    },
    "configs": [
@@ -68,7 +68,7 @@
      "format": "uri",
      "protocol": "tuic",
      "remark": "VIP - tuic",
-     "uri": "tuic://11eef689a2a84c3c81b27d1321a64ab6:pw-11eef689@vpn.example.tld:40443?alpn=h3"
+     "uri": "tuic://ff31b79a6a00417eaf40f6ee90fca1ec:pw-ff31b79a@vpn.example.tld:40443?alpn=h3"
     }
    ],
    "hosted_profile_id": 1,

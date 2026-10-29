@@ -157,7 +157,7 @@ def build(panel: Path):
         return {**u, "avatar": "", "quota_gb": None}
 
     app.include_router(create_user_router(
-        db=repos, cfg=SimpleNamespace(), get_current_user=current_user, build_user_configs=lambda u: [],
+        db=repos, cfg=SimpleNamespace(), get_current_user=current_user,
         vpn_orchestrator=orchestrator, pro_connector=connector))
     return SimpleNamespace(app=app, agent=agent, ids=ids, servers={"douala": douala, "yaounde": yaounde, "reserve": reserve},
                            tmp=tmp, calls=calls)
