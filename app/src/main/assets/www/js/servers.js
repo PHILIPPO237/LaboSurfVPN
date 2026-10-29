@@ -237,6 +237,7 @@ Actions.selectProfile = (el) => {
   if(pid && !p) return;
   Profiles.selectedId = p ? p.id : null;
   store.set('hostedProfile', Profiles.selectedId);
+  if(window.Haptic) Haptic.confirm();   // choix de profil validé : retour haptique de confirmation
   // le serveur du profil devient le serveur retenu (carte d'accueil cohérente)
   if(p && p.serverId !== null && Servers.list.some((s) => sameId(s.id, p.serverId))){
     Servers.selectedId = p.serverId;
@@ -253,6 +254,7 @@ Actions.selectServer = (el) => {
   if(!s.available){ toast(t('err.serverUnavailable'), 'warning'); return; }
   Servers.selectedId = s.id;
   store.set('server', s.id === undefined ? null : s.id);
+  if(window.Haptic) Haptic.confirm();   // choix de serveur validé : retour haptique de confirmation
   // choisir un autre serveur que celui du profil retenu = revenir au choix automatique sur ce serveur
   const prof = getSelectedProfile();
   if(prof && !sameId(prof.serverId, s.id)){ Profiles.selectedId = null; store.set('hostedProfile', null); }

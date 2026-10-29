@@ -24,6 +24,7 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if(!el) return;
   const fn = Actions[el.dataset.action];
+  if(window.Haptic) Haptic.forAction(el.dataset.action);   // retour haptique : une impulsion par interaction (voir js/haptic.js)
   if(fn) fn(el, e);
 });
 document.addEventListener('submit', (e) => {

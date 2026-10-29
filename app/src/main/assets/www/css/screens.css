@@ -123,12 +123,12 @@
 
 /* ---------- Bannière premium (annonces du panel + contenu par défaut) ----------
    .banner-card = cadre (bordure, relief) · .bn-fx = décor animé · .bn-body = contenu défilable · .bn-dots = indicateur (futur) */
-.banner-card{ isolation:isolate; border-radius:var(--r-lg); text-align:center; position:relative; overflow:hidden; margin-bottom:var(--sp-2); display:flex; flex-direction:column; }
+.banner-card{ isolation:isolate; border-radius:0; text-align:center; position:relative; overflow:hidden; margin-bottom:var(--sp-2); display:flex; flex-direction:column; } /* direction artistique : rectangle à angles droits (fini les grands arrondis) */
 .bn-body{ position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; padding:var(--sp-5) var(--sp-4); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
 /* Centré quand il y a de la place, aligné en haut (et défilable) quand le message est plus long que l'espace */
 .bn-body > *{ margin-block:auto; }
 .bn-body.is-swap > :not([hidden]){ animation:bnIn .55s var(--ease) both; }
-.banner-card .bc-img{ width:100%; max-height:240px; object-fit:cover; border-radius:var(--r-md); margin-bottom:var(--sp-3); }
+.banner-card .bc-img{ width:100%; max-height:240px; object-fit:cover; border-radius:0; margin-bottom:var(--sp-3); }
 .banner-card .bc-text{ font:700 var(--fs-lg)/1.3 var(--font-display); color:#fff; text-wrap:balance; overflow-wrap:anywhere; white-space:pre-line; }
 .bn-title{ font:800 var(--fs-xl)/1.2 var(--font-display); color:#fff; margin-bottom:var(--sp-2); overflow-wrap:anywhere; }
 .bn-badge{ display:inline-block; margin-bottom:var(--sp-2); background:rgba(57,255,106,.14); color:#39ff6a; }
@@ -220,7 +220,7 @@
 .bd-badges{ display:flex; justify-content:center; gap:.5em; flex-wrap:wrap; }
 .bd .badge{ font-size:max(10px, .68em); padding:.34em .9em; letter-spacing:.09em; text-transform:uppercase; }
 .bd-head{ display:flex; flex-direction:column; align-items:center; gap:.3em; }
-.bd-mark{ font:700 3.1em/1 var(--font-display); letter-spacing:.24em; padding-left:.24em;
+.bd-mark{ font:700 3.5em/1 var(--font-display); letter-spacing:.24em; padding-left:.24em;
   background:linear-gradient(90deg, #d8ffe3, #7dffa0 28%, #39ff6a 55%, #2ff0a8 78%, #12b34a); -webkit-background-clip:text; background-clip:text; color:transparent;
   filter:drop-shadow(0 0 .32em rgba(57,255,106,.45)); }
 .bd-rule{ display:flex; align-items:center; gap:.55em; width:9em; }
@@ -233,8 +233,8 @@
 .bd-perks li{ display:inline-flex; align-items:center; gap:.32em; padding:.4em .66em; border-radius:999px; white-space:nowrap;
   background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.24); box-shadow:inset 0 1px 0 rgba(255,255,255,.25); font:600 max(10px, .76em)/1 var(--font-body); color:#f4f8f5; }
 .bd-perks .ic{ width:1.15em; height:1.15em; color:#35e879; }
-.bd-actions{ display:flex; justify-content:center; gap:.55em; flex-wrap:wrap; }
-.bd-actions .btn{ min-height:max(38px, 2.7em); padding:0 1.1em; font-size:max(12.5px, .86em); gap:.45em; }
+.bd-actions{ display:flex; justify-content:center; gap:.55em; flex-wrap:wrap; row-gap:.45em; }
+.bd-actions .btn{ min-height:max(38px, 2.7em); padding:0 .95em; font-size:max(12px, .84em); gap:.45em; white-space:nowrap; }
 .bd-actions .ic{ width:1.15em; height:1.15em; }
 /* Bannière étroite (le rail occupe le côté, petit écran) : marges réduites et pastilles sans icône, pour rester sur une seule ligne */
 .home-foot.is-inset .bn-body:has(> .bd:not([hidden])){ padding:var(--sp-3) var(--sp-2); }

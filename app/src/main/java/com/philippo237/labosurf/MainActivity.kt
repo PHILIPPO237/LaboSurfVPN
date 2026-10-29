@@ -3,7 +3,10 @@ package com.philippo237.labosurf
 import android.content.Intent
 import android.net.Uri
 import android.net.VpnService
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
@@ -248,6 +251,39 @@ class MainActivity : AppCompatActivity() {
         fun stopVpn() {
             Log.d(TAG, "stopVpn appele depuis le JS")
             LaboVpnService.stop(this@MainActivity)
+        }
+
+        /**
+         * Retour haptique demande par le JS (voir js/haptic.js) — un appel = une interaction,
+         * jamais une boucle ou une animation continue. Le service Vibrator respecte deja
+         * les reglages systeme (retour haptique active/desactive par l'utilisateur) et un
+         * appareil sans vibreur reste silencieux. Types : tap (action ordinaire, discret),
+         * press (bouton principal, marque), confirm (choix valide), error (echec).
+         */
+        @JavascriptInterface
+        fun haptic(kind: String) {
+            val vibrator = getSystemService(Vibrator::class.java) ?: return
+            if (!vibrator.hasVibrator()) return
+            val timings: LongArray
+            val amplitudes: IntArray
+            when (kind) {
+                "press" -> { timings = longArrayOf(0, 32); amplitudes = intArrayOf(0, 180) }
+                "confirm" -> { timings = longArrayOf(0, 16, 70, 16); amplitudes = intArrayOf(0, 110, 0, 140) }
+                "error" -> { timings = longArrayOf(0, 30, 70, 30, 70, 48); amplitudes = intArrayOf(0, 140, 0, 170, 0, 220) }
+                else -> { timings = longArrayOf(0, 9); amplitudes = intArrayOf(0, 72) }   // tap : micro-impulsion discrete
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (vibrator.hasAmplitudeControl()) {
+                    vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+                } else {
+                    // Pas de controle d'amplitude sur cet appareil : on garde seulement les durees
+                    vibrator.vibrate(VibrationEffect.createWaveform(timings, -1))
+                }
+            } else {
+                // Android 7.x (minSdk 24) : VibrationEffect n'existe pas encore
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(timings, -1)
+            }
         }
 
         /**

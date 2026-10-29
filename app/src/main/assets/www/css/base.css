@@ -33,8 +33,12 @@ a{ color:inherit; }
 .screens{ flex:1; min-height:0; position:relative; }
 .screen{
   display:none; position:absolute; inset:0; overflow-x:hidden; overflow-y:auto;
-  padding:var(--sp-5) var(--sp-4) var(--sp-6) calc(var(--rail-left) + var(--rail-btn) + 22px); -webkit-overflow-scrolling:touch;
+  padding:var(--sp-5) var(--sp-4) var(--sp-6) var(--sp-5); -webkit-overflow-scrolling:touch;
 }
+/* Le rail n'apparaît que sur l'accueil : les écrans secondaires utilisent toute la largeur,
+   et un retour à l'accueil restaure le rail (data-screen suit l'écran actif). */
+#screen-home{ padding-left:calc(var(--rail-left) + var(--rail-btn) + 22px); }
+:root:not([data-screen="home"]) .rail{ display:none; }
 /* Rail adaptatif : tailles décroissantes selon l'écran, mêmes boutons partout (aucun n'est retiré).
    Cible tactile minimale 44 px sur les petits écrans. */
 @media (max-height:760px){ .app{ --rail-btn:48px; --rail-gap:8px; } }

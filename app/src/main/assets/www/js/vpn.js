@@ -101,6 +101,7 @@ function renderHome(){
   $('statusTitle').textContent = t(statusKey + '.title');
   $('statusSub').textContent = st === 'error' ? '' : t(st === 'connecting' && VPN.mcRetries > 0 ? 'home.state.connecting.waitOld' : statusKey + '.sub');
   if(statusKey !== lastStatusKey){   // petit fondu à chaque vrai changement d'état (jamais à un simple redessin)
+    if(statusKey === 'home.state.error' && window.Haptic) Haptic.error();   // échec de connexion : un retour d'erreur par changement d'état, jamais en boucle
     lastStatusKey = statusKey;
     const box = $('statusTitle').parentNode;
     box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
