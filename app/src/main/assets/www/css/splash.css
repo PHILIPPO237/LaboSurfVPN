@@ -1,6 +1,6 @@
 /* ==========================================================================
-   LABOSURFVPN — SPLASH SCREEN 3D ANIMÉ OFFICIEL (DURÉE EXACTE 6 SECONDES)
-   Format : Vertical 9:16 (adapté à Android)
+   LABOSURFVPN — SPLASH SCREEN 3D ANIMÉ OFFICIEL (DURÉE 8 SECONDES)
+   Fond : Galaxie cosmique mouvementée 3D (starfield hyperspatial, nébuleuses)
    Fidélité : Référence visuelle officielle LABOSURF (globe terrestre avec Afrique
              visible, océans bleus, hexagone métallique, clé Tech Élite,
              typographie LABOSURF en vert émeraude et argent,
@@ -8,7 +8,7 @@
    Règles impératives :
    - FAIRE TOURNER UNIQUEMENT LE GLOBE.
    - GARDER LA CLÉ, L'HEXAGONE, LE TEXTE ET LE SOUS-TITRE STRICTEMENT IMMOBILES.
-   - Éclairage vert discret, sans fumée ni décor parasite.
+   - Fond galactique animé avec profondeur sans saturer l'écran.
    ========================================================================== */
 
 .splash {
@@ -25,7 +25,7 @@
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  animation: spOut 0.45s cubic-bezier(0.4, 0, 0.2, 1) 5.6s forwards;
+  animation: spOut 0.45s cubic-bezier(0.4, 0, 0.2, 1) 7.6s forwards;
 }
 
 .splash.is-skipped {
@@ -46,18 +46,30 @@
   }
 }
 
+/* Fond galaxie mouvementée (Starfield 3D & Nébuleuses) */
+.sp-galaxy-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  display: block;
+}
+
 /* Éclairage vert discret d'arrière-plan (halo volumétrique doux) */
 .sp-ambient-glow {
   position: absolute;
-  width: min(85vw, 360px);
+  width: min(88vw, 380px);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 41%, rgba(10, 240, 114, 0.16) 0%, rgba(6, 182, 212, 0.05) 45%, transparent 70%);
+  background: radial-gradient(circle at 50% 41%, rgba(10, 240, 114, 0.18) 0%, rgba(6, 182, 212, 0.06) 45%, transparent 70%);
   filter: blur(35px);
   transform: translateZ(-20px);
   pointer-events: none;
   opacity: 0;
-  animation: spGlowFadeIn 1.4s ease-out 0.2s forwards;
+  animation: spGlowFadeIn 1.5s ease-out 0.2s forwards;
+  z-index: 1;
 }
 
 @keyframes spGlowFadeIn {
@@ -78,7 +90,8 @@
   aspect-ratio: 1;
   opacity: 0;
   transform: scale(0.96);
-  animation: spStageAppear 1.0s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards;
+  animation: spStageAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards;
+  z-index: 2;
 }
 
 @keyframes spStageAppear {
@@ -119,7 +132,7 @@
   display: block;
 }
 
-/* Couche 3 : Master original (fondu 0..1s et stabilité parfaite 5..6s) */
+/* Couche 3 : Master original (fondu 0..1.2s et stabilité parfaite 6.8..8s) */
 .sp-master-img {
   position: absolute;
   inset: 0;
@@ -129,14 +142,14 @@
   pointer-events: none;
   z-index: 3;
   opacity: 1;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.4s ease;
 }
 
 .sp-master-img.is-rotating {
   opacity: 0;
 }
 
-/* Couche 4 : Reflet vert spéculaire subtil (5s..6s) sur les contours métalliques */
+/* Couche 4 : Reflet vert spéculaire subtil (6.8s..7.8s) sur les contours métalliques */
 .sp-metal-sheen {
   position: absolute;
   inset: 0;
@@ -144,13 +157,13 @@
   pointer-events: none;
   opacity: 0;
   mix-blend-mode: screen;
-  background: linear-gradient(125deg, transparent 35%, rgba(10, 240, 114, 0.42) 50%, rgba(255, 255, 255, 0.22) 53%, transparent 68%);
+  background: linear-gradient(125deg, transparent 35%, rgba(10, 240, 114, 0.45) 50%, rgba(255, 255, 255, 0.22) 53%, transparent 68%);
   background-size: 260% 260%;
   background-position: -80% -80%;
 }
 
 .sp-metal-sheen.is-active {
-  animation: spSheenSweep 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: spSheenSweep 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 @keyframes spSheenSweep {
@@ -159,10 +172,10 @@
     background-position: -80% -80%;
   }
   25% {
-    opacity: 0.9;
+    opacity: 0.95;
   }
   80% {
-    opacity: 0.8;
+    opacity: 0.85;
   }
   100% {
     opacity: 0;
