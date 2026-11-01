@@ -47,6 +47,14 @@
             </intent-filter>
         </activity>
 
+        <!-- LABOSURF TV : lecteur natif, separe du tunnel VPN -->
+        <activity
+            android:name=".tv.TvPlayerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.LaboSurf.Player"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode|screenLayout|smallestScreenSize|density" />
+
         <!-- Photo prise avec l'appareil photo : fichier du cache PRIVE de l'app (photos/), partage temporairement
              avec l'app photo du systeme ; jamais exporte, jamais d'acces au stockage de l'utilisateur. -->
         <provider

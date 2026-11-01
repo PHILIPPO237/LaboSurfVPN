@@ -22,8 +22,8 @@ android {
         applicationId = "com.philippo237.labosurf"
         minSdk = 24        // Android 7.0+ (couvre la grande majorite des telephones au Cameroun)
         targetSdk = 34
-        versionCode = 14
-        versionName = "1.5.1"
+        versionCode = 15
+        versionName = "1.6.0"
         buildConfigField("String", "PANEL_BASE_URL", "\"$panelBaseUrl\"")
         // App Link (https://<hôte du panel>/app/open) : vérifié par Android grâce à /.well-known/assetlinks.json servi par le panel
         manifestPlaceholders["panelHost"] = URI(panelBaseUrl).host
@@ -80,6 +80,11 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
+    // LABOSURF TV : lecteur natif, independant du tunnel. 1.4.1 : derniere ligne compatible compileSdk 34 et minSdk 24.
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
+    implementation("androidx.media3:media3-ui:1.4.1")
+
     implementation("androidx.webkit:webkit:1.16.0")   // API WebView modernes (evaluateJavascript, etc.)
 
     // Tests unitaires JVM du moteur UDP (app/src/test) : `gradle testDebugUnitTest`

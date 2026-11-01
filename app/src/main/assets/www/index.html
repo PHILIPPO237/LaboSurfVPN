@@ -29,6 +29,8 @@
 <link rel="stylesheet" href="css/home.css">
 <link rel="stylesheet" href="css/secondary.css">
 <link rel="stylesheet" href="css/orbite-pages.css">
+<link rel="stylesheet" href="css/tv.css">
+<link rel="stylesheet" href="css/galaxy.css">
 <!-- Appliqué avant le premier rendu pour éviter tout flash de thème -->
 <script src="js/theme.js"></script>
 <!-- Accent du profil (couche secondaire de l'identité LABOSURF) : posé avant le premier rendu, voir js/profile-theme.js -->
@@ -55,6 +57,14 @@
 
 <!-- Sprite d'icônes (une seule définition, réutilisée partout via <use>) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="17 2 12 7 7 2"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7.5" x2="7" y2="7.5"/><line x1="2" y1="16.5" x2="7" y2="16.5"/><line x1="17" y1="7.5" x2="22" y2="7.5"/><line x1="17" y1="16.5" x2="22" y2="16.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+  <symbol id="i-child" viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M5 11c2 1.2 4.3 2 7 2s5-.8 7-2"/><path d="M9 13v8M15 13v8M9 17h6"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
   <symbol id="i-server" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
@@ -112,6 +122,7 @@
     <nav class="rail" id="rail" data-i18n-attr="aria-label:nav.label">
       <button class="rail-btn active" type="button" id="railBtn-home" data-action="nav" data-screen="home" data-i18n-attr="title:nav.home;aria-label:nav.home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg></button>
       <button class="rail-btn" type="button" id="railBtn-services" data-action="nav" data-screen="services" data-i18n-attr="title:nav.services;aria-label:nav.services"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></button>
+      <button class="rail-btn" type="button" id="railBtn-tv" data-action="nav" data-screen="tv" data-i18n-attr="title:nav.tv;aria-label:nav.tv"><svg class="ic" aria-hidden="true"><use href="#i-tv"/></svg></button>
       <button class="rail-btn" type="button" id="railBtn-account" data-action="nav" data-screen="account" data-i18n-attr="title:nav.account;aria-label:nav.account"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="rail-badge" id="accountBadge" hidden></span></button>
       <button class="rail-btn" type="button" id="railBtn-chat" data-action="nav" data-screen="chat" hidden data-i18n-attr="title:nav.chat;aria-label:nav.chat"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span class="rail-badge" id="chatBadge" hidden></span></button>
       <button class="rail-btn" type="button" id="railBtn-livechat" data-action="openCommunity" data-i18n-attr="title:nav.community;aria-label:nav.community"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span class="rail-badge" id="communityBadge" hidden></span></button>
@@ -129,6 +140,7 @@
 
     <!-- ===================== ACCUEIL ===================== -->
     <section class="screen active" id="screen-home" aria-labelledby="brandName">
+      <canvas id="vhGalaxy" class="home-galaxy" aria-hidden="true"></canvas>
       <button class="help-btn home-help" type="button" data-action="openGuide" data-topic="start" data-i18n-attr="aria-label:help.open;title:help.open"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg></button>
       <!-- Fond galactique (décor, derrière tout le contenu) : étoiles fixes, nuages, quelques scintillements et étoiles filantes
            à intervalles irréguliers. Animations CSS seules, suspendues hors de l'accueil, en arrière-plan et si « réduire les animations ». -->
@@ -290,6 +302,23 @@
     </section>
 
     <!-- ===================== SERVEURS ===================== -->
+    <!-- ===================== LABOSURF TV ===================== -->
+    <section class="screen" id="screen-tv" aria-labelledby="tvTitle">
+      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async">
+        <div class="head-title"><button class="icon-btn back-btn" type="button" data-action="tvBack" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="tvTitle" data-i18n="tv.title"></h1></div>
+        <div class="tv-head-actions">
+          <button class="icon-btn" type="button" data-action="tvOpenSearch" data-i18n-attr="aria-label:tv.search.action;title:tv.search.action"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button class="icon-btn" type="button" data-action="tvOpenList" data-i18n-attr="aria-label:tv.row.myList;title:tv.row.myList"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></button>
+          <button class="icon-btn" type="button" id="tvHistoryBtn" data-action="tvOpenHistory" data-i18n-attr="aria-label:tv.history.title;title:tv.history.title"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></button>
+          <button class="icon-btn" type="button" data-action="tvOpenDownloads" data-i18n-attr="aria-label:tv.downloads.title;title:tv.downloads.title"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg></button>
+          <button class="icon-btn" type="button" data-action="tvOpenSettings" data-i18n-attr="aria-label:tv.pref.title;title:tv.pref.title"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg></button>
+          <button class="icon-btn" type="button" id="tvKidsBtn" data-action="tvOpenKids" data-i18n-attr="aria-label:tv.kids.title;title:tv.kids.title"><svg class="ic" aria-hidden="true"><use href="#i-child"/></svg></button>
+          <button class="icon-btn" type="button" id="tvExitKidsBtn" data-action="tvExitKids" hidden data-i18n-attr="aria-label:tv.kids.exit;title:tv.kids.exit"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></button>
+        </div>
+      </div>
+      <div id="tvBody"></div>
+    </section>
+
     <section class="screen" id="screen-servers" aria-labelledby="srvTitle">
       <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async">
         <div class="head-title"><button class="icon-btn back-btn" type="button" data-action="nav" data-screen="services" data-i18n-attr="aria-label:common.back"><svg class="ic " aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="srvTitle" data-i18n="srv.title"></h1></div>
@@ -966,6 +995,10 @@
   </div>
 </div>
 
+<div class="tv-player-overlay" id="tvPlayerOverlay" hidden>
+  <div class="tv-player-bar"><button class="icon-btn" type="button" data-action="tvClosePlayer" data-i18n-attr="aria-label:common.close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button><b id="tvPlayerTitle"></b></div>
+  <div id="tvPlayerHost"></div>
+</div>
 <script src="js/i18n.js"></script>
 <script src="js/lang/fr.js"></script>
 <script src="js/lang/en.js"></script>
@@ -987,6 +1020,8 @@
 <script src="js/legal.js"></script>
 <script src="js/onboarding.js"></script>
 <script src="js/emoji.js"></script>
+<script src="js/galaxy.js"></script>
+<script src="js/tv.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

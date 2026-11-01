@@ -96,6 +96,10 @@ class MainActivity : AppCompatActivity() {
             notifyWeb(nativeState, detail)
         }
         // Trafic RÉELLEMENT mesuré par le moteur (octets qui ont traversé le tunnel) — jamais une estimation
+        // LABOSURF TV : position de lecture remontee par le lecteur natif, enregistree par l'interface (js/tv.js)
+        com.philippo237.labosurf.tv.TvEvents.progressListener = { title, episode, position, duration ->
+            runOnUiThread { webView.evaluateJavascript("window.onTvProgress($title, $episode, $position, $duration)", null) }
+        }
         LaboVpnService.statsListener = { rx, tx, rxSpeed, txSpeed ->
             runOnUiThread {
                 webView.evaluateJavascript("window.onNativeVpnStats($rx, $tx, $rxSpeed, $txSpeed)", null)
@@ -205,6 +209,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         LaboVpnService.stateListener = null
         LaboVpnService.statsListener = null
+        com.philippo237.labosurf.tv.TvEvents.progressListener = null
         super.onDestroy()
     }
 
@@ -392,6 +397,50 @@ class MainActivity : AppCompatActivity() {
             val id = "ins-" + java.util.UUID.randomUUID().toString().replace("-", "")
             prefs.edit().putString(INSTALL_ID_KEY, id).apply()
             return id
+        }
+
+        // ─── LABOSURF TV : un ticket du panel, jamais une adresse. Le natif l'echange lui-meme aupres du panel (voir TvApi). ───
+        @JavascriptInterface
+        fun tvPlay(ticket: String, lang: String, audio: String, subtitles: String) {
+            if (ticket.isBlank()) return
+            runOnUiThread { startActivity(com.philippo237.labosurf.tv.TvPlayerActivity.streamIntent(this@MainActivity, ticket, lang, audio, subtitles)) }
+        }
+
+        @JavascriptInterface
+        fun tvOpenYoutube(ticket: String) {
+            Thread {
+                val videoId = try { com.philippo237.labosurf.tv.TvApi.redeem(ticket, "").optString("youtube_id") } catch (e: Exception) { "" }
+                if (Regex("^[A-Za-z0-9_-]{11}$").matches(videoId)) {
+                    // Lecteur officiel, jamais une extraction du flux : l'application YouTube, sinon le navigateur
+                    runOnUiThread { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=$videoId"))) }
+                } else {
+                    runOnUiThread { android.widget.Toast.makeText(this@MainActivity, R.string.tv_error_authorize, android.widget.Toast.LENGTH_LONG).show() }
+                }
+            }.start()
+        }
+
+        @JavascriptInterface
+        fun tvDownloadStart(ticket: String, lang: String) {
+            Thread {
+                val code = com.philippo237.labosurf.tv.TvDownloads.start(applicationContext, ticket, lang)
+                runOnUiThread { webView.evaluateJavascript("window.onTvDownload(${org.json.JSONObject.quote(code)})", null) }
+            }.start()
+        }
+
+        @JavascriptInterface
+        fun tvDownloadsList(): String = com.philippo237.labosurf.tv.TvDownloads.list(applicationContext)
+
+        @JavascriptInterface
+        fun tvStorage(): String = com.philippo237.labosurf.tv.TvDownloads.storage(applicationContext)
+
+        @JavascriptInterface
+        fun tvDownloadDelete(id: String) = com.philippo237.labosurf.tv.TvDownloads.delete(applicationContext, id)
+
+        @JavascriptInterface
+        fun tvPlayOffline(id: String, audio: String, subtitles: String): Boolean {
+            if (!com.philippo237.labosurf.tv.TvDownloads.isPlayable(applicationContext, id)) return false
+            runOnUiThread { startActivity(com.philippo237.labosurf.tv.TvPlayerActivity.offlineIntent(this@MainActivity, id, audio, subtitles)) }
+            return true
         }
 
         /** Nom lisible de l'appareil pour la liste « Mes appareils » (ex. « Samsung SM-A155F ») : ni numero de serie ni IMEI. */

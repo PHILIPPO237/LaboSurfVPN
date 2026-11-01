@@ -5,14 +5,14 @@
 // Rien n'est supprimé : Serveurs s'ouvre depuis Services, Historique et Espace revendeur depuis Compte,
 // Communauté depuis Réglages (voir PARENT_OF).
 
-const SCREENS = ['home', 'services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'livechat', 'settings', 'about', 'logs', 'legal'];
+const SCREENS = ['home', 'tv', 'services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'livechat', 'settings', 'about', 'logs', 'legal'];
 // Sous-écrans : le bouton du parent reste allumé sur le rail, et « retour » y ramène
 const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', community: 'settings', legal: 'settings', logs: 'settings', about: 'settings' };
 let currentScreen = 'home';
 document.documentElement.dataset.screen = 'home';
 
 // Sens de la transition : sous-page = +1 (le contenu arrive du bas), retour = -1, sinon selon la position des boutons dans le rail
-const RAIL_ORDER = ['home', 'services', 'account', 'chat', 'livechat', 'settings', 'logs', 'about'];   // même ordre que le rail (du plus au moins prioritaire)
+const RAIL_ORDER = ['home', 'services', 'account', 'chat', 'livechat', 'settings', 'logs', 'about', 'tv'];   // même ordre que le rail (du plus au moins prioritaire)
 function transitionDir(from, to){
   if(PARENT_OF[to] === from) return 1;
   if(PARENT_OF[from] === to) return -1;
@@ -46,7 +46,9 @@ function showScreen(name){
   });
   if(!wasActive) $('screen-' + name).scrollTop = 0;
 
+  if(typeof TV !== 'undefined') document.documentElement.classList.toggle('tv-kids', name === 'tv' && !!TV.kid);
   if(name === 'home') fitHomeScreen();
+  if(name === 'tv') tvOpen();
   if(name === 'logs') renderLogs();   // diagnostic à jour à chaque ouverture
   if(name === 'services' && authToken && Services.state === 'idle') loadServices();
   if(name === 'servers' && authToken && Servers.state === 'idle') loadServers();
@@ -98,6 +100,8 @@ window.LaboBack = function(){
   if(Guide.isOpen()){ Guide.close(); return true; }
   if(currentScreen === 'account' && Account.view !== 'menu'){ setAccView('menu'); return true; }
   if(currentScreen === 'legal'){ Actions.legalBack(); return true; }
+  if(typeof TV !== 'undefined' && !$('tvPlayerOverlay').hidden){ Actions.tvClosePlayer(); return true; }
+  if(currentScreen === 'tv' && tvBack()) return true;
   if(currentScreen === 'livechat' && typeof LC !== 'undefined' && LC.room){ Actions.lcRooms(); return true; }   // salon ouvert : retour à la liste des salons
   if(PARENT_OF[currentScreen]){ showScreen(PARENT_OF[currentScreen]); return true; }
   if(currentScreen !== 'home'){ showScreen('home'); return true; }

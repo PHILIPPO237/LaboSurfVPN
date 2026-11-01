@@ -1,0 +1,99 @@
+/* LABOSURF TV : identité LABOSURF (noir profond, émeraude, néon maîtrisé) avec une présentation de plateforme de streaming.
+   KIDS : mêmes composants, palette plus douce, déclenchée par la classe .tv-kids posée sur <html>. */
+#screen-tv{ --tv-accent:var(--brand); --tv-surface:rgba(255,255,255,.045); --tv-line:rgba(255,255,255,.09); --tv-muted:var(--text-2, #a9b8b1); }
+:root[data-theme="light"] #screen-tv{ --tv-surface:rgba(0,0,0,.04); --tv-line:rgba(0,0,0,.1); }
+:root.tv-kids #screen-tv{ --tv-accent:#7dd3fc; --tv-surface:rgba(125,211,252,.08); --tv-line:rgba(125,211,252,.24); background:linear-gradient(180deg, rgba(56,132,190,.2), transparent 340px); }
+.tv-head-actions{ display:flex; gap:6px; flex:none; }
+.tv-head-actions .icon-btn[hidden]{ display:none; }
+
+.tv-state{ padding:40px 12px; text-align:center; color:var(--tv-muted); font-size:14px; }
+.tv-empty{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:48px 16px; text-align:center; color:var(--tv-muted); }
+.tv-empty .ic{ width:38px; height:38px; color:var(--tv-accent); }
+.tv-empty p{ margin:0; max-width:320px; line-height:1.5; font-size:14px; }
+.tv-offline-link{ display:flex; justify-content:center; }
+.tv-section-title{ margin:18px 0 10px; font:600 18px/1.2 var(--font-display); }
+.tv-note{ margin:6px 0; font-size:12px; line-height:1.5; color:var(--tv-muted); }
+.tv-notice{ display:flex; align-items:flex-start; gap:10px; margin-bottom:12px; padding:10px 12px; border-radius:14px; background:var(--tv-surface); border:1px solid var(--tv-line); font-size:12px; line-height:1.5; }
+.tv-notice > .ic{ flex:none; margin-top:2px; color:var(--tv-accent); }
+.tv-notice p{ flex:1; margin:0; }
+
+.tv-hero{ position:relative; overflow:hidden; min-height:230px; margin-bottom:18px; border-radius:20px; background:linear-gradient(140deg,#0b2a1c,#02070a 70%); border:1px solid var(--tv-line); display:flex; align-items:flex-end; }
+.tv-hero-img, .tv-detail-art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.tv-hero-shade{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(2,7,5,.05) 20%, rgba(2,7,5,.92) 100%); }
+.tv-hero-text{ position:relative; padding:16px; color:#f2f8f5; }
+.tv-eyebrow{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--tv-accent); font-weight:700; }
+.tv-hero-text h2{ margin:4px 0; font:700 24px/1.15 var(--font-display); }
+.tv-meta{ margin:0 0 10px; font-size:12px; color:rgba(242,248,245,.75); }
+.tv-hero-btn{ display:inline-flex; align-items:center; gap:6px; }
+
+.tv-row{ margin-bottom:18px; }
+.tv-row-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+.tv-row-head h2{ margin:0; font:600 15px/1.2 var(--font-display); }
+.tv-row-more{ background:none; border:0; color:var(--tv-accent); font-size:12px; font-weight:600; cursor:pointer; padding:4px; flex:none; }
+.tv-row-items{ display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.tv-row-items::-webkit-scrollbar{ display:none; }
+.tv-row-items .tv-card{ flex:0 0 112px; scroll-snap-align:start; }
+.tv-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:12px 10px; }
+.tv-card{ display:block; background:none; border:0; padding:0; text-align:left; color:inherit; cursor:pointer; min-width:0; }
+.tv-card-art{ position:relative; display:block; aspect-ratio:2/3; border-radius:12px; overflow:hidden; background:var(--tv-surface); border:1px solid var(--tv-line); transition:transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.tv-card:active .tv-card-art, .tv-card:focus-visible .tv-card-art{ transform:scale(.97); border-color:var(--tv-accent); }
+.tv-card-img{ display:block; width:100%; height:100%; object-fit:cover; }
+.tv-poster-none{ display:grid; place-items:center; background:linear-gradient(150deg,#0e2c20,#050c09); color:rgba(255,255,255,.35); }
+.tv-card-title{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:6px; font-size:12px; line-height:1.3; font-weight:500; }
+.tv-age, .tv-lock{ position:absolute; top:6px; padding:2px 6px; border-radius:7px; background:rgba(0,0,0,.72); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; }
+.tv-age{ right:6px; }
+.tv-lock{ left:6px; color:var(--gold); }
+.tv-lock .ic{ width:12px; height:12px; }
+
+.tv-detail-art{ position:relative; height:190px; margin:0 calc(var(--sp-4) * -1); overflow:hidden; background:linear-gradient(140deg,#0b2a1c,#02070a 70%); }
+.tv-detail-head{ position:relative; display:flex; align-items:flex-end; gap:12px; margin-top:-64px; margin-bottom:12px; }
+.tv-detail-poster{ width:96px; aspect-ratio:2/3; flex:none; border-radius:12px; object-fit:cover; border:1px solid var(--tv-line); box-shadow:0 8px 24px rgba(0,0,0,.5); }
+.tv-detail-title h2{ margin:0 0 4px; font:700 21px/1.15 var(--font-display); overflow-wrap:anywhere; }
+.tv-detail-title .tv-meta{ color:var(--tv-muted); }
+.tv-actions{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+.tv-actions .btn{ width:auto; display:inline-flex; align-items:center; gap:6px; }
+.tv-synopsis{ margin:12px 0; font-size:14px; line-height:1.55; }
+.tv-denied{ display:flex; align-items:center; gap:6px; margin:8px 0; font-size:13px; color:var(--gold); }
+.tv-info{ display:flex; gap:8px; margin:8px 0; font-size:12px; align-items:baseline; }
+.tv-info > span{ flex:0 0 74px; color:var(--tv-muted); }
+.tv-info > div{ display:flex; flex-wrap:wrap; gap:4px; min-width:0; }
+.tv-chip{ padding:2px 8px; border-radius:20px; border:1px solid var(--tv-line); font-size:11px; }
+.tv-seasons{ margin-top:14px; }
+.tv-season-tabs{ display:flex; gap:6px; overflow-x:auto; margin-bottom:10px; scrollbar-width:none; }
+.tv-season-tab{ flex:none; padding:7px 12px; border-radius:20px; border:1px solid var(--tv-line); background:none; color:inherit; font-size:12px; cursor:pointer; }
+.tv-season-tab[aria-selected="true"]{ background:var(--tv-accent); border-color:var(--tv-accent); color:var(--on-brand); font-weight:700; }
+.tv-episode{ padding:12px; margin-bottom:8px; border-radius:14px; background:var(--tv-surface); border:1px solid var(--tv-line); }
+.tv-ep-head{ display:flex; justify-content:space-between; gap:8px; font-size:14px; }
+.tv-ep-head span{ flex:none; font-size:12px; color:var(--tv-muted); }
+.tv-episode p{ margin:6px 0; font-size:12px; line-height:1.5; }
+.tv-progress{ height:4px; margin:6px 0; border-radius:4px; background:var(--tv-line); overflow:hidden; }
+.tv-progress i{ display:block; height:100%; background:var(--tv-accent); }
+
+.tv-search, .tv-form{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+.tv-form label{ display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--tv-muted); }
+.tv-search-filters{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.tv-form .tv-check, .tv-check{ flex-direction:row; align-items:center; gap:8px; color:inherit; display:flex; font-size:13px; }
+.tv-checks{ border:1px solid var(--tv-line); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px; margin:0; }
+.tv-checks legend{ font-size:12px; padding:0 4px; }
+.tv-fold{ margin-bottom:8px; padding:10px 12px; border-radius:14px; background:var(--tv-surface); border:1px solid var(--tv-line); }
+.tv-fold summary{ cursor:pointer; font-size:14px; font-weight:600; }
+.tv-fold .tv-form{ margin:10px 0 0; }
+.tv-profiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; margin-bottom:12px; }
+.tv-profile{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 6px; border-radius:16px; background:var(--tv-surface); border:1px solid var(--tv-line); color:inherit; cursor:pointer; }
+.tv-profile-face{ width:54px; height:54px; display:grid; place-items:center; border-radius:50%; background:linear-gradient(145deg,#7dd3fc,#a7f3d0); color:#06222e; font:700 22px var(--font-display); }
+.tv-profile small{ font-size:11px; color:var(--tv-muted); }
+
+.tv-player-overlay{ position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; background:#000; color:#fff; }
+.tv-player-overlay[hidden]{ display:none; }
+.tv-player-bar{ display:flex; align-items:center; gap:10px; padding:10px; }
+.tv-player-bar b{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; }
+#tvPlayerHost{ flex:1; min-height:0; }
+#tvPlayerHost video, #tvPlayerHost iframe{ width:100%; height:100%; border:0; background:#000; }
+@media (prefers-reduced-motion: reduce){ .tv-card-art{ transition:none; } }
+
+/* En-tête : le titre sur sa ligne, les actions dessous, sans logo de fond qui prendrait la place du catalogue */
+:root:not(#nv) #app #screen-tv > .screen-head{ flex-wrap:wrap; gap:10px; }
+:root:not(#nv) #app #screen-tv > .screen-head .head-logo{ display:none; }
+:root:not(#nv) #app #screen-tv > .screen-head .head-title{ flex:1 1 100%; }
+:root:not(#nv) #app #screen-tv > .screen-head h1{ font-size:20px; white-space:nowrap; }
+#screen-tv .tv-head-actions{ flex:1 1 100%; justify-content:flex-end; }
