@@ -13,10 +13,19 @@ function renderSettings(){
   // Réglages VPN Android : seulement dans l'app native, et si le pont l'expose
   $('setConnection').hidden = !(isNativeApp() && typeof window.LaboSurfNative.openVpnSettings === 'function');
 
-  let version = '';
-  try{ if(isNativeApp() && typeof window.LaboSurfNative.getAppVersion === 'function') version = window.LaboSurfNative.getAppVersion(); }catch(e){}
-  $('appVersion').textContent = version || '—';
-  $('aboutVersion').textContent = version || '—';
+  // « ORBITE 1.6.0 (261103001) » : nom, numéro, build ; une version antérieure n'a ni nom ni build : « 1.5.1 »
+  let version = '', build = '', name = '';
+  try{
+    const n = window.LaboSurfNative;
+    if(isNativeApp() && typeof n.getAppVersion === 'function'){
+      version = n.getAppVersion();
+      if(typeof n.getAppBuild === 'function') build = n.getAppBuild();
+      if(typeof n.getReleaseName === 'function') name = n.getReleaseName();
+    }
+  }catch(e){}
+  const label = version ? [name, version, build ? '(' + build + ')' : ''].filter(Boolean).join(' ') : '';
+  $('appVersion').textContent = label || '—';
+  $('aboutVersion').textContent = label || '—';
 }
 
 Actions.setLang = (el) => { I18N.set(el.dataset.value); };

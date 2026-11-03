@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Mise a jour depuis l'application : Android demande toujours la confirmation de l'utilisateur -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Choix de photo : l'appareil photo est propose s'il existe (Android 11+ : visibilite a declarer). La permission
          CAMERA n'est PAS demandee : l'app photo du systeme ecrit la photo via FileProvider. -->
     <queries>

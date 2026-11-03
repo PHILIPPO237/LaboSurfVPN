@@ -44,6 +44,7 @@
 .tv-age{ right:6px; }
 .tv-lock{ left:6px; color:var(--gold); }
 .tv-lock .ic{ width:12px; height:12px; }
+.tv-lang{ position:absolute; left:6px; bottom:6px; padding:2px 6px; border-radius:7px; background:rgba(0,0,0,.72); color:#fff; font-size:10px; font-weight:700; letter-spacing:.04em; }
 
 .tv-detail-art{ position:relative; height:190px; margin:0 calc(var(--sp-4) * -1); overflow:hidden; background:linear-gradient(140deg,#0b2a1c,#02070a 70%); }
 .tv-detail-head{ position:relative; display:flex; align-items:flex-end; gap:12px; margin-top:-64px; margin-bottom:12px; }

@@ -96,6 +96,7 @@ function renderRailMinis(){
 window.LaboBack = function(){
   if(!Splash.isDone()){ Splash.skip(); return true; }   // animation d'ouverture : le retour la passe
   if(Onboarding.isOpen()){ Onboarding.finish(); return true; }
+  if(Update.open){ updClose(); return true; }   // mise à jour obligatoire : la page reste ouverte
   if(!$('dialogBackdrop').hidden){ closeDialog(false); return true; }
   if(Guide.isOpen()){ Guide.close(); return true; }
   if(currentScreen === 'account' && Account.view !== 'menu'){ setAccView('menu'); return true; }
@@ -124,6 +125,7 @@ setInterval(loadHomeBanner, 5 * 60 * 1000);   // rafraîchi toutes les 5 min
 restoreRememberedSession();                   // « rester connecté » : compte rouvert sans ressaisir les identifiants
 setTimeout(fitHomeScreen, 300);               // filet de sécurité : polices / images finissent de charger
 Splash.whenDone(() => Onboarding.maybeStart());
+Splash.whenDone(updStart);
 Splash.whenDone(() => {   // retour d'un « Vider le cache » (rechargement) : on le confirme
   try{ if(sessionStorage.getItem('ls.cacheCleared')){ sessionStorage.removeItem('ls.cacheCleared'); toast(t('cache.done'), 'success'); } }catch(e){}
 });                      // première ouverture seulement (passable)

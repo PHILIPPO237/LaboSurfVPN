@@ -108,7 +108,7 @@ function tvPosterMarkup(item, cls){
 function tvCard(item){
   const locked = item.availability === 'restricted';
   return `<button class="tv-card" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">
-    <span class="tv-card-art">${tvPosterMarkup(item, 'tv-card-img')}${locked ? `<span class="tv-lock" title="${esc(t('tv.restricted'))}">${ic('lock')}</span>` : ''}${item.age ? `<span class="tv-age">${Number(item.age)}+</span>` : ''}</span>
+    <span class="tv-card-art">${tvPosterMarkup(item, 'tv-card-img')}${locked ? `<span class="tv-lock" title="${esc(t('tv.restricted'))}">${ic('lock')}</span>` : ''}${item.age ? `<span class="tv-age">${Number(item.age)}+</span>` : ''}${item.original_lang === 'fr' || item.original_lang === 'en' ? `<span class="tv-lang" title="${esc(t('tv.lang.' + item.original_lang))}">${item.original_lang.toUpperCase()}</span>` : ''}</span>
     <span class="tv-card-title">${esc(item.title)}</span></button>`;
 }
 
@@ -245,7 +245,7 @@ async function tvRenderDetail(view){
   tvBody().innerHTML = `<article class="tv-detail">
       <div class="tv-detail-art">${art ? `<img src="${esc(art)}" alt="" decoding="async">` : ''}<div class="tv-hero-shade"></div></div>
       <div class="tv-detail-head">${tvPosterMarkup(item, 'tv-detail-poster')}<div class="tv-detail-title"><h2>${esc(item.title)}</h2>
-        <p class="tv-meta">${[item.year, item.country, item.age ? item.age + '+' : '', tvDuration(item.duration_min), t('tv.kind.' + item.kind)].filter(Boolean).map(esc).join(' · ')}</p></div></div>
+        <p class="tv-meta">${[item.year, item.country, item.age ? item.age + '+' : '', tvDuration(item.duration_min), t('tv.kind.' + item.kind), item.original_lang === 'fr' || item.original_lang === 'en' ? t('tv.lang.' + item.original_lang) : ''].filter(Boolean).map(esc).join(' · ')}</p></div></div>
       <div class="tv-actions">${tvPlayButton(item.id, 0, item.can_stream, position)}${tvDownloadButton(item.id, 0, item.media, item.can_download)}
         <button class="btn btn-ghost" type="button" data-action="tvFavorite" data-id="${Number(item.id)}" data-on="${item.favorite ? 1 : 0}" aria-pressed="${item.favorite ? 'true' : 'false'}">${ic(item.favorite ? 'check' : 'plus')} ${esc(t(item.favorite ? 'tv.inList' : 'tv.addList'))}</button></div>
       ${denied}${youtube}
