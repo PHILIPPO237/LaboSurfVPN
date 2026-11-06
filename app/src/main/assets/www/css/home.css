@@ -623,7 +623,7 @@
   radial-gradient(.8px .8px at 66% 66%, #cfe9ff, transparent), radial-gradient(.8px .8px at 96% 72%, #fff, transparent),
   radial-gradient(.8px .8px at 22% 82%, #fff, transparent), radial-gradient(1px 1px at 50% 88%, #bff5dc, transparent),
   radial-gradient(.8px .8px at 80% 92%, #fff, transparent), radial-gradient(.8px .8px at 8% 94%, #cfe9ff, transparent); }
-:root:not(#nv) #app .rail{ --rail-top:clamp(88px, calc(18vh + 24px), 194px); }
+:root:not(#nv) #app .rail{ --rail-top:clamp(56px, calc(18vh - 16px), 154px); }   /* remonté de ~40 px : le bas de l'écran revient entièrement à la bannière */
 
 /* Écran court (< 700 px) : la vitrine de 188 px doit tout contenir sans couper les boutons */
 @media (max-height:700px){

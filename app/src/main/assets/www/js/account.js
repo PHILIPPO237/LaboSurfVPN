@@ -123,9 +123,11 @@ function renderPass(acc){
 // la connexion sans compte). Les comptes gratuits gardent « Messages et annonces » dans le profil : c'est par là que
 // arrivent les offres de token et les factures.
 function isSubscriber(acc){ return !!acc && acc.plan !== 'gratuit' && acc.daysLeft !== 0; }
+// Messagerie du compte : plus de bouton dans le rail, l'écran reste ouvert par Compte > Messages (abonnés seulement).
+let messagesAvailable = false;
 function updateChatRail(acc){
   const sub = isSubscriber(acc);
-  $('railBtn-chat').hidden = !sub;
+  messagesAvailable = sub;
   if(!sub && currentScreen === 'chat' && acc) showScreen('account');
 }
 
@@ -298,7 +300,7 @@ Actions.openPanel = async (next) => {
 Actions.openCommunityWeb = () => Actions.openPanel('/tchatch');   // version web (fichiers, réactions) ; la communauté intégrée est dans js/livechat.js
 // Support : messages avec le revendeur ou l'administrateur (dans l'application si le compte y a accès, sinon sur le site)
 Actions.openSupport = () => {
-  if(authToken && !$('railBtn-chat').hidden){ showScreen('chat'); return; }
+  if(authToken && messagesAvailable){ showScreen('chat'); return; }
   Actions.openPanel('/mes-messages');
 };
 
@@ -781,7 +783,7 @@ Actions.toggleAnnouncements = (el) => {
 // ─── Déconnexion du compte / session expirée ───
 function resetToLoggedOut(){
   authToken = null;
-  $('railBtn-chat').hidden = true;
+  messagesAvailable = false;
   if(currentScreen === 'chat') showScreen('account');
   if(typeof lcReset === 'function') lcReset();   // communauté : non-lus, salons et pastille effacés avec le compte
   authExpiresAt = null;
@@ -1103,9 +1105,6 @@ function updateAccountBadge(){
   tab.hidden = total === 0;
   tab.textContent = total > 9 ? '9+' : String(total);
   const cnt = (n) => n > 9 ? '9+' : String(n);
-  const chat = $('chatBadge');
-  chat.hidden = total === 0;
-  chat.textContent = cnt(total);
   const cardBadge = $('messagesCardBadge');
   cardBadge.hidden = Account.unreadMessages === 0;
   cardBadge.textContent = cnt(Account.unreadMessages);

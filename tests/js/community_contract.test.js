@@ -137,12 +137,17 @@ test('Salon ouvert : l\'épinglage et la fin d\'historique viennent du panel (ha
   assert.equal(a.ev('$("lcComposer").hidden'), true, 'salon read-only : composer caché');
 });
 
-test('Communauté : sans session, ouverture = parcours de connexion avec retour direct, aucun appel au panel', () => {
+test('Communauté : le bouton ouvre directement le menu de la communauté (version web seulement), aucun appel au panel', () => {
   const a = app();
   a.ev('authToken = null');
   a.ev('Actions.openCommunity()');
-  assert.equal(a.ev('LC.wantReturn'), true);
   assert.equal(a.calls.apiFetch.length, 0);
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www', 'js', 'livechat.js'), 'utf8');
+  assert.match(src, /Actions\.openCommunity = \(\) => showScreen\('community'\);/);
+  const html = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www', 'index.html'), 'utf8');
+  const com = html.slice(html.indexOf('id="screen-community"'), html.indexOf('id="screen-clients"'));
+  assert.match(com, /data-action="openCommunityWeb"/);
+  assert.doesNotMatch(com, /t\.me|openSupport|data-action="openCommunity"/, 'ni Telegram, ni Support, ni salons intégrés');
 });
 
 test("Communauté : le retour automatique est annulé si l'utilisateur va ailleurs (showScreen)", () => {

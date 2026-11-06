@@ -124,6 +124,23 @@ loadHomeBanner();
 setInterval(loadHomeBanner, 5 * 60 * 1000);   // rafraîchi toutes les 5 min
 restoreRememberedSession();                   // « rester connecté » : compte rouvert sans ressaisir les identifiants
 setTimeout(fitHomeScreen, 300);               // filet de sécurité : polices / images finissent de charger
+
+// Rail : son bas s'arrête juste au bord haut de la bannière (la position haute est calculée, jamais figée en px, car la
+// hauteur de la bannière dépend de l'écran). Raccourcis dépliés : on ne recalcule pas, ils recouvrent la bannière à dessein.
+const RAIL_GAP = 6;
+function alignRail(){
+  const rail = $('rail'), group = $('railGroup'), foot = document.querySelector('.home-foot');
+  if(!rail || !foot || !group || group.classList.contains('open') || !rail.offsetHeight) return;
+  const host = rail.offsetParent || rail.parentElement;
+  const top = foot.getBoundingClientRect().top - host.getBoundingClientRect().top - rail.offsetHeight - RAIL_GAP;
+  if(top > 0) rail.style.setProperty('--rail-top', Math.max(56, Math.round(top)) + 'px');
+}
+if(window.ResizeObserver){ const ro = new ResizeObserver(() => alignRail()); const f = document.querySelector('.home-foot'); if(f) ro.observe(f); }
+window.addEventListener('resize', alignRail);
+document.addEventListener('langchange', () => setTimeout(alignRail, 0));
+new MutationObserver(() => setTimeout(alignRail, 60)).observe(document.documentElement, { attributes:true, attributeFilter:['data-screen'] });
+setTimeout(alignRail, 400);
+setTimeout(alignRail, 1500);
 Splash.whenDone(() => Onboarding.maybeStart());
 Splash.whenDone(updStart);
 Splash.whenDone(() => {   // retour d'un « Vider le cache » (rechargement) : on le confirme
