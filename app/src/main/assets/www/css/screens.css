@@ -128,11 +128,15 @@
 .tiles[data-state="loading"] .tile-v{ height:16px; width:60%; margin-top:6px; border-radius:6px; background:linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size:200% 100%; animation:shimmer 1.6s linear infinite; }
 .tiles[data-state="unavailable"] .tile{ display:none; }
 
-.home-foot{ align-self:stretch; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; text-align:center;
-  /* Le rail n'occupe que la partie haute : la bannière s'étend sous lui, sur toute la largeur de l'écran */
-  margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 22px) + var(--sp-4)); }
-.home-foot.is-inset{ margin-left:0; }   /* écran trop court : le rail descendrait jusqu'à la bannière, on la garde à côté */
-.home-foot .banner-card{ flex:1 1 auto; min-height:0; margin-bottom:var(--sp-2); }
+.home-foot, .home-foot.is-inset{
+  align-self:stretch; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; text-align:center;
+  /* Alignement bord à bord parfait (gauche et droite) sur toute la largeur de l'écran */
+  margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 32px));
+  margin-right:calc(-1 * var(--sp-4));
+  width:calc(100% + (var(--rail-left) + var(--rail-btn) + 32px) + var(--sp-4));
+  box-sizing:border-box;
+}
+.home-foot .banner-card{ flex:1 1 auto; min-height:0; margin-bottom:var(--sp-2); width:100%; border-radius:0; }
 
 /* ---------- Bannière premium (annonces du panel + contenu par défaut) ----------
    .banner-card = cadre (bordure, relief) · .bn-fx = décor animé · .bn-body = contenu défilable · .bn-dots = indicateur (futur) */
@@ -367,8 +371,11 @@
   .conn-meta{ margin-top:3px; gap:1px; }
   .conn-since{ flex-direction:row; gap:6px; align-items:baseline; }
   .status-title{ font-size:var(--fs-md); }
-  .home-foot{ margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 22px) + var(--sp-3)); }
-  .home-foot.is-inset{ margin-left:0; }
+  .home-foot, .home-foot.is-inset{
+    margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 32px));
+    margin-right:calc(-1 * var(--sp-3));
+    width:calc(100% + (var(--rail-left) + var(--rail-btn) + 32px) + var(--sp-3));
+  }
   .status-sub{ font-size:11.5px; margin-top:0; }
   .home[data-state="error"] .status-sub{ display:none; }   /* redondant avec le titre d'état */
   .tiles[data-state="loading"] .tile{ display:none; }                                       /* chargement : seule la note s'affiche */

@@ -305,7 +305,7 @@ Actions.tvPlay = async (el) => {
     return tvWebPlayer(granted.ticket);
   }
   const play = tvNative('tvPlay');
-  if(play){ play(granted.ticket, I18N.lang, pref.audio || '', pref.subtitles || ''); return; }
+  if(play){ play(granted.ticket, I18N.lang, pref.audio || 'fr', pref.subtitles || ''); return; }
   tvWebPlayer(granted.ticket);
 };
 
@@ -428,7 +428,7 @@ Actions.tvPlayOffline = (el) => {
   const play = tvNative('tvPlayOffline');
   if(!play) return;
   const pref = store.get('tvPlayback', {});
-  if(!play(el.dataset.id, pref.audio || '', pref.subtitles || '')){ toast(t('tv.downloads.expired'), 'error'); tvRender(); }
+  if(!play(el.dataset.id, pref.audio || 'fr', pref.subtitles || '')){ toast(t('tv.downloads.expired'), 'error'); tvRender(); }
 };
 Actions.tvDeleteDownload = async (el) => {
   const remove = tvNative('tvDownloadDelete');

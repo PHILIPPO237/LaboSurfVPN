@@ -133,6 +133,7 @@ function updateChatRail(acc){
 
 function renderAccountCard(acc){
   Account.last = acc;
+  try { store.set('cached_account', acc); } catch(e){}
   if(typeof ProfileTheme !== 'undefined') ProfileTheme.refresh();   // l'offre (VIP…) peut donner l'accent premium
   $('accNameTxt').textContent = acc.username;
   // Photo de profil si elle a été renseignée, sinon avatar par défaut (aussi en cas d'image introuvable)
@@ -380,8 +381,14 @@ function setSyncState(state){ Account.syncState = state; $('accSyncTime').textCo
 
 async function loadAndShowAccount(fallbackName){
   const [meRes, subRes] = await Promise.all([apiFetch('/api/user/me'), apiFetch('/api/user/subscription')]);
-  if(!authToken) return; // session expirée pendant le chargement
-  renderAccountCard(accountFromApi(meRes.ok ? meRes.data || {} : {}, subRes.ok ? subRes.data || {} : {}, fallbackName));
+  if(!authToken) return;
+  if(meRes.ok){
+    renderAccountCard(accountFromApi(meRes.data || {}, subRes.ok ? subRes.data || {} : {}, fallbackName));
+  } else {
+    const cachedAcc = store.get('cached_account', null);
+    if(cachedAcc) renderAccountCard(cachedAcc);
+    else renderAccountCard(accountFromApi({}, {}, fallbackName));
+  }
   if(meRes.ok) ProfileCache.save(meRes.data); else profileFallback(ProfileContract.failure(meRes));
   $('accLoggedOut').hidden = true;
   $('accLoggedIn').hidden = false;

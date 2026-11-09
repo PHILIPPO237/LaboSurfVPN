@@ -133,7 +133,7 @@ function alignRail(){
   if(!rail || !foot || !group || group.classList.contains('open') || !rail.offsetHeight) return;
   const host = rail.offsetParent || rail.parentElement;
   const top = foot.getBoundingClientRect().top - host.getBoundingClientRect().top - rail.offsetHeight - RAIL_GAP;
-  if(top > 0) rail.style.setProperty('--rail-top', Math.max(56, Math.round(top)) + 'px');
+  if(top > 0) rail.style.setProperty('--rail-top', Math.max(42, Math.round(top)) + 'px');
 }
 if(window.ResizeObserver){ const ro = new ResizeObserver(() => alignRail()); const f = document.querySelector('.home-foot'); if(f) ro.observe(f); }
 window.addEventListener('resize', alignRail);

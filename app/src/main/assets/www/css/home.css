@@ -623,7 +623,7 @@
   radial-gradient(.8px .8px at 66% 66%, #cfe9ff, transparent), radial-gradient(.8px .8px at 96% 72%, #fff, transparent),
   radial-gradient(.8px .8px at 22% 82%, #fff, transparent), radial-gradient(1px 1px at 50% 88%, #bff5dc, transparent),
   radial-gradient(.8px .8px at 80% 92%, #fff, transparent), radial-gradient(.8px .8px at 8% 94%, #cfe9ff, transparent); }
-:root:not(#nv) #app .rail{ --rail-top:clamp(56px, calc(18vh - 16px), 154px); }   /* remonté de ~40 px : le bas de l'écran revient entièrement à la bannière */
+:root:not(#nv) #app .rail{ --rail-top:clamp(46px, calc(15vh - 16px), 136px); }   /* remonté de ~40 px : le bas de l'écran revient entièrement à la bannière */
 
 /* Écran court (< 700 px) : la vitrine de 188 px doit tout contenir sans couper les boutons */
 @media (max-height:700px){
@@ -631,4 +631,47 @@
   :root:not(#nv) #app .home-foot .bd-tagline{ min-height:1.4em; font-size:max(1.06em, 13px); }
   :root:not(#nv) #app .home-foot .banner-style-default .bn-body{ padding-top:24px; padding-bottom:10px; }
   :root:not(#nv) #app .home-foot .bd-act{ min-height:44px; }
+}
+
+
+/* ==========================================================================
+   ALIGNEMENT BORD À BORD STRICT DU CADRE PUBLICITAIRE (ACCUEIL)
+   Le cadre publicitaire touche la bordure gauche ET la bordure droite de l'écran
+   sans aucun espace résiduel (width: 100%, marge négative annulant le padding du parent).
+   La signature en dessous reste dans le flux normal, parfaitement centrée et intacte.
+   ========================================================================== */
+#app #screen-home .home-foot,
+#app #screen-home .home-foot.is-inset{
+  margin-left: calc(-1 * var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px))) !important;
+  margin-right: calc(-1 * var(--home-right-pad, var(--sp-4))) !important;
+  width: calc(100% + var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px)) + var(--home-right-pad, var(--sp-4))) !important;
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#app #screen-home .home-foot .banner-card{
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#app #screen-home .home-foot .banner-card .bn-body{
+  padding-left: var(--sp-4);
+  padding-right: var(--sp-4);
+  box-sizing: border-box;
+}
+
+#app #screen-home .home-foot .sig-home{
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: var(--sp-4);
+  padding-right: var(--sp-4);
+  margin-top: 6px;
+  position: static;
 }

@@ -120,7 +120,12 @@ class TvPlayerActivity : AppCompatActivity() {
         nextButton.visibility = if (nextTicket.isEmpty()) View.GONE else View.VISIBLE
 
         val builder = MediaItem.Builder().setUri(Uri.parse(url))
-        if (play.optString("kind") == "hls") builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+        val cleanUrl = url.substringBefore('?').lowercase()
+        if (play.optString("kind") == "hls" || cleanUrl.endsWith(".m3u8")) {
+            builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+        } else if (cleanUrl.endsWith(".mp4")) {
+            builder.setMimeType(MimeTypes.VIDEO_MP4)
+        }
         val subtitles = play.optJSONArray("subtitles")
         if (subtitles != null) {
             val configs = ArrayList<MediaItem.SubtitleConfiguration>()
@@ -156,7 +161,7 @@ class TvPlayerActivity : AppCompatActivity() {
         val subtitles = intent.getStringExtra(EXTRA_SUBTITLES).orEmpty()
         val exo = ExoPlayer.Builder(this).build()
         val params = exo.trackSelectionParameters.buildUpon()
-        if (audio.isNotEmpty()) params.setPreferredAudioLanguage(audio)
+        if (audio.isNotEmpty()) params.setPreferredAudioLanguage(audio) else params.setPreferredAudioLanguage("fr")
         if (subtitles == "off") params.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
         else if (subtitles.isNotEmpty()) params.setPreferredTextLanguage(subtitles)
         exo.trackSelectionParameters = params.build()

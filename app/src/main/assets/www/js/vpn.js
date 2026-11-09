@@ -305,6 +305,7 @@ function markConnected(){
   logEvent('ok', 'log.connected', { server: VPN.session.server });
   toast(t('toast.connected'), 'success');
   const pb = $('powerBtn'); pb.classList.add('pop'); setTimeout(() => pb.classList.remove('pop'), 600);
+  setTimeout(() => { if(VPN.state === 'on') syncBackgroundAfterConnect(); }, 2500);
 }
 
 function markDisconnected(){
@@ -335,6 +336,56 @@ function failConnect(serverName, spec){
   VPN.trialLimitMinutes = null; VPN.accessExpiresAt = null; VPN.serverId = null; VPN.health = '';
   setVpnState('error', spec);
   toast(message, 'error');
+}
+
+// Cache local des configurations de connexion pour le mode OFFLINE-FIRST (0 Mo de data / contournement captif)
+const ConfigCache = {
+  key(pid, sid){
+    if(pid) return 'cfg_prof_' + pid;
+    if(sid) return 'cfg_srv_' + sid;
+    return 'cfg_last';
+  },
+  save(pid, sid, parsed){
+    if(!parsed || !parsed.ok || !parsed.config) return;
+    const item = {
+      config: parsed.config,
+      serverId: parsed.serverId,
+      hostedProfileId: parsed.hostedProfileId || pid,
+      access: parsed.access,
+      trialLimitMinutes: parsed.trialLimitMinutes,
+      trialQuotaMb: parsed.trialQuotaMb,
+      health: parsed.health || 'available',
+      savedAt: Date.now(),
+    };
+    try {
+      store.set(this.key(pid, sid), item);
+      store.set('cfg_last', item);
+    } catch(e){}
+  },
+  load(pid, sid){
+    try {
+      let item = store.get(this.key(pid, sid), null);
+      if(!item && pid) item = store.get('cfg_last', null);
+      if(!item && sid) item = store.get('cfg_last', null);
+      if(!item) item = store.get('cfg_last', null);
+      return (item && item.config && item.config.uri) ? item : null;
+    } catch(e){
+      return null;
+    }
+  }
+};
+
+function fastSwitchService(){
+  VPN.fastSwitching = true;
+  disconnectVpn();
+}
+
+async function syncBackgroundAfterConnect(){
+  try {
+    if(typeof reloadAccountCard === 'function') await reloadAccountCard();
+    if(typeof loadServers === 'function') await loadServers();
+    if(typeof loadProfiles === 'function') await loadProfiles();
+  } catch(e){}
 }
 
 // Moteur natif : { integrated, protocols }. Un shell sans getEngineInfo est traité comme « pas de moteur ».
@@ -391,10 +442,29 @@ async function connectVpn(){
       if(deviceId) body.device_id = deviceId;
       if(body.server_id === null) delete body.server_id;
     }
-    const res = await apiFetch('/api/user/connect', { method: 'POST', body: JSON.stringify(body), timeout: 20000 });
+    const res = await apiFetch('/api/user/connect', { method: 'POST', body: JSON.stringify(body), timeout: 12000 });
     parsed = ConnectContract.parse(res);
   }catch(e){
     parsed = ConnectContract.networkFailure(e, navigator.onLine);
+  }
+  let usedOfflineConfig = false;
+  if(!parsed || !parsed.ok){
+    const cached = ConfigCache.load(profile ? profile.id : null, target ? target.id : null);
+    if(cached && cached.config && cached.config.uri){
+      parsed = {
+        ok: true,
+        offlineMode: true,
+        serverId: cached.serverId,
+        hostedProfileId: cached.hostedProfileId,
+        health: cached.health || 'available',
+        access: cached.access || { state: 'active', expiresAt: null },
+        config: cached.config,
+        trialLimitMinutes: cached.trialLimitMinutes,
+        trialQuotaMb: cached.trialQuotaMb,
+      };
+      usedOfflineConfig = true;
+      logEvent('info', 'log.offlineConnect', { server: name });
+    }
   }
   if(VPN.state !== 'connecting') return; // annulé entre-temps (déconnexion du compte, par exemple)
   if(!parsed.ok){
@@ -405,6 +475,10 @@ async function connectVpn(){
     if(profile && (parsed.code === 'profile_not_found' || parsed.code === 'profile_unavailable') && typeof loadProfiles === 'function') loadProfiles();
     return;
   }
+  if(!usedOfflineConfig){
+    ConfigCache.save(profile ? profile.id : null, target ? target.id : null, parsed);
+  }
+  VPN.offlineMode = usedOfflineConfig;
   VPN.trialLimitMinutes = parsed.trialLimitMinutes;
   VPN.accessExpiresAt = parsed.access.expiresAt;
   VPN.serverId = parsed.serverId;
@@ -474,8 +548,13 @@ window.onNativeVpnState = function(nativeState, detail){
   } else if(nativeState === 'stopping'){
     if(VPN.state === 'on') setVpnState('disconnecting');
   } else if(nativeState === 'disconnected'){
+    const wasSwitching = VPN.fastSwitching;
+    VPN.fastSwitching = false;
     markDisconnected();
-    resetNativeNetwork();   // le tunnel vient de se fermer : la WebView doit oublier l'état réseau hérité du VPN (voir api.js)
+    resetNativeNetwork();
+    if(wasSwitching){
+      setTimeout(() => { connectVpn(); }, 350);
+    }   // le tunnel vient de se fermer : la WebView doit oublier l'état réseau hérité du VPN (voir api.js)
   } else if(nativeState === 'error'){
     if(detail === 'max_connections' && VPN.state === 'connecting' && VPN.mcRetries < MAXCONN_RETRY_MAX){
       // Ancienne session pas encore expirée côté serveur : nouvelle tentative automatique, sans erreur affichée

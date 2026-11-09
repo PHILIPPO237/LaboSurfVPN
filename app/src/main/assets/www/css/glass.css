@@ -59,9 +59,40 @@
 #app .rail-mini{ background:rgba(10,31,21,.85); border-color:var(--lg-edge); color:var(--lg-mint); }
 #app .rail-badge{ box-shadow:0 0 0 2px var(--lg-wood); }
 /* l'accueil réserve la largeur de la colonne (bouton + 2 × 8 px de verre) */
-#app #screen-home{ padding-left:calc(var(--rail-left) + var(--rail-btn) + 16px + 16px); }
-#app .home-foot{ margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 16px + 16px) + var(--sp-4)); }
-#app .home-foot.is-inset{ margin-left:0; }
+#app #screen-home{
+  --home-rail-pad: calc(var(--rail-left) + var(--rail-btn) + 32px);
+  --home-right-pad: var(--sp-4);
+  padding-left: var(--home-rail-pad);
+  padding-right: var(--home-right-pad);
+}
+@media (max-height:640px), (max-width:370px){
+  #app #screen-home{ --home-right-pad: var(--sp-3); }
+}
+#app .home-foot,
+#app .home-foot.is-inset{
+  margin-left: calc(-1 * var(--home-rail-pad)) !important;
+  margin-right: calc(-1 * var(--home-right-pad)) !important;
+  width: calc(100% + var(--home-rail-pad) + var(--home-right-pad)) !important;
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+#app .home-foot .banner-card{
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+}
+#app .home-foot .sig-home{
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: var(--sp-4);
+  padding-right: var(--sp-4);
+  margin-top: 4px;
+}
 
 /* ---------------------------------------------------------------- Accueil ---
    Bouton central conservé (identité validée) ; les informations de connexion deviennent UNE carte de verre
