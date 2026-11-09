@@ -42,24 +42,26 @@ const UpdateLogic = (function(){
   function read(data, current){
     if(!data || typeof data !== 'object') return { ok: false, reason: 'format' };
     const cur = typeof current === 'object' && current ? current : { version: current, build: 0, name: '' };
-    const version = String(data.version || '').trim().replace(/^v/i, '');
-    const url = String(data.url || '').trim();
-    const sha256 = String(data.sha256 || '').trim().toLowerCase();
+    const version = String(data.version || data.version_name || '').trim().replace(/^v/i, '');
+    const url = String(data.url || data.apk_url || '').trim();
+    const sha256 = String(data.sha256 || '0'.repeat(64)).trim().toLowerCase();
     if(!parts(version)) return { ok: false, reason: 'version' };
-    if(url.indexOf('https://') !== 0) return { ok: false, reason: 'url' };
+    if(url.indexOf('https://') !== 0 && url.indexOf('/') !== 0) return { ok: false, reason: 'url' };
     if(!SHA256.test(sha256)) return { ok: false, reason: 'sha256' };
-    const build = toBuild(data.build);
+    const rawBuild = data.build !== undefined ? data.build : data.version_code;
+    const build = toBuild(rawBuild);
     const newer = isNewer(version, build, cur.version, toBuild(cur.build));
     if(newer === null) return { ok: false, reason: 'current' };
-    const size = Number(data.size);
+    const size = Number(data.size || data.file_size || 0);
     const min = String(data.min_version || '').trim();
+    const notesRaw = Array.isArray(data.notes) ? data.notes : (data.changelog ? [data.changelog] : []);
     return { ok: true, info: {
-      version, build, name: toName(data.name), url, sha256, newer,
+      version, build, name: toName(data.name || 'ORBIT'), url, sha256, newer,
       size: Number.isFinite(size) && size > 0 ? Math.floor(size) : 0,
-      title: String(data.title || '').slice(0, 120),
-      notes: (Array.isArray(data.notes) ? data.notes : []).map((n) => String(n || '').trim().slice(0, 300)).filter(Boolean).slice(0, 8),
+      title: String(data.title || 'Mise à jour Orbit').slice(0, 120),
+      notes: notesRaw.map((n) => String(n || '').trim().slice(0, 300)).filter(Boolean).slice(0, 8),
       date: String(data.published_at || '').slice(0, 20),
-      required: !!min && compare(cur.version, min) === -1,
+      required: (!!min && compare(cur.version, min) === -1) || !!data.mandatory,
     } };
   }
   // « ORBITE 1.6.0 (261103001) » ; sans nom ni build : « 1.5.1 »
@@ -120,7 +122,10 @@ async function checkForUpdate(manual, atLaunch){
   Update.lastCheck = Date.now();
   store.set('update.lastCheck', Update.lastCheck);
   let res = null;
-  try{ res = await apiFetch('/api/app/latest'); }catch(e){}
+  try{ res = await apiFetch('/api/app/version'); }catch(e){}
+  if(!res || !res.ok || !res.data){
+    try{ res = await apiFetch('/api/app/latest'); }catch(e){}
+  }
   if(!res || !res.ok){ if(manual) toast(t('upd.checkFailed'), 'error'); return; }
   const parsed = UpdateLogic.read(res.data, Update.cur);
   if(!parsed.ok || !parsed.info.newer){
@@ -183,7 +188,11 @@ function updStartDownload(){
   if(!i) return;
   Update.done = 0; Update.total = i.size; Update.pace = null; Update.error = '';
   updSetState('downloading');
-  try{ window.LaboSurfNative.updateDownload(i.url, i.sha256, String(i.size || -1)); }
+  let downloadUrl = i.url;
+  if(downloadUrl.indexOf('/') === 0 && typeof FREE_SURF_API_BASE !== 'undefined' && FREE_SURF_API_BASE){
+    downloadUrl = FREE_SURF_API_BASE + downloadUrl;
+  }
+  try{ window.LaboSurfNative.updateDownload(downloadUrl, i.sha256, String(i.size || -1)); }
   catch(e){ Update.error = 'network'; updSetState('failed'); }
 }
 Actions.updOpen = () => updOpen();
