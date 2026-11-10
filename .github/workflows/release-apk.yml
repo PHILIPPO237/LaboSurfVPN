@@ -126,7 +126,9 @@ jobs:
           OUT="LaboSurfVPN-v${VNAME}.apk"
           cp "$APK" "$OUT"
           sha256sum "$OUT" > "$OUT.sha256"
-          echo "::notice title=APK release signee::$OUT ; versionName $VNAME ; versionCode $VCODE ; $(stat -c %s "$OUT") octets ; sha256 $(cut -d' ' -f1 "$OUT.sha256") ; certificat $CERT"
+          cp "$APK" "Orbit-v${VNAME}.apk"
+          sha256sum "Orbit-v${VNAME}.apk" > "Orbit-v${VNAME}.apk.sha256"
+          echo "::notice title=APK release signee::$OUT / Orbit-v${VNAME}.apk ; versionName $VNAME ; versionCode $VCODE ; $(stat -c %s "$OUT") octets ; sha256 $(cut -d' ' -f1 "$OUT.sha256") ; certificat $CERT"
           echo "::notice title=Architectures::$(unzip -l "$OUT" | grep -o 'lib/[^/]*/' | sort -u | tr '\n' ' ' || true) (aucune bibliotheque native = toutes architectures)"
           echo "apk=$OUT" >> "$GITHUB_OUTPUT"
 
@@ -140,9 +142,11 @@ jobs:
           path: |
             LaboSurfVPN-v*.apk
             LaboSurfVPN-v*.apk.sha256
+            Orbit-v*.apk
+            Orbit-v*.apk.sha256
           retention-days: 90
 
-      - name: Release GitHub en BROUILLON (tag uniquement)
+      - name: Release GitHub officielle (tag uniquement)
         if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
@@ -151,8 +155,8 @@ jobs:
           set -euo pipefail
           APK="${{ steps.verify.outputs.apk }}"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true" || { echo "::error::la Release $RELEASE_TAG est deja publiee : rien n'est remplace"; exit 1; }
-            gh release upload "$RELEASE_TAG" "$APK" "$APK.sha256" --clobber
+            gh release upload "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --clobber || true
+            gh release edit "$RELEASE_TAG" --draft=false --title "Orbit $RELEASE_TAG" || true
           else
-            gh release create "$RELEASE_TAG" "$APK" "$APK.sha256" --draft --verify-tag --title "LaboSurfVPN $RELEASE_TAG" --notes "APK release signee (cle de production). Notes a completer avant publication."
+            gh release create "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --verify-tag --title "Orbit $RELEASE_TAG" --notes "Release officielle Android Orbit $RELEASE_TAG (build 261109001) avec Auto-Update in-app et mode Offline-First."
           fi
