@@ -242,6 +242,7 @@ async function loadProfiles(){
   if(Profiles.state === 'ready' && Profiles.selectedId !== null && Profiles.selectedId !== undefined && !getSelectedProfile()){
     Profiles.selectedId = null;
     store.set('hostedProfile', null);
+    toast(t('prof.gone'), 'warning');
   }
   if(authToken) renderServers();
 }

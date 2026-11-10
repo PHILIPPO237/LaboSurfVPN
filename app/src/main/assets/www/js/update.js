@@ -44,7 +44,8 @@ const UpdateLogic = (function(){
     const cur = typeof current === 'object' && current ? current : { version: current, build: 0, name: '' };
     const version = String(data.version || data.version_name || '').trim().replace(/^v/i, '');
     const url = String(data.url || data.apk_url || '').trim();
-    const sha256 = String(data.sha256 || '0'.repeat(64)).trim().toLowerCase();
+    const rawSha = (data.sha256 !== undefined && data.sha256 !== null) ? String(data.sha256).trim() : '0'.repeat(64);
+    const sha256 = rawSha.toLowerCase();
     if(!parts(version)) return { ok: false, reason: 'version' };
     if(url.indexOf('https://') !== 0 && url.indexOf('/') !== 0) return { ok: false, reason: 'url' };
     if(!SHA256.test(sha256)) return { ok: false, reason: 'sha256' };

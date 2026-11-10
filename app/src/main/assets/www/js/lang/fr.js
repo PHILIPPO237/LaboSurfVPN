@@ -109,6 +109,7 @@ I18N.register('fr', {
   'srv.emptyTitle': 'Aucun serveur disponible', 'srv.emptyText': 'Ton abonnement détermine les serveurs accessibles.',
   'srv.noResult': 'Aucun résultat',
   'srv.appliedNext': 'Ce serveur sera utilisé à la prochaine connexion.',
+  'srv.switching': 'Bascule de service en cours...',
   'prof.section': 'Profil de connexion', 'prof.auto': 'Automatique',
   'prof.autoSub': 'Le Laboratoire choisit le service du serveur sélectionné.',
   'prof.defaultName': 'Profil {n}', 'prof.healthUnknown': 'État non vérifié',

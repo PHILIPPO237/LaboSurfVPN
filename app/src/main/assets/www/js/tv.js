@@ -305,7 +305,7 @@ Actions.tvPlay = async (el) => {
     return tvWebPlayer(granted.ticket);
   }
   const play = tvNative('tvPlay');
-  if(play){ play(granted.ticket, I18N.lang, pref.audio || 'fr', pref.subtitles || ''); return; }
+  if(play){ play(granted.ticket, I18N.lang, pref.audio || '', pref.subtitles || ''); return; }
   tvWebPlayer(granted.ticket);
 };
 

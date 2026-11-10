@@ -109,6 +109,7 @@ I18N.register('en', {
   'srv.emptyTitle': 'No server available', 'srv.emptyText': 'Your plan determines which servers you can use.',
   'srv.noResult': 'No results',
   'srv.appliedNext': 'This server will be used the next time you connect.',
+  'srv.switching': 'Switching service...',
   'prof.section': 'Connection profile', 'prof.auto': 'Automatic',
   'prof.autoSub': 'The Laboratory picks the service of the selected server.',
   'prof.defaultName': 'Profile {n}', 'prof.healthUnknown': 'Status not verified',
