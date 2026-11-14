@@ -107,8 +107,15 @@ function tvPosterMarkup(item, cls){
 
 function tvCard(item){
   const locked = item.availability === 'restricted';
+  const badges = Array.isArray(item.badges) && item.badges.length
+    ? item.badges.slice(0, 2)
+    : [(item.original_lang || 'fr').toUpperCase(), item.format_tag].filter(Boolean);
+  const foot = item.is_complete_story ? 'Récit Complet' : (item.episode_count ? `${Number(item.episode_count)} Ép.` : '');
   return `<button class="tv-card" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">
-    <span class="tv-card-art">${tvPosterMarkup(item, 'tv-card-img')}${locked ? `<span class="tv-lock" title="${esc(t('tv.restricted'))}">${ic('lock')}</span>` : ''}${item.age ? `<span class="tv-age">${Number(item.age)}+</span>` : ''}${item.original_lang === 'fr' || item.original_lang === 'en' ? `<span class="tv-lang" title="${esc(t('tv.lang.' + item.original_lang))}">${item.original_lang.toUpperCase()}</span>` : ''}</span>
+    <span class="tv-card-art">${tvPosterMarkup(item, 'tv-card-img')}<span class="tv-card-grad"></span>
+    <span class="tv-card-badges">${badges.map((b, i) => `<span class="tv-badge ${i === 0 ? 'accent' : ''}">${esc(b)}</span>`).join('')}</span>
+    ${locked ? `<span class="tv-lock" title="${esc(t('tv.restricted'))}">${ic('lock')}</span>` : ''}${item.age ? `<span class="tv-age">${Number(item.age)}+</span>` : ''}
+    <span class="tv-card-foot">${foot ? `<span class="tv-card-ep">${esc(foot)}</span>` : ''}</span></span>
     <span class="tv-card-title">${esc(item.title)}</span></button>`;
 }
 
@@ -124,11 +131,19 @@ function tvNotice(){
 Actions.tvHideNotice = (el) => { store.set('tvNoticeSeen', true); const box = el.closest('.tv-notice'); if(box) box.remove(); };
 
 function tvHero(item){
-  const art = tvImage(item.banner) || tvImage(item.poster);
-  return `<section class="tv-hero">${art ? `<img class="tv-hero-img" src="${esc(art)}" alt="" decoding="async">` : ''}<div class="tv-hero-shade"></div>
-    <div class="tv-hero-text"><span class="tv-eyebrow">${esc(t('tv.featured'))}</span><h2>${esc(item.title)}</h2>
-    <p class="tv-meta">${[item.year, item.age ? item.age + '+' : '', tvDuration(item.duration_min)].filter(Boolean).map(esc).join(' · ')}</p>
-    <button class="btn btn-primary tv-hero-btn" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">${ic('info')} ${esc(t('tv.details'))}</button></div></section>`;
+  const art = tvImage(item.poster_url || item.poster || item.banner);
+  const badges = Array.isArray(item.badges) ? item.badges.slice(0, 3) : [];
+  return `<section class="tv-hero-916">
+    <div class="tv-hero-916-art">${art ? `<img src="${esc(art)}" alt="${esc(item.title)}" decoding="async">` : ''}<span class="tv-card-grad"></span></div>
+    <div class="tv-hero-916-body">
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${badges.map((b, i) => `<span class="tv-badge ${i === 0 ? 'accent' : ''}">${esc(b)}</span>`).join('')}</div>
+      <h2>${esc(item.title)}</h2>
+      <p>${esc(item.synopsis || [item.format_tag, item.year, tvDuration(item.duration_min)].filter(Boolean).join(' · '))}</p>
+      <div class="tv-actions">
+        <button class="btn btn-primary tv-hero-btn" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Lire 9:16</button>
+        <button class="btn btn-ghost tv-hero-btn" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">${ic('info')} ${esc(t('tv.details'))}</button>
+      </div>
+    </div></section>`;
 }
 
 function tvApiFailure(res, fallback){
@@ -136,10 +151,69 @@ function tvApiFailure(res, fallback){
 }
 Actions.tvRetry = () => tvRender();
 
+function tvFilterBarMarkup(){
+  const filters = TV.filters || [];
+  if(!filters.length) return '';
+  const active = TV.activeFilter || 'all';
+  return `<div class="tv-filter-bar" role="tablist">${filters.map((f) =>
+    `<button class="tv-filter-pill ${active === f.slug ? 'active' : ''}" type="button" data-action="tvSelectFilter" data-slug="${esc(f.slug)}">${esc(f.label)}</button>`
+  ).join('')}</div>`;
+}
+
+Actions.tvSelectFilter = async (el) => {
+  TV.activeFilter = el.dataset.slug || 'all';
+  tvRenderHomeSection();
+};
+
+async function tvRenderHomeSection(){
+  const host = $('tvHomeContent');
+  if(!host) return;
+  const bar = $('tvFilterBarWrap');
+  if(bar) bar.innerHTML = tvFilterBarMarkup();
+  const active = TV.activeFilter || 'all';
+  if(active === 'all'){
+    const b = TV.bootstrapData;
+    if(!b) return;
+    const featured = b.featured || [], carousels = b.carousels || [];
+    host.innerHTML = (featured[0] ? tvHero(featured[0]) : '') +
+      carousels.map((c) => tvRow(c.title, c.items, c.slug)).join('');
+    return;
+  }
+  host.innerHTML = tvState('tv.loading');
+  const res = await apiFetch(tvPath('/api/v1/tv/series?genre=' + encodeURIComponent(active))).catch(() => null);
+  const items = (res && res.ok && res.data && res.data.items) || [];
+  if(!items.length){
+    host.innerHTML = `<div class="tv-empty">${ic('film')}<p>${esc(t('tv.empty'))}</p></div>`;
+    return;
+  }
+  host.innerHTML = `<div class="tv-grid">${items.map(tvCard).join('')}</div>`;
+}
+
 async function tvRenderHome(){
   tvBody().innerHTML = tvState('tv.loading');
   tvFlushProgress();
-  let res;
+  let res = await apiFetch(tvPath('/api/v1/tv/bootstrap')).catch(() => null);
+  if(res && res.ok && res.data && Array.isArray(res.data.carousels)){
+    TV.kid = (res.data.viewer && res.data.viewer.kid_mode) ? { id: 1 } : null;
+    if(TV.kid){
+      const pRes = await apiFetch(tvPath('/api/tv/home')).catch(() => null);
+      if(pRes && pRes.ok) TV.kid = pRes.data.kid_mode || TV.kid;
+    }
+    tvHeader();
+    TV.bootstrapData = res.data;
+    TV.filters = res.data.filters || [];
+    TV.reels = res.data.reels || [];
+    TV.activeFilter = TV.activeFilter || 'all';
+    const featured = res.data.featured || [], carousels = res.data.carousels || [];
+    if(!featured.length && !carousels.length){
+      tvBody().innerHTML = tvNotice() + `<div class="tv-empty">${ic('film')}<p>${esc(t(TV.kid ? 'tv.kids.empty' : 'tv.empty'))}</p></div>`;
+      return;
+    }
+    const reelsBtn = TV.reels.length ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><button class="tv-reels-fab" type="button" data-action="tvOpenReelsFeed">${ic('play')} Reels Plein Écran 9:16 (${TV.reels.length})</button></div>` : '';
+    tvBody().innerHTML = (TV.kid ? '' : tvNotice()) + reelsBtn + `<div id="tvFilterBarWrap">${tvFilterBarMarkup()}</div><div id="tvHomeContent"></div>`;
+    tvRenderHomeSection();
+    return;
+  }
   try{ res = await apiFetch(tvPath('/api/tv/home')); }catch(e){ res = null; }
   if(!res || !res.ok){
     tvBody().innerHTML = tvApiFailure(res, 'tv.err.load') + `<div class="tv-offline-link"><button class="btn btn-ghost" type="button" data-action="tvOpenDownloads">${ic('download')} ${esc(t('tv.downloads.title'))}</button></div>`;
@@ -246,7 +320,7 @@ async function tvRenderDetail(view){
       <div class="tv-detail-art">${art ? `<img src="${esc(art)}" alt="" decoding="async">` : ''}<div class="tv-hero-shade"></div></div>
       <div class="tv-detail-head">${tvPosterMarkup(item, 'tv-detail-poster')}<div class="tv-detail-title"><h2>${esc(item.title)}</h2>
         <p class="tv-meta">${[item.year, item.country, item.age ? item.age + '+' : '', tvDuration(item.duration_min), t('tv.kind.' + item.kind), item.original_lang === 'fr' || item.original_lang === 'en' ? t('tv.lang.' + item.original_lang) : ''].filter(Boolean).map(esc).join(' · ')}</p></div></div>
-      <div class="tv-actions">${tvPlayButton(item.id, 0, item.can_stream, position)}${tvDownloadButton(item.id, 0, item.media, item.can_download)}
+      <div class="tv-actions"><button class="btn btn-primary" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Vertical 9:16</button>${tvPlayButton(item.id, 0, item.can_stream, position)}${tvDownloadButton(item.id, 0, item.media, item.can_download)}
         <button class="btn btn-ghost" type="button" data-action="tvFavorite" data-id="${Number(item.id)}" data-on="${item.favorite ? 1 : 0}" aria-pressed="${item.favorite ? 'true' : 'false'}">${ic(item.favorite ? 'check' : 'plus')} ${esc(t(item.favorite ? 'tv.inList' : 'tv.addList'))}</button></div>
       ${denied}${youtube}
       ${item.synopsis ? `<p class="tv-synopsis">${esc(item.synopsis)}</p>` : ''}
@@ -551,3 +625,187 @@ Actions.tvExitKidsConfirm = async () => {
 };
 
 document.addEventListener('langchange', () => { if(currentScreen === 'tv') tvRender(); });
+
+// -------------------- VerticalReelPlayer Plein Écran 9:16 --------------------
+const TV_REEL = { items: [], idx: 0, hls: null, hlsLoading: null, muted: false, series: null };
+
+function tvEnsureHls(){
+  if(window.Hls) return Promise.resolve(window.Hls);
+  if(TV_REEL.hlsLoading) return TV_REEL.hlsLoading;
+  TV_REEL.hlsLoading = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
+    s.onload = () => resolve(window.Hls || null);
+    s.onerror = () => resolve(null);
+    document.head.appendChild(s);
+  });
+  return TV_REEL.hlsLoading;
+}
+
+function tvEnsureReelOverlay(){
+  let box = $('tvReelOverlay');
+  if(box) return box;
+  box = document.createElement('div');
+  box.id = 'tvReelOverlay';
+  box.className = 'tv-reel-overlay';
+  box.hidden = true;
+  box.innerHTML = `<div class="tv-reel-top"><button type="button" data-action="tvCloseReel">&larr; ${esc(t('common.back'))}</button><button type="button" data-action="tvToggleReelDrawer">Épisodes</button></div>
+    <div class="tv-reel-feed" id="tvReelFeed"></div>
+    <div class="tv-reel-bar"><button type="button" id="tvReelToggle">&#10074;&#10074;</button><input type="range" id="tvReelScrub" min="0" max="100" value="0" aria-label="Progress"><span class="tv-reel-time" id="tvReelTime">0:00</span></div>
+    <div class="tv-reel-drawer" id="tvReelDrawer" hidden></div>`;
+  document.body.appendChild(box);
+  $('tvReelToggle').addEventListener('click', () => {
+    const slide = document.querySelector(`.tv-reel-slide[data-ridx="${TV_REEL.idx}"]`);
+    const v = slide && slide.querySelector('video');
+    if(!v) return;
+    if(v.paused){ v.play().catch(() => {}); $('tvReelToggle').innerHTML = '&#10074;&#10074;'; }
+    else { v.pause(); $('tvReelToggle').innerHTML = '&#9654;'; }
+  });
+  $('tvReelScrub').addEventListener('input', (ev) => {
+    const slide = document.querySelector(`.tv-reel-slide[data-ridx="${TV_REEL.idx}"]`);
+    const v = slide && slide.querySelector('video');
+    if(v && v.duration) v.currentTime = (Number(ev.target.value) / 100) * v.duration;
+  });
+  $('tvReelFeed').addEventListener('click', (ev) => {
+    const v = ev.target && ev.target.closest('video');
+    if(!v) return;
+    if(v.paused){ v.play().catch(() => {}); $('tvReelToggle').innerHTML = '&#10074;&#10074;'; }
+    else { v.pause(); $('tvReelToggle').innerHTML = '&#9654;'; }
+  });
+  return box;
+}
+
+function tvFmtSec(s){
+  const n = Math.max(0, Math.floor(s || 0));
+  return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+}
+
+async function tvAttachReelVideo(idx){
+  if(TV_REEL.hls){ try{ TV_REEL.hls.destroy(); }catch(e){} TV_REEL.hls = null; }
+  document.querySelectorAll('.tv-reel-video').forEach((v) => { v.pause(); v.removeAttribute('src'); });
+  TV_REEL.idx = idx;
+  const item = TV_REEL.items[idx];
+  const slide = document.querySelector(`.tv-reel-slide[data-ridx="${idx}"]`);
+  if(!slide || !item || !item.stream_url) return;
+  const video = slide.querySelector('video');
+  video.muted = TV_REEL.muted;
+  const src = item.stream_url;
+  const isHls = item.source_kind === 'hls' || /\.m3u8(\?|$)/i.test(src) || src.indexOf('.ism/.m3u8') >= 0;
+  if(isHls && !video.canPlayType('application/vnd.apple.mpegurl')){
+    const HlsLib = await tvEnsureHls();
+    if(HlsLib && HlsLib.isSupported()){
+      TV_REEL.hls = new HlsLib({ enableWorker: true });
+      TV_REEL.hls.loadSource(src);
+      TV_REEL.hls.attachMedia(video);
+      TV_REEL.hls.on(HlsLib.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+    }else{
+      video.src = src;
+      video.play().catch(() => {});
+    }
+  }else{
+    video.src = src;
+    video.play().catch(() => {});
+  }
+  const scrub = $('tvReelScrub'), tm = $('tvReelTime');
+  video.ontimeupdate = () => {
+    const d = video.duration || 0;
+    if(scrub) scrub.value = d > 0 ? String(Math.round((video.currentTime / d) * 100)) : '0';
+    if(tm) tm.textContent = `${tvFmtSec(video.currentTime)} / ${tvFmtSec(d)}`;
+    if(video.currentTime > 5 && Math.floor(video.currentTime) % 10 === 0){
+      tvSaveProgress(Number(item.title_id || item.id), Number(item.episode_id || 0), Math.floor(video.currentTime), Math.floor(d));
+    }
+  };
+  if($('tvReelToggle')) $('tvReelToggle').innerHTML = '&#10074;&#10074;';
+}
+
+function tvOpenReelPlayer(items, startIdx, seriesMeta){
+  if(!items || !items.length) return toast(t('tv.err.load'));
+  TV_REEL.items = items;
+  TV_REEL.series = seriesMeta || null;
+  const box = tvEnsureReelOverlay();
+  const feed = $('tvReelFeed');
+  const drawer = $('tvReelDrawer');
+  drawer.hidden = true;
+  feed.innerHTML = items.map((r, idx) => `
+    <div class="tv-reel-slide" data-ridx="${idx}">
+      <div class="tv-reel-stage">
+        <img class="tv-reel-poster" src="${esc(tvImage(r.poster_url || r.poster))}" alt="">
+        <video class="tv-reel-video" playsinline webkit-playsinline preload="metadata" loop></video>
+        <div class="tv-reel-scrim"></div>
+        <div class="tv-reel-hud">
+          <span class="tv-badge accent">${esc(r.format_tag || 'Labo Surf TV')}</span>
+          <h3>${esc(r.title)}${r.episode_title && r.episode_title !== r.title ? ' · ' + esc(r.episode_title) : ''}</h3>
+          <p>${esc(r.synopsis || '')}</p>
+        </div>
+        <div class="tv-reel-side">
+          <button type="button" class="tv-reel-side-btn" data-action="tvToggleReelMute">${TV_REEL.muted ? 'Muet' : 'Son'}</button>
+          <button type="button" class="tv-reel-side-btn" data-action="tvReelOpenDetail" data-id="${Number(r.title_id || r.id)}">Infos</button>
+        </div>
+      </div>
+    </div>`).join('');
+  box.hidden = false;
+
+  drawer.innerHTML = items.length > 1
+    ? `<h3 style="margin:0 0 10px;font-size:14px">${esc((seriesMeta && seriesMeta.title) || 'Sélection 9:16')}</h3><div style="display:grid;gap:6px">${items.map((it, i) => `<button type="button" class="tv-episode" style="text-align:left;cursor:pointer" data-action="tvJumpReel" data-idx="${i}"><div class="tv-ep-head"><strong>${esc(it.episode_title || it.title)}</strong><span>${it.duration_min || 8}m</span></div></button>`).join('')}</div>`
+    : `<p class="tv-note">Glissez verticalement pour parcourir les récits.</p>`;
+
+  const slides = feed.querySelectorAll('.tv-reel-slide');
+  if(typeof IntersectionObserver === 'function'){
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if(en.isIntersecting && en.intersectionRatio >= 0.7){
+          const idx = Number(en.target.dataset.ridx);
+          if(idx !== TV_REEL.idx) tvAttachReelVideo(idx);
+        }
+      });
+    }, { root: feed, threshold: 0.72 });
+    slides.forEach((s) => obs.observe(s));
+  }
+  const target = feed.querySelector(`.tv-reel-slide[data-ridx="${startIdx || 0}"]`);
+  if(target && typeof target.scrollIntoView === 'function') target.scrollIntoView();
+  tvAttachReelVideo(startIdx || 0);
+}
+
+Actions.tvOpenReelsFeed = () => {
+  if(TV.reels && TV.reels.length) tvOpenReelPlayer(TV.reels, 0, null);
+};
+Actions.tvOpenReelTitle = async (el) => {
+  const id = Number(el.dataset.id);
+  const res = await apiFetch(tvPath('/api/v1/tv/series/' + id)).catch(() => null);
+  if(!res || !res.ok || !res.data || !res.data.series) return toast(t('tv.err.load'));
+  const s = res.data.series;
+  const eps = (s.episodes || []).filter((e) => e.stream_url);
+  if(!eps.length) return toast(t('tv.denied.plan'));
+  const items = eps.map((e) => ({
+    id: e.id || s.id, title_id: s.id, episode_id: e.id, title: s.title, episode_title: e.title,
+    synopsis: e.synopsis || s.synopsis, poster_url: s.poster_url, format_tag: s.format_tag,
+    duration_min: e.duration_min, stream_url: e.stream_url, source_kind: e.source_kind,
+  }));
+  tvOpenReelPlayer(items, 0, s);
+};
+Actions.tvCloseReel = () => {
+  if(TV_REEL.hls){ try{ TV_REEL.hls.destroy(); }catch(e){} TV_REEL.hls = null; }
+  document.querySelectorAll('.tv-reel-video').forEach((v) => { v.pause(); v.removeAttribute('src'); });
+  const box = $('tvReelOverlay');
+  if(box) box.hidden = true;
+};
+Actions.tvToggleReelDrawer = () => {
+  const d = $('tvReelDrawer');
+  if(d) d.hidden = !d.hidden;
+};
+Actions.tvToggleReelMute = () => {
+  TV_REEL.muted = !TV_REEL.muted;
+  document.querySelectorAll('.tv-reel-video').forEach((v) => { v.muted = TV_REEL.muted; });
+  document.querySelectorAll('[data-action="tvToggleReelMute"]').forEach((b) => { b.textContent = TV_REEL.muted ? 'Muet' : 'Son'; });
+};
+Actions.tvJumpReel = (el) => {
+  const d = $('tvReelDrawer'); if(d) d.hidden = true;
+  const idx = Number(el.dataset.idx) || 0;
+  const slide = document.querySelector(`.tv-reel-slide[data-ridx="${idx}"]`);
+  if(slide && typeof slide.scrollIntoView === 'function') slide.scrollIntoView({ behavior: 'smooth' });
+  tvAttachReelVideo(idx);
+};
+Actions.tvReelOpenDetail = (el) => {
+  Actions.tvCloseReel();
+  tvPush({ name: 'detail', id: Number(el.dataset.id) });
+};
