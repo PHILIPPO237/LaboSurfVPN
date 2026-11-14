@@ -73,3 +73,15 @@ test('Media3 reste compatible avec les SDK du projet', () => {
   assert.match(gradle, /compileSdk = 34/);
   assert.match(gradle, /androidx\.media3:media3-exoplayer:1\.4\.1/);
 });
+
+test('mode hors-ligne 9:16 : uniquement pour .mp4, masqué sur .m3u8, onglet Hors-ligne et stockage téléphone', () => {
+  assert.match(js, /function tvIsDownloadableMp4\(url, sourceKind\)/);
+  assert.match(js, /\\\.m3u8\(\\\?\|\$\)\/i\.test/);
+  assert.match(js, /⬇️ Télécharger/);
+  assert.match(js, /✅ Hors-ligne/);
+  assert.match(js, /📂 Hors-ligne/);
+  assert.match(js, /labosurf_tv_offline_db/);
+  assert.match(js, /labosurf-tv-offline-v1/);
+  assert.match(js, /tvPlayOfflineReel/);
+  assert.match(js, /tvDeleteOfflineItem/);
+});

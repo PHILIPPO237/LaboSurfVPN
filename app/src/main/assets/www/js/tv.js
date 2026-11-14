@@ -152,10 +152,17 @@ function tvApiFailure(res, fallback){
 Actions.tvRetry = () => tvRender();
 
 function tvFilterBarMarkup(){
-  const filters = TV.filters || [];
-  if(!filters.length) return '';
+  const raw = Array.isArray(TV.filters) ? TV.filters : [];
+  if(!raw.length && !TV_OFFLINE.list().length) return '';
+  const list = raw.filter((f) => f && f.slug !== 'offline');
+  if(!list.length) list.push({ slug: 'all', label: 'Tout' });
+  const offCount = TV_OFFLINE.list().length;
+  const offPill = { slug: 'offline', label: offCount ? `📂 Hors-ligne (${offCount})` : '📂 Hors-ligne' };
+  const allIdx = list.findIndex((f) => f.slug === 'all');
+  if(allIdx >= 0) list.splice(allIdx + 1, 0, offPill);
+  else list.unshift(offPill);
   const active = TV.activeFilter || 'all';
-  return `<div class="tv-filter-bar" role="tablist">${filters.map((f) =>
+  return `<div class="tv-filter-bar" role="tablist">${list.map((f) =>
     `<button class="tv-filter-pill ${active === f.slug ? 'active' : ''}" type="button" data-action="tvSelectFilter" data-slug="${esc(f.slug)}">${esc(f.label)}</button>`
   ).join('')}</div>`;
 }
@@ -165,15 +172,46 @@ Actions.tvSelectFilter = async (el) => {
   tvRenderHomeSection();
 };
 
+function tvRenderOfflineSection(host){
+  const target = host || $('tvHomeContent');
+  if(!target) return;
+  const items = TV_OFFLINE.list();
+  const totalBytes = items.reduce((sum, it) => sum + (Number(it.size) || 0), 0);
+  if(!items.length){
+    target.innerHTML = `<div class="tv-empty">${ic('download')}<p>Aucune vidéo enregistrée hors-ligne sur cet appareil. Touchez <strong>⬇️ Télécharger</strong> sur un film raconté ou épisode <code>.mp4</code> pour le regarder sans connexion.</p></div>`;
+    return;
+  }
+  target.innerHTML = `<div class="tv-offline-head"><span class="tv-note" style="margin:0"><strong>📂 ${items.length} vidéo(s) hors-ligne</strong> · ${esc(tvSize(totalBytes) || 'Stockage local')} (lecture 9:16 sans Internet)</span></div>
+    <div class="tv-grid">${items.map((it) => `<div class="tv-offline-card">
+      <button class="tv-card" type="button" data-action="tvPlayOfflineReel" data-offline-key="${esc(it.key)}">
+        <span class="tv-card-art">${it.poster_url ? `<img class="tv-card-img" src="${esc(tvImage(it.poster_url))}" alt="" loading="lazy" decoding="async">` : `<span class="tv-card-img tv-poster-none" aria-hidden="true">${ic('film')}</span>`}<span class="tv-card-grad"></span>
+        <span class="tv-card-badges"><span class="tv-badge accent">✅ Hors-ligne</span>${it.format_tag ? `<span class="tv-badge">${esc(it.format_tag)}</span>` : ''}</span>
+        <span class="tv-card-foot">${it.size ? `<span class="tv-card-ep">${esc(tvSize(it.size))}</span>` : ''}</span></span>
+        <span class="tv-card-title">${esc(it.title || 'Vidéo locale')}${it.episode_title && it.episode_title !== it.title ? ' · ' + esc(it.episode_title) : ''}</span>
+      </button>
+      <div class="tv-offline-card-actions">
+        <button class="btn btn-primary" type="button" data-action="tvPlayOfflineReel" data-offline-key="${esc(it.key)}">${ic('play')} Lire 9:16</button>
+        <button class="btn btn-ghost tv-offline-del" type="button" data-action="tvDeleteOfflineItem" data-offline-key="${esc(it.key)}" aria-label="Supprimer">${ic('trash')}</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
 async function tvRenderHomeSection(){
   const host = $('tvHomeContent');
   if(!host) return;
   const bar = $('tvFilterBarWrap');
   if(bar) bar.innerHTML = tvFilterBarMarkup();
   const active = TV.activeFilter || 'all';
+  if(active === 'offline'){
+    tvRenderOfflineSection(host);
+    return;
+  }
   if(active === 'all'){
     const b = TV.bootstrapData;
-    if(!b) return;
+    if(!b){
+      tvRenderOfflineSection(host);
+      return;
+    }
     const featured = b.featured || [], carousels = b.carousels || [];
     host.innerHTML = (featured[0] ? tvHero(featured[0]) : '') +
       carousels.map((c) => tvRow(c.title, c.items, c.slug)).join('');
@@ -216,6 +254,14 @@ async function tvRenderHome(){
   }
   try{ res = await apiFetch(tvPath('/api/tv/home')); }catch(e){ res = null; }
   if(!res || !res.ok){
+    const offlineItems = TV_OFFLINE.list();
+    if(offlineItems.length || (typeof navigator !== 'undefined' && navigator.onLine === false)){
+      TV.filters = [{ slug: 'all', label: 'Tout' }];
+      TV.activeFilter = 'offline';
+      tvBody().innerHTML = `<div id="tvFilterBarWrap">${tvFilterBarMarkup()}</div><div id="tvHomeContent"></div>`;
+      tvRenderOfflineSection($('tvHomeContent'));
+      return;
+    }
     tvBody().innerHTML = tvApiFailure(res, 'tv.err.load') + `<div class="tv-offline-link"><button class="btn btn-ghost" type="button" data-action="tvOpenDownloads">${ic('download')} ${esc(t('tv.downloads.title'))}</button></div>`;
     return;
   }
@@ -307,20 +353,38 @@ function tvDownloadButton(title, episodeId, media, canDownload){
 
 async function tvRenderDetail(view){
   tvBody().innerHTML = tvState('tv.loading');
-  const res = await apiFetch(tvPath('/api/tv/titles/' + Number(view.id))).catch(() => null);
+  const [res, v1Res] = await Promise.all([
+    apiFetch(tvPath('/api/tv/titles/' + Number(view.id))).catch(() => null),
+    apiFetch(tvPath('/api/v1/tv/series/' + Number(view.id))).catch(() => null),
+  ]);
   if(!res || !res.ok){ tvBody().innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
   const item = res.data.title;
+  const v1Series = (v1Res && v1Res.ok && v1Res.data && v1Res.data.series) || null;
+  TV.currentV1Series = v1Series;
   TV.kid = res.data.kid_mode || null;
   tvHeader();
   const art = tvImage(item.banner) || tvImage(item.poster);
   const position = item.progress ? Number(item.progress.position_sec) || 0 : 0;
   const denied = item.availability === 'restricted' ? `<p class="tv-denied">${ic('lock')} ${esc(t('tv.denied.plan'))}</p>` : '';
   const youtube = item.media && item.media.kind === 'youtube' ? `<p class="tv-note">${esc(t('tv.youtubeNote'))}</p>` : '';
+  const primaryEp = !item.has_seasons && v1Series && Array.isArray(v1Series.episodes) ? v1Series.episodes[0] : null;
+  const filmOfflineBtn = primaryEp ? tvOfflineButtonMarkup({
+    title_id: item.id,
+    episode_id: primaryEp.id || 0,
+    title: item.title,
+    episode_title: primaryEp.title || '',
+    poster_url: item.poster || v1Series.poster_url || '',
+    format_tag: (v1Series && v1Series.format_tag) || item.format_tag || 'Film Raconté',
+    duration_min: item.duration_min || primaryEp.duration_min || 12,
+    synopsis: item.synopsis || primaryEp.synopsis || '',
+    stream_url: primaryEp.download_url || primaryEp.stream_url || '',
+    source_kind: primaryEp.source_kind || '',
+  }, false) : '';
   tvBody().innerHTML = `<article class="tv-detail">
       <div class="tv-detail-art">${art ? `<img src="${esc(art)}" alt="" decoding="async">` : ''}<div class="tv-hero-shade"></div></div>
       <div class="tv-detail-head">${tvPosterMarkup(item, 'tv-detail-poster')}<div class="tv-detail-title"><h2>${esc(item.title)}</h2>
         <p class="tv-meta">${[item.year, item.country, item.age ? item.age + '+' : '', tvDuration(item.duration_min), t('tv.kind.' + item.kind), item.original_lang === 'fr' || item.original_lang === 'en' ? t('tv.lang.' + item.original_lang) : ''].filter(Boolean).map(esc).join(' · ')}</p></div></div>
-      <div class="tv-actions"><button class="btn btn-primary" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Vertical 9:16</button>${tvPlayButton(item.id, 0, item.can_stream, position)}${tvDownloadButton(item.id, 0, item.media, item.can_download)}
+      <div class="tv-actions"><button class="btn btn-primary" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Vertical 9:16</button>${tvPlayButton(item.id, 0, item.can_stream, position)}${filmOfflineBtn || tvDownloadButton(item.id, 0, item.media, item.can_download)}
         <button class="btn btn-ghost" type="button" data-action="tvFavorite" data-id="${Number(item.id)}" data-on="${item.favorite ? 1 : 0}" aria-pressed="${item.favorite ? 'true' : 'false'}">${ic(item.favorite ? 'check' : 'plus')} ${esc(t(item.favorite ? 'tv.inList' : 'tv.addList'))}</button></div>
       ${denied}${youtube}
       ${item.synopsis ? `<p class="tv-synopsis">${esc(item.synopsis)}</p>` : ''}
@@ -337,13 +401,31 @@ async function tvLoadEpisodes(titleId, seasonId){
   const res = await apiFetch(tvPath('/api/tv/seasons/' + Number(seasonId) + '/episodes')).catch(() => null);
   if(!res || !res.ok){ box.innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
   const episodes = res.data.episodes || [];
+  const v1Series = TV.currentV1Series || null;
+  const v1ById = {};
+  if(v1Series && Array.isArray(v1Series.episodes)){
+    v1Series.episodes.forEach((ve) => { v1ById[Number(ve.id)] = ve; });
+  }
   box.innerHTML = episodes.length ? episodes.map((e) => {
     const pct = e.progress_duration_sec > 0 ? Math.min(100, Math.round(e.position_sec * 100 / e.progress_duration_sec)) : 0;
+    const v1Ep = v1ById[Number(e.id)] || null;
+    const epOfflineBtn = v1Ep ? tvOfflineButtonMarkup({
+      title_id: titleId,
+      episode_id: e.id,
+      title: (v1Series && v1Series.title) || '',
+      episode_title: e.title || v1Ep.title || '',
+      poster_url: (v1Series && v1Series.poster_url) || '',
+      format_tag: (v1Series && v1Series.format_tag) || '',
+      duration_min: e.duration_min || v1Ep.duration_min || 10,
+      synopsis: e.synopsis || v1Ep.synopsis || '',
+      stream_url: v1Ep.download_url || v1Ep.stream_url || '',
+      source_kind: v1Ep.source_kind || '',
+    }, false) : '';
     return `<div class="tv-episode"><div class="tv-ep-head"><b>${Number(e.number)}. ${esc(e.title || t('tv.episode', { n: e.number }))}</b><span>${esc(tvDuration(e.duration_min))}</span></div>
       ${e.synopsis ? `<p>${esc(e.synopsis)}</p>` : ''}
       ${pct ? `<div class="tv-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>` : ''}
       ${tvTracks(e.media)}
-      <div class="tv-actions">${tvPlayButton(titleId, e.id, e.can_stream, e.position_sec)}${tvDownloadButton(titleId, e.id, e.media, e.can_download)}${e.can_stream || e.can_download ? '' : `<span class="tv-note">${esc(t('tv.denied.noMedia'))}</span>`}</div></div>`;
+      <div class="tv-actions">${tvPlayButton(titleId, e.id, e.can_stream, e.position_sec)}${epOfflineBtn || tvDownloadButton(titleId, e.id, e.media, e.can_download)}${e.can_stream || e.can_download || epOfflineBtn ? '' : `<span class="tv-note">${esc(t('tv.denied.noMedia'))}</span>`}</div></div>`;
   }).join('') : tvState('tv.episodes.none');
 }
 Actions.tvSeason = (el) => {
@@ -479,23 +561,35 @@ function tvDownloadsList(){
 }
 
 function tvRenderDownloads(){
-  const items = tvDownloadsList();
-  if(items === null){ tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t('tv.downloads.title'))}</h2>` + tvState('tv.downloads.appOnly'); return; }
-  const visible = TV.kid ? items.filter((d) => d.kid) : items;
+  const localItems = TV_OFFLINE.list();
+  const nativeItems = tvDownloadsList();
+  const visible = nativeItems === null ? [] : (TV.kid ? nativeItems.filter((d) => d.kid) : nativeItems);
   const storage = tvStorage();
-  const used = visible.reduce((sum, d) => sum + (Number(d.downloaded) || 0), 0);
+  const localBytes = localItems.reduce((sum, it) => sum + (Number(it.size) || 0), 0);
+  const nativeBytes = visible.reduce((sum, d) => sum + (Number(d.downloaded) || 0), 0);
+  const used = localBytes + nativeBytes;
   const status = (d) => d.expired ? t('tv.downloads.expired') : t('tv.downloads.status.' + d.status);
+  const localHtml = localItems.map((it) => `
+    <div class="tv-episode">
+      <div class="tv-ep-head"><b>${esc(it.title || 'Vidéo hors-ligne')}${it.episode_title && it.episode_title !== it.title ? ' · ' + esc(it.episode_title) : ''}</b><span>${esc(tvSize(it.size))}</span></div>
+      <p class="tv-note">✅ Hors-ligne · ${esc(it.format_tag || '9:16')}</p>
+      <div class="tv-actions">
+        <button class="btn btn-primary" type="button" data-action="tvPlayOfflineReel" data-offline-key="${esc(it.key)}">${ic('play')} Lire 9:16</button>
+        <button class="btn btn-ghost" type="button" data-action="tvDeleteOfflineItem" data-offline-key="${esc(it.key)}">${ic('trash')} ${esc(t('tv.downloads.delete'))}</button>
+      </div>
+    </div>`).join('');
+  const nativeHtml = visible.map((d) => {
+    const pct = d.size > 0 ? Math.min(100, Math.round(d.downloaded * 100 / d.size)) : 0;
+    const running = d.status === 'running' || d.status === 'pending' || d.status === 'paused';
+    return `<div class="tv-episode"><div class="tv-ep-head"><b>${esc(d.title)}${d.episode ? ' · ' + esc(d.episode) : ''}</b><span>${esc(tvSize(d.size))}</span></div>
+      <p class="tv-note">${esc(status(d))}${running && pct ? ' · ' + pct + ' %' : ''}</p>
+      ${running ? `<div class="tv-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>` : ''}
+      <div class="tv-actions">${d.status === 'done' && !d.expired ? `<button class="btn btn-primary" type="button" data-action="tvPlayOffline" data-id="${esc(d.id)}">${ic('play')} ${esc(t('tv.play'))}</button>` : ''}
+        <button class="btn btn-ghost" type="button" data-action="tvDeleteDownload" data-id="${esc(d.id)}">${ic('trash')} ${esc(t(running ? 'tv.downloads.cancel' : 'tv.downloads.delete'))}</button></div></div>`;
+  }).join('');
   tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t('tv.downloads.title'))}</h2>
-    ${storage ? `<p class="tv-note">${esc(t('tv.downloads.storage', { used: tvSize(used) || '0 ' + t('tv.unit.mb'), free: tvSize(storage.free) }))}</p>` : ''}
-    ${visible.length ? visible.map((d) => {
-      const pct = d.size > 0 ? Math.min(100, Math.round(d.downloaded * 100 / d.size)) : 0;
-      const running = d.status === 'running' || d.status === 'pending' || d.status === 'paused';
-      return `<div class="tv-episode"><div class="tv-ep-head"><b>${esc(d.title)}${d.episode ? ' · ' + esc(d.episode) : ''}</b><span>${esc(tvSize(d.size))}</span></div>
-        <p class="tv-note">${esc(status(d))}${running && pct ? ' · ' + pct + ' %' : ''}</p>
-        ${running ? `<div class="tv-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>` : ''}
-        <div class="tv-actions">${d.status === 'done' && !d.expired ? `<button class="btn btn-primary" type="button" data-action="tvPlayOffline" data-id="${esc(d.id)}">${ic('play')} ${esc(t('tv.play'))}</button>` : ''}
-          <button class="btn btn-ghost" type="button" data-action="tvDeleteDownload" data-id="${esc(d.id)}">${ic('trash')} ${esc(t(running ? 'tv.downloads.cancel' : 'tv.downloads.delete'))}</button></div></div>`;
-    }).join('') : tvState('tv.downloads.empty')}`;
+    ${storage ? `<p class="tv-note">${esc(t('tv.downloads.storage', { used: tvSize(used) || '0 ' + t('tv.unit.mb'), free: tvSize(storage.free) }))}</p>` : (localBytes ? `<p class="tv-note">Espace utilisé hors-ligne : ${esc(tvSize(localBytes))}</p>` : '')}
+    ${(localHtml || nativeHtml) ? (localHtml + nativeHtml) : tvState('tv.downloads.empty')}`;
   if(visible.some((d) => d.status === 'running' || d.status === 'pending' || d.status === 'paused')) TV.pollTimer = setTimeout(() => { if(currentScreen === 'tv' && TV.stack[TV.stack.length - 1].name === 'downloads') tvRenderDownloads(); }, 1500);
 }
 Actions.tvPlayOffline = (el) => {
@@ -686,11 +780,21 @@ async function tvAttachReelVideo(idx){
   TV_REEL.idx = idx;
   const item = TV_REEL.items[idx];
   const slide = document.querySelector(`.tv-reel-slide[data-ridx="${idx}"]`);
-  if(!slide || !item || !item.stream_url) return;
+  if(!slide || !item) return;
+  const offlineKey = item.offline_key || tvOfflineKey(item.title_id || item.id, item.episode_id || 0);
+  let localUrl = item.blobUrl || TV_OFFLINE.blobUrls[offlineKey] || '';
+  if(!localUrl && TV_OFFLINE.getMeta(offlineKey)){
+    const blob = await tvOfflineGetBlob(offlineKey).catch(() => null);
+    if(blob){
+      localUrl = URL.createObjectURL(blob);
+      TV_OFFLINE.blobUrls[offlineKey] = localUrl;
+    }
+  }
+  const src = localUrl || item.stream_url || '';
+  if(!src) return;
   const video = slide.querySelector('video');
   video.muted = TV_REEL.muted;
-  const src = item.stream_url;
-  const isHls = item.source_kind === 'hls' || /\.m3u8(\?|$)/i.test(src) || src.indexOf('.ism/.m3u8') >= 0;
+  const isHls = !localUrl && (item.source_kind === 'hls' || /\.m3u8(\?|$)/i.test(src) || src.indexOf('.ism/.m3u8') >= 0);
   if(isHls && !video.canPlayType('application/vnd.apple.mpegurl')){
     const HlsLib = await tvEnsureHls();
     if(HlsLib && HlsLib.isSupported()){
@@ -739,6 +843,7 @@ function tvOpenReelPlayer(items, startIdx, seriesMeta){
         </div>
         <div class="tv-reel-side">
           <button type="button" class="tv-reel-side-btn" data-action="tvToggleReelMute">${TV_REEL.muted ? 'Muet' : 'Son'}</button>
+          ${tvOfflineButtonMarkup(r, true)}
           <button type="button" class="tv-reel-side-btn" data-action="tvReelOpenDetail" data-id="${Number(r.title_id || r.id)}">Infos</button>
         </div>
       </div>
@@ -779,7 +884,7 @@ Actions.tvOpenReelTitle = async (el) => {
   const items = eps.map((e) => ({
     id: e.id || s.id, title_id: s.id, episode_id: e.id, title: s.title, episode_title: e.title,
     synopsis: e.synopsis || s.synopsis, poster_url: s.poster_url, format_tag: s.format_tag,
-    duration_min: e.duration_min, stream_url: e.stream_url, source_kind: e.source_kind,
+    duration_min: e.duration_min, stream_url: e.stream_url, download_url: e.download_url, source_kind: e.source_kind,
   }));
   tvOpenReelPlayer(items, 0, s);
 };
@@ -808,4 +913,283 @@ Actions.tvJumpReel = (el) => {
 Actions.tvReelOpenDetail = (el) => {
   Actions.tvCloseReel();
   tvPush({ name: 'detail', id: Number(el.dataset.id) });
+};
+
+// -------------------- Stockage local hors-ligne (téléphone, zéro charge VPS) --------------------
+const TV_OFFLINE_META_KEY = 'labosurf_tv_offline_meta_v1';
+const TV_OFFLINE_DB_NAME = 'labosurf_tv_offline_db';
+const TV_OFFLINE_STORE = 'videos';
+const TV_OFFLINE_CACHE = 'labosurf-tv-offline-v1';
+
+const TV_OFFLINE = {
+  progress: {},
+  blobUrls: {},
+  getMap(){
+    try{ return JSON.parse(localStorage.getItem(TV_OFFLINE_META_KEY) || '{}') || {}; }catch(e){ return {}; }
+  },
+  setMap(map){
+    try{ localStorage.setItem(TV_OFFLINE_META_KEY, JSON.stringify(map || {})); }catch(e){}
+  },
+  getMeta(key){ return this.getMap()[key] || null; },
+  list(){
+    return Object.values(this.getMap()).sort((a, b) => (b.saved_at || 0) - (a.saved_at || 0));
+  },
+  saveMeta(key, meta){
+    const map = this.getMap();
+    map[key] = meta;
+    this.setMap(map);
+  },
+  removeMeta(key){
+    const map = this.getMap();
+    delete map[key];
+    this.setMap(map);
+  },
+};
+
+function tvOfflineKey(titleId, episodeId){
+  return String(Number(titleId) || 0) + '_' + String(Number(episodeId) || 0);
+}
+
+function tvIsDownloadableMp4(url, sourceKind){
+  const s = String(url || '').trim();
+  const k = String(sourceKind || '').toLowerCase();
+  if(!s || k === 'hls' || k === 'youtube' || /\.m3u8(\?|$)/i.test(s) || s.indexOf('.ism/.m3u8') >= 0) return false;
+  return /^https:\/\//i.test(s) && (/\.mp4(\?|$)/i.test(s) || k === 'file');
+}
+
+function tvOfflineOpenDb(){
+  return new Promise((resolve, reject) => {
+    if(typeof indexedDB === 'undefined') return reject(new Error('no_idb'));
+    const req = indexedDB.open(TV_OFFLINE_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains(TV_OFFLINE_STORE)) db.createObjectStore(TV_OFFLINE_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error('idb_err'));
+  });
+}
+
+async function tvOfflinePutBlob(key, blob){
+  if(typeof caches !== 'undefined'){
+    try{
+      const c = await caches.open(TV_OFFLINE_CACHE);
+      await c.put('https://labosurf.local/tv-offline/' + encodeURIComponent(key), new Response(blob, { headers: { 'Content-Type': blob.type || 'video/mp4' } }));
+    }catch(e){}
+  }
+  try{
+    const db = await tvOfflineOpenDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(TV_OFFLINE_STORE, 'readwrite');
+      tx.objectStore(TV_OFFLINE_STORE).put(blob, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }catch(e){}
+}
+
+async function tvOfflineGetBlob(key){
+  try{
+    const db = await tvOfflineOpenDb();
+    const blob = await new Promise((resolve) => {
+      const tx = db.transaction(TV_OFFLINE_STORE, 'readonly');
+      const r = tx.objectStore(TV_OFFLINE_STORE).get(key);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => resolve(null);
+    });
+    if(blob) return blob;
+  }catch(e){}
+  if(typeof caches !== 'undefined'){
+    try{
+      const c = await caches.open(TV_OFFLINE_CACHE);
+      const match = await c.match('https://labosurf.local/tv-offline/' + encodeURIComponent(key));
+      if(match) return await match.blob();
+    }catch(e){}
+  }
+  return null;
+}
+
+async function tvOfflineDeleteBlob(key){
+  if(TV_OFFLINE.blobUrls[key]){
+    try{ URL.revokeObjectURL(TV_OFFLINE.blobUrls[key]); }catch(e){}
+    delete TV_OFFLINE.blobUrls[key];
+  }
+  if(typeof caches !== 'undefined'){
+    try{
+      const c = await caches.open(TV_OFFLINE_CACHE);
+      await c.delete('https://labosurf.local/tv-offline/' + encodeURIComponent(key));
+    }catch(e){}
+  }
+  try{
+    const db = await tvOfflineOpenDb();
+    await new Promise((resolve) => {
+      const tx = db.transaction(TV_OFFLINE_STORE, 'readwrite');
+      tx.objectStore(TV_OFFLINE_STORE).delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  }catch(e){}
+}
+
+function tvOfflineButtonMarkup(meta, compact){
+  if(!meta) return '';
+  const url = String(meta.download_url || meta.stream_url || '').trim();
+  const kind = meta.source_kind || '';
+  if(!tvIsDownloadableMp4(url, kind)) return '';
+  const titleId = Number(meta.title_id || meta.id || 0);
+  const episodeId = Number(meta.episode_id || 0);
+  const key = tvOfflineKey(titleId, episodeId);
+  const cls = compact ? 'tv-reel-side-btn tv-offline-btn' : 'btn btn-ghost tv-offline-btn';
+  if(TV_OFFLINE.getMeta(key)){
+    return `<button type="button" class="${cls} is-done" data-action="tvOpenOfflineTab" data-offline-key="${esc(key)}">✅ Hors-ligne</button>`;
+  }
+  if(TV_OFFLINE.progress[key] != null){
+    return `<button type="button" class="${cls} is-busy" disabled data-offline-key="${esc(key)}">⏳ ${Number(TV_OFFLINE.progress[key])}%</button>`;
+  }
+  return `<button type="button" class="${cls}" data-action="tvOfflineDownload" data-offline-key="${esc(key)}" data-title-id="${titleId}" data-episode-id="${episodeId}" data-title="${esc(meta.title || '')}" data-episode-title="${esc(meta.episode_title || '')}" data-poster="${esc(meta.poster_url || meta.poster || '')}" data-format-tag="${esc(meta.format_tag || 'Film Raconté')}" data-duration="${Number(meta.duration_min || 10)}" data-synopsis="${esc(String(meta.synopsis || '').slice(0, 220))}" data-stream-url="${esc(url)}" data-source-kind="${esc(kind || 'file')}">⬇️ Télécharger</button>`;
+}
+
+function tvSyncOfflineButtons(key){
+  const done = !!TV_OFFLINE.getMeta(key);
+  const pct = TV_OFFLINE.progress[key];
+  document.querySelectorAll('[data-offline-key]').forEach((btn) => {
+    if(btn.dataset.offlineKey !== key || (btn.dataset.action !== 'tvOfflineDownload' && btn.dataset.action !== 'tvOpenOfflineTab' && !btn.classList.contains('tv-offline-btn'))) return;
+    if(done){
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      btn.classList.add('is-done');
+      btn.dataset.action = 'tvOpenOfflineTab';
+      btn.textContent = '✅ Hors-ligne';
+    }else if(pct != null){
+      btn.disabled = true;
+      btn.classList.remove('is-done');
+      btn.classList.add('is-busy');
+      btn.textContent = `⏳ ${Number(pct)}%`;
+    }else{
+      btn.disabled = false;
+      btn.classList.remove('is-busy', 'is-done');
+      btn.dataset.action = 'tvOfflineDownload';
+      btn.textContent = '⬇️ Télécharger';
+    }
+  });
+  const bar = $('tvFilterBarWrap');
+  if(bar) bar.innerHTML = tvFilterBarMarkup();
+}
+
+Actions.tvOfflineDownload = async (el) => {
+  const key = el.dataset.offlineKey;
+  const streamUrl = el.dataset.streamUrl || '';
+  const sourceKind = el.dataset.sourceKind || 'file';
+  if(!key || !tvIsDownloadableMp4(streamUrl, sourceKind)){
+    toast('Ce flux en direct (.m3u8) ne peut pas être enregistré hors-ligne.', 'warning');
+    return;
+  }
+  if(TV_OFFLINE.getMeta(key)){ Actions.tvOpenOfflineTab(); return; }
+  if(TV_OFFLINE.progress[key] != null) return;
+
+  TV_OFFLINE.progress[key] = 0;
+  tvSyncOfflineButtons(key);
+  try{
+    const resp = await fetch(streamUrl);
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const total = Number(resp.headers.get('content-length') || 0);
+    let blob;
+    if(resp.body && typeof resp.body.getReader === 'function'){
+      const reader = resp.body.getReader();
+      const chunks = [];
+      let received = 0;
+      let lastPct = -1;
+      for(;;){
+        const step = await reader.read();
+        if(step.done) break;
+        if(step.value){
+          chunks.push(step.value);
+          received += step.value.byteLength;
+          const pct = total > 0 ? Math.min(99, Math.round((received * 100) / total)) : Math.min(95, Math.max(5, Math.round(received / 131072)));
+          if(pct !== lastPct){
+            lastPct = pct;
+            TV_OFFLINE.progress[key] = pct;
+            tvSyncOfflineButtons(key);
+          }
+        }
+      }
+      blob = new Blob(chunks, { type: resp.headers.get('content-type') || 'video/mp4' });
+    }else{
+      TV_OFFLINE.progress[key] = 50;
+      tvSyncOfflineButtons(key);
+      blob = await resp.blob();
+    }
+    await tvOfflinePutBlob(key, blob);
+    TV_OFFLINE.saveMeta(key, {
+      key,
+      title_id: Number(el.dataset.titleId) || 0,
+      episode_id: Number(el.dataset.episodeId) || 0,
+      title: el.dataset.title || 'Labo Surf TV',
+      episode_title: el.dataset.episodeTitle || '',
+      poster_url: el.dataset.poster || '',
+      format_tag: el.dataset.formatTag || 'Film Raconté',
+      duration_min: Number(el.dataset.duration) || 10,
+      synopsis: el.dataset.synopsis || '',
+      stream_url: streamUrl,
+      source_kind: 'file',
+      size: blob.size || 0,
+      saved_at: Date.now(),
+    });
+    delete TV_OFFLINE.progress[key];
+    tvSyncOfflineButtons(key);
+    toast('Vidéo enregistrée ✅ Hors-ligne !', 'success');
+  }catch(e){
+    delete TV_OFFLINE.progress[key];
+    tvSyncOfflineButtons(key);
+    toast('Téléchargement impossible pour cette source.', 'error');
+  }
+};
+
+Actions.tvOpenOfflineTab = () => {
+  Actions.tvCloseReel();
+  TV.activeFilter = 'offline';
+  TV.stack = [{ name: 'home' }];
+  if($('tvHomeContent') && $('tvFilterBarWrap')){
+    tvRenderHomeSection();
+  }else{
+    tvRender();
+  }
+};
+
+Actions.tvPlayOfflineReel = (el) => {
+  const key = el.dataset.offlineKey;
+  const list = TV_OFFLINE.list();
+  if(!list.length) return;
+  const idx = Math.max(0, list.findIndex((it) => it.key === key));
+  const items = list.map((it) => ({
+    id: it.episode_id || it.title_id,
+    title_id: it.title_id,
+    episode_id: it.episode_id,
+    offline_key: it.key,
+    title: it.title,
+    episode_title: it.episode_title || it.title,
+    synopsis: it.synopsis || 'Lecture locale 9:16 hors-ligne',
+    poster_url: it.poster_url,
+    format_tag: it.format_tag || 'Hors-ligne',
+    duration_min: it.duration_min || 10,
+    stream_url: it.stream_url,
+    source_kind: 'file',
+  }));
+  tvOpenReelPlayer(items, idx, { title: '📂 Hors-ligne' });
+};
+
+Actions.tvDeleteOfflineItem = async (el) => {
+  const key = el.dataset.offlineKey;
+  if(!key) return;
+  await tvOfflineDeleteBlob(key);
+  TV_OFFLINE.removeMeta(key);
+  const bar = $('tvFilterBarWrap');
+  if(bar) bar.innerHTML = tvFilterBarMarkup();
+  if($('tvHomeContent') && TV.activeFilter === 'offline'){
+    tvRenderOfflineSection($('tvHomeContent'));
+  }else{
+    const view = TV.stack[TV.stack.length - 1];
+    if(view && view.name === 'downloads') tvRenderDownloads();
+  }
+  toast('Vidéo supprimée du téléphone.', 'success');
 };

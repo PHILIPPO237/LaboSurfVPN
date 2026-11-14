@@ -142,3 +142,14 @@
 .tv-reel-time{ font-size:11px; color:#d8e2dc; font-variant-numeric:tabular-nums; }
 .tv-reel-drawer{ position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:99; width:min(520px, 100vw); max-height:62dvh; overflow-y:auto; background:#0b1310; border-top:1px solid rgba(255,255,255,.14); border-radius:20px 20px 0 0; padding:16px; }
 .tv-reel-drawer[hidden]{ display:none; }
+
+/* Mode Hors-ligne & bouton téléchargement direct .mp4 */
+.tv-offline-btn{ display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+.tv-offline-btn.is-done{ border-color:rgba(57,255,20,.65); background:rgba(57,255,20,.14); color:#39ff14; font-weight:800; }
+.tv-offline-btn.is-busy{ border-color:rgba(229,172,66,.65); background:rgba(229,172,66,.12); color:#ffd27a; cursor:wait; }
+.tv-reel-side-btn.tv-offline-btn{ width:auto; min-width:56px; max-width:98px; height:auto; min-height:36px; padding:6px 9px; border-radius:999px; font-size:10px; line-height:1.15; text-align:center; white-space:nowrap; }
+.tv-offline-head{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.tv-offline-card{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.tv-offline-card-actions{ display:flex; gap:6px; align-items:center; }
+.tv-offline-card-actions .btn{ flex:1; padding:6px 8px; font-size:11px; justify-content:center; }
+.tv-offline-del{ flex:0 0 auto !important; padding:6px 9px !important; border-color:rgba(255,92,68,.45) !important; color:#ff8d7a !important; }
