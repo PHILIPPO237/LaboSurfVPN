@@ -548,6 +548,10 @@ Actions.register = async () => {
     authToken = reg.data.token;
     authExpiresAt = sessionExpiryFrom(reg.data);
     toast(t('acc.created'), 'success');
+    if(reg.data.country_availability){
+      const ca = reg.data.country_availability;
+      toast(`${ca.official_count || 0} offre(s) officielle(s) et ${ca.beta_count || 0} Bêta disponibles pour ${ca.country_name || ca.country_code}`, 'info', 5500);
+    }
     // Photo facultative : envoyée avec l'API existante (POST /api/user/profile/avatar-upload), jeton du compte tout juste créé.
     // Un échec ne remet pas en cause le compte : il est déjà créé, la photo pourra être ajoutée depuis le profil.
     if(Account.regPhoto){
@@ -1160,4 +1164,37 @@ document.addEventListener('langchange', () => {
   // Messages d'erreur de formulaire : transitoires, effacés au changement de langue (jamais affichés dans la mauvaise langue)
   document.querySelectorAll('.form-error.show').forEach((el) => el.classList.remove('show'));
 });
+
+Actions.redeemBetaToken = async (rawToken) => {
+  const tok = String(rawToken || '').trim().toUpperCase();
+  if(!tok){ toast('Entrez un Token Bêta valide.', 'warning'); return null; }
+  const res = await apiFetch('/api/v1/beta/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ token: tok }),
+  });
+  if(!res.ok || !res.data || res.data.status !== 'ok'){
+    toast(apiMessage(res, 'Token Bêta invalide ou expiré.'), 'warning');
+    return null;
+  }
+  toast('Token Bêta activé ! Configurations [TEST BÊTA] débloquées.', 'success');
+  if(typeof loadServers === 'function') await loadServers();
+  return res.data;
+};
+
+Actions.transferDevice = async (newDeviceId, newDeviceName, oldDeviceId) => {
+  const res = await apiFetch('/api/v1/devices/transfer', {
+    method: 'POST',
+    body: JSON.stringify({
+      new_device_id: newDeviceId,
+      new_device_name: newDeviceName || 'Appareil LaboSurf',
+      old_device_id: oldDeviceId || '',
+    }),
+  });
+  if(!res.ok || !res.data || res.data.status !== 'ok'){
+    toast(apiMessage(res, 'Transfert d’appareil refusé.'), 'warning');
+    return null;
+  }
+  toast('Appareil transféré avec succès.', 'success');
+  return res.data;
+};
 

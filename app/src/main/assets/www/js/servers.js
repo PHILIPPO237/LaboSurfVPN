@@ -258,16 +258,20 @@ async function loadProfiles(){
     Profiles.state = 'ready';
   }
   try{
-    const up = await apiFetch('/api/user/profiles');
-    if(up.ok && up.data && up.data.status === 'ok' && Array.isArray(up.data.profiles) && up.data.profiles.length){
-      const mapped = up.data.profiles.map((x) => ({
+    const up = await apiFetch('/api/v1/client/configs');
+    const items = (up.ok && up.data && up.data.status === 'ok') ? (up.data.configs || up.data.profiles) : null;
+    if(Array.isArray(items) && items.length){
+      const mapped = items.map((x) => ({
         id: x.id,
-        publicLabel: x.public_label || x.name || '',
+        publicLabel: (x.badge ? x.badge + ' ' : '') + (x.display_name || x.public_label || x.name || ''),
         publicSubtitle: x.public_subtitle || '🛡️ Stable',
-        displayName: x.public_label || x.name || '',
-        operatorName: x.operator_name || '',
+        displayName: (x.badge ? x.badge + ' ' : '') + (x.display_name || x.public_label || x.name || ''),
+        operatorName: x.operator || x.operator_name || '',
+        badge: x.badge || '',
+        status: x.status || 'published',
         vlessUri: x.vless_uri || '',
         clientJson: x.client_json || null,
+        sshCredentials: x.ssh_credentials || null,
         health: 'ok',
         isUserProfile: true,
       }));
