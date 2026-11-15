@@ -158,5 +158,5 @@ jobs:
             gh release upload "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --clobber || true
             gh release edit "$RELEASE_TAG" --draft=false --title "Orbit $RELEASE_TAG" || true
           else
-            gh release create "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --verify-tag --title "Orbit $RELEASE_TAG" --notes "Release officielle Android Orbit $RELEASE_TAG (build 261109001) avec Auto-Update in-app et mode Offline-First."
+            gh release create "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --verify-tag --title "Orbit $RELEASE_TAG" --notes "Release officielle Android Orbit $RELEASE_TAG (build 261116001) avec Auto-Update in-app et mode Offline-First."
           fi
