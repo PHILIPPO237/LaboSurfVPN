@@ -635,17 +635,22 @@
 
 
 /* ==========================================================================
-   ALIGNEMENT BORD À BORD STRICT DU CADRE PUBLICITAIRE (ACCUEIL)
-   Le cadre publicitaire touche la bordure gauche ET la bordure droite de l'écran
-   sans aucun espace résiduel (width: 100%, marge négative annulant le padding du parent).
-   La signature en dessous reste dans le flux normal, parfaitement centrée et intacte.
+   CADRE PUBLICITAIRE CONTENU ET BORDURE VISIBLE (ACCUEIL)
+   Conteneur strictement borné avec marges horizontales symétriques,
+   coins arrondis propres et bordure nette harmonisée au thème LaboSurfVPN.
    ========================================================================== */
-#app #screen-home .home-foot,
-#app #screen-home .home-foot.is-inset{
-  margin-left: calc(-1 * var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px))) !important;
-  margin-right: calc(-1 * var(--home-right-pad, var(--sp-4))) !important;
-  width: calc(100% + var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px)) + var(--home-right-pad, var(--sp-4))) !important;
+#app #screen-home .home-foot{
+  margin: 12px calc(-1 * var(--home-right-pad, var(--sp-4)) + 16px) 8px calc(-1 * var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px)) + 16px) !important;
+  width: calc(100% + var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px)) + var(--home-right-pad, var(--sp-4)) - 32px) !important;
   max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+#app #screen-home .home-foot.is-inset{
+  margin: 10px 0 8px 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
   box-sizing: border-box !important;
@@ -653,11 +658,14 @@
 
 #app #screen-home .home-foot .banner-card{
   width: 100% !important;
+  max-width: 100% !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-radius: 0 !important;
+  border: 1.5px solid var(--accent-color, var(--accent, var(--brand, #0af072))) !important;
+  border-radius: 14px !important;
+  background: var(--surface-2, rgba(10, 25, 18, 0.92)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.52), 0 0 18px var(--brand-soft, rgba(10, 240, 114, 0.14)) !important;
+  overflow: hidden !important;
   box-sizing: border-box !important;
 }
 

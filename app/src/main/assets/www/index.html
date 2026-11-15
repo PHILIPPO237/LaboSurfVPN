@@ -304,16 +304,19 @@
     <!-- ===================== SERVEURS ===================== -->
     <!-- ===================== LABOSURF TV ===================== -->
     <section class="screen" id="screen-tv" aria-labelledby="tvTitle">
-      <div class="screen-head"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async">
-        <div class="head-title"><button class="icon-btn back-btn" type="button" data-action="tvBack" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="tvTitle" data-i18n="tv.title"></h1></div>
+      <div class="screen-head tv-topbar"><img class="head-logo" src="img/official-horizontal.png" alt="" aria-hidden="true" decoding="async" hidden>
+        <div class="head-title"><button class="icon-btn back-btn" type="button" data-action="tvBack" data-i18n-attr="aria-label:common.back"><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"/></svg></button><h1 id="tvTitle" data-i18n="tv.title">Labo Surf <span class="tv-brand-accent">TV</span></h1></div>
         <div class="tv-head-actions">
-          <button class="icon-btn" type="button" data-action="tvOpenSearch" data-i18n-attr="aria-label:tv.search.action;title:tv.search.action"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
-          <button class="icon-btn" type="button" data-action="tvOpenList" data-i18n-attr="aria-label:tv.row.myList;title:tv.row.myList"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></button>
-          <button class="icon-btn" type="button" id="tvHistoryBtn" data-action="tvOpenHistory" data-i18n-attr="aria-label:tv.history.title;title:tv.history.title"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></button>
-          <button class="icon-btn" type="button" data-action="tvOpenDownloads" data-i18n-attr="aria-label:tv.downloads.title;title:tv.downloads.title"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg></button>
-          <button class="icon-btn" type="button" data-action="tvOpenSettings" data-i18n-attr="aria-label:tv.pref.title;title:tv.pref.title"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg></button>
-          <button class="icon-btn" type="button" id="tvKidsBtn" data-action="tvOpenKids" data-i18n-attr="aria-label:tv.kids.title;title:tv.kids.title"><svg class="ic" aria-hidden="true"><use href="#i-child"/></svg></button>
-          <button class="icon-btn" type="button" id="tvExitKidsBtn" data-action="tvExitKids" hidden data-i18n-attr="aria-label:tv.kids.exit;title:tv.kids.exit"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></button>
+          <button class="icon-btn tv-circle-btn" type="button" data-action="tvOpenSearch" data-i18n-attr="aria-label:tv.search.action;title:tv.search.action"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button class="icon-btn tv-circle-btn" type="button" id="tvExitKidsBtn" data-action="tvExitKids" hidden data-i18n-attr="aria-label:tv.kids.exit;title:tv.kids.exit"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></button>
+          <button class="icon-btn tv-circle-btn tv-bell-btn" type="button" id="tvBellBtn" data-action="tvToggleQuickMenu" aria-label="Centre Labo Surf TV" title="Centre Labo Surf TV"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><span class="tv-bell-dot" id="tvBellDot" hidden></span></button>
+          <div class="tv-quick-menu" id="tvQuickMenu" hidden>
+            <button class="tv-qm-item" type="button" data-action="tvOpenDownloads"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span>Hors-ligne</span></button>
+            <button class="tv-qm-item" type="button" data-action="tvOpenList"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg><span>Ma liste</span></button>
+            <button class="tv-qm-item" type="button" id="tvHistoryBtn" data-action="tvOpenHistory" data-i18n-attr="aria-label:tv.history.title;title:tv.history.title"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><span>Historique</span></button>
+            <button class="tv-qm-item" type="button" data-action="tvOpenSettings"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg><span>Préférences</span></button>
+            <button class="tv-qm-item" type="button" id="tvKidsBtn" data-action="tvOpenKids" data-i18n-attr="aria-label:tv.kids.title;title:tv.kids.title"><svg class="ic" aria-hidden="true"><use href="#i-child"/></svg><span>Mode Enfant</span></button>
+          </div>
         </div>
       </div>
       <div id="tvBody"></div>

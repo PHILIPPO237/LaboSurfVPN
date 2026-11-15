@@ -53,12 +53,29 @@ function tvLanguageName(code){
   return label === key ? String(code || '') : label;
 }
 
-function tvPush(view){ TV.stack.push(view); tvRender(); }
+function tvClosePopups(){
+  const qm = $('tvQuickMenu');
+  if(qm) qm.hidden = true;
+}
+function tvPush(view){ tvClosePopups(); TV.stack.push(view); tvRender(); }
 function tvBack(){
+  tvClosePopups();
+  const ro = $('tvReelOverlay');
+  if(ro && !ro.hidden){ Actions.tvCloseReel(); return true; }
   if(TV.stack.length > 1){ TV.stack.pop(); tvRender(); return true; }
   return false;
 }
 Actions.tvBack = () => { if(!tvBack()) showScreen('home'); };
+Actions.tvToggleQuickMenu = () => {
+  const qm = $('tvQuickMenu');
+  if(qm) qm.hidden = !qm.hidden;
+};
+document.addEventListener('click', (ev) => {
+  const qm = $('tvQuickMenu');
+  if(!qm || qm.hidden) return;
+  if(ev.target && (ev.target.closest('#tvQuickMenu') || ev.target.closest('[data-action="tvToggleQuickMenu"]'))) return;
+  qm.hidden = true;
+});
 Actions.tvOpenSearch = () => tvPush({ name: 'search', query: '' });
 Actions.tvOpenList = () => tvPush({ name: 'list', key: 'favorites' });
 Actions.tvOpenHistory = () => tvPush({ name: 'list', key: 'history' });
@@ -80,10 +97,17 @@ function tvState(key, cls){ return `<div class="tv-state ${cls || ''}" role="sta
 function tvHeader(){
   const kid = !!TV.kid;
   document.documentElement.classList.toggle('tv-kids', kid && currentScreen === 'tv');
-  $('tvTitle').textContent = t(kid ? 'tv.kids.title' : 'tv.title');
-  $('tvExitKidsBtn').hidden = !kid;
-  $('tvKidsBtn').hidden = kid;
-  $('tvHistoryBtn').hidden = kid;
+  if($('screen-tv')) $('screen-tv').classList.toggle('is-kids', kid);
+  const titleEl = $('tvTitle');
+  if(titleEl){
+    if(kid) titleEl.textContent = t('tv.kids.title');
+    else titleEl.innerHTML = 'Labo Surf <span class="tv-brand-accent">TV</span>';
+  }
+  if($('tvExitKidsBtn')) $('tvExitKidsBtn').hidden = !kid;
+  if($('tvKidsBtn')) $('tvKidsBtn').hidden = kid;
+  if($('tvHistoryBtn')) $('tvHistoryBtn').hidden = kid;
+  if($('tvBellDot')) $('tvBellDot').hidden = !TV_OFFLINE.list().length;
+  tvClosePopups();
 }
 
 async function tvRender(){
@@ -105,23 +129,100 @@ function tvPosterMarkup(item, cls){
   return url ? `<img class="${cls}" src="${esc(url)}" alt="" loading="lazy" decoding="async">` : `<span class="${cls} tv-poster-none" aria-hidden="true">${ic('film')}</span>`;
 }
 
-function tvCard(item){
+function tvFormatRating(val){
+  const n = Number(val);
+  return (n > 0 ? n : 8.4).toFixed(1).replace('.', ',');
+}
+
+function tvFormatViews(val){
+  const n = Math.max(1, Math.round(Number(val) || 1));
+  if(n === 1) return '1 vue';
+  if(n >= 1000) return (n / 1000).toFixed(1).replace('.', ',') + 'k vues';
+  return n + ' vues';
+}
+
+function tvLangBadge(item){
+  const badges = Array.isArray(item && item.badges) ? item.badges : [];
+  const joined = [badges.join(' '), item && item.format_tag, item && item.title].join(' ').toUpperCase();
+  if(joined.indexOf('VOSTFR') >= 0) return 'VOSTFR';
+  if(joined.indexOf('VF') >= 0 || (item && String(item.original_lang || '').toLowerCase() === 'fr')) return 'VF';
+  return badges[0] || item && item.format_tag || 'VF';
+}
+
+function tvEpFootLabel(item){
+  if(item && item.is_complete_story) return 'Film';
+  const ep = Number(item && item.episode_count) || 0;
+  if(ep > 0) return `${ep} ép.`;
+  return (item && item.kind === 'film') ? 'Film' : '1 ép.';
+}
+
+function tvLocalContinueList(){
+  const raw = store.get('tvLocalContinue', {});
+  return Object.values(raw || {}).sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0));
+}
+
+function tvCatalogIndex(b){
+  const map = {};
+  if(!b) return map;
+  const add = (arr) => {
+    if(!Array.isArray(arr)) return;
+    arr.forEach((it) => { if(it && it.id) map[Number(it.id)] = it; });
+  };
+  add(b.featured);
+  add(b.top10);
+  (b.carousels || []).forEach((c) => add(c.items));
+  return map;
+}
+
+function tvBuildContinueRow(b){
+  const local = tvLocalContinueList();
+  if(!local.length) return [];
+  const idx = tvCatalogIndex(b);
+  const out = [];
+  local.forEach((p) => {
+    const base = idx[Number(p.title_id)];
+    if(!base) return;
+    const dur = Math.max(Number(p.duration_sec) || 0, 1);
+    const pos = Math.max(0, Number(p.position_sec) || 0);
+    const pct = p.duration_sec > 0 ? Math.min(100, Math.max(6, Math.round((pos * 100) / dur))) : 20;
+    const epNum = Number(p.episode_number) || 1;
+    out.push(Object.assign({}, base, {
+      _continuePct: pct,
+      _continueSub: `Ép. ${epNum} · ${tvFmtSec(pos)}`,
+    }));
+  });
+  return out;
+}
+
+function tvCard(item, opts){
+  const cfg = opts || {};
   const locked = item.availability === 'restricted';
-  const badges = Array.isArray(item.badges) && item.badges.length
-    ? item.badges.slice(0, 2)
-    : [(item.original_lang || 'fr').toUpperCase(), item.format_tag].filter(Boolean);
-  const foot = item.is_complete_story ? 'Récit Complet' : (item.episode_count ? `${Number(item.episode_count)} Ép.` : '');
-  return `<button class="tv-card" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">
-    <span class="tv-card-art">${tvPosterMarkup(item, 'tv-card-img')}<span class="tv-card-grad"></span>
-    <span class="tv-card-badges">${badges.map((b, i) => `<span class="tv-badge ${i === 0 ? 'accent' : ''}">${esc(b)}</span>`).join('')}</span>
-    ${locked ? `<span class="tv-lock" title="${esc(t('tv.restricted'))}">${ic('lock')}</span>` : ''}${item.age ? `<span class="tv-age">${Number(item.age)}+</span>` : ''}
-    <span class="tv-card-foot">${foot ? `<span class="tv-card-ep">${esc(foot)}</span>` : ''}</span></span>
-    <span class="tv-card-title">${esc(item.title)}</span></button>`;
+  const langBadge = tvLangBadge(item);
+  const viewsText = tvFormatViews(item.views_count);
+  const foot = tvEpFootLabel(item);
+  const isTop10 = !!cfg.isTop10;
+  const rank = Number(cfg.rank || item.top10_rank || 0);
+  const pct = Number(cfg.progressPct != null ? cfg.progressPct : item._continuePct) || 0;
+  const sub = cfg.sub || item._continueSub || '';
+  return `<button class="tv-card${isTop10 ? ' tv-card-top10' : ''}" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">
+    ${isTop10 && rank ? `<span class="tv-top10-rank" aria-hidden="true">${rank}</span>` : ''}
+    <span class="tv-poster-box">${tvPosterMarkup(item, '')}
+      ${langBadge ? `<span class="tv-badge-vf">${esc(langBadge)}</span>` : ''}
+      ${viewsText ? `<span class="tv-badge-views">${esc(viewsText)}</span>` : ''}
+      ${foot ? `<span class="tv-badge-eps">${esc(foot)}</span>` : ''}
+      ${locked ? `<span class="tv-lock" title="${esc(t('tv.restricted'))}">${ic('lock')}</span>` : ''}
+      ${pct > 0 ? `<span class="tv-card-progress"><span style="width:${pct}%"></span></span>` : ''}
+    </span>
+    <span class="tv-card-title">${esc(item.title)}</span>
+    ${sub ? `<span class="tv-card-sub">${esc(sub)}</span>` : ''}
+  </button>`;
 }
 
 function tvRow(label, items, category){
-  const more = category ? `<button class="tv-row-more" type="button" data-action="tvOpenCategory" data-slug="${esc(category)}" data-label="${esc(label)}">${esc(t('tv.more'))}</button>` : '';
-  return `<section class="tv-row"><header class="tv-row-head"><h2>${esc(label)}</h2>${more}</header><div class="tv-row-items">${items.map(tvCard).join('')}</div></section>`;
+  if(!Array.isArray(items) || !items.length) return '';
+  const isTop10 = category === 'top-10';
+  const more = category ? `<button class="tv-more-link" type="button" data-action="tvOpenCategory" data-slug="${esc(category)}" data-label="${esc(label)}">Tout voir &gt;</button>` : '';
+  return `<section class="tv-section"><header class="tv-row-head"><h2 class="tv-row-title">${esc(label)}</h2>${more}</header><div class="tv-track">${items.map((it, i) => tvCard(it, { isTop10, rank: it.top10_rank || (i + 1) })).join('')}</div></section>`;
 }
 
 function tvNotice(){
@@ -130,21 +231,43 @@ function tvNotice(){
 }
 Actions.tvHideNotice = (el) => { store.set('tvNoticeSeen', true); const box = el.closest('.tv-notice'); if(box) box.remove(); };
 
-function tvHero(item){
-  const art = tvImage(item.poster_url || item.poster || item.banner);
-  const badges = Array.isArray(item.badges) ? item.badges.slice(0, 3) : [];
-  return `<section class="tv-hero-916">
-    <div class="tv-hero-916-art">${art ? `<img src="${esc(art)}" alt="${esc(item.title)}" decoding="async">` : ''}<span class="tv-card-grad"></span></div>
-    <div class="tv-hero-916-body">
-      <div style="display:flex;flex-wrap:wrap;gap:4px">${badges.map((b, i) => `<span class="tv-badge ${i === 0 ? 'accent' : ''}">${esc(b)}</span>`).join('')}</div>
-      <h2>${esc(item.title)}</h2>
-      <p>${esc(item.synopsis || [item.format_tag, item.year, tvDuration(item.duration_min)].filter(Boolean).join(' · '))}</p>
-      <div class="tv-actions">
-        <button class="btn btn-primary tv-hero-btn" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Lire 9:16</button>
-        <button class="btn btn-ghost tv-hero-btn" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">${ic('info')} ${esc(t('tv.details'))}</button>
+function tvHero(featuredOrItem, activeIdx){
+  const list = Array.isArray(featuredOrItem) ? featuredOrItem : (featuredOrItem ? [featuredOrItem] : []);
+  const slides = list.slice(0, 5);
+  if(!slides.length) return '';
+  const idx = Math.max(0, Math.min(Number(activeIdx) || 0, slides.length - 1));
+  const item = slides[idx];
+  const epMeta = item.is_complete_story ? 'Récit complet' : `${Math.max(1, Number(item.episode_count) || 1)} épisodes`;
+  const ratingStr = tvFormatRating(item.rating);
+  const viewsStr = tvFormatViews(item.views_count);
+  return `<section class="tv-hero">
+    <div class="tv-hero-slides">${slides.map((s, i) => {
+      const art = tvImage(s.banner_url || s.poster_url || s.poster || s.banner);
+      return `<div class="tv-hero-slide${i === idx ? ' is-active' : ''}">${art ? `<img src="${esc(art)}" alt="${esc(s.title)}" decoding="async">` : ''}</div>`;
+    }).join('')}</div>
+    <div class="tv-hero-vignette"></div>
+    <div class="tv-hero-body">
+      <div class="tv-hero-badges"><span class="tv-pill-featured">À LA UNE</span><span class="tv-pill-brand">${esc(tvLangBadge(item))}</span></div>
+      <h2 class="tv-hero-title">${esc(item.title)}</h2>
+      <div class="tv-hero-meta"><span>${esc(epMeta)}</span><span>·</span><span class="tv-star">★ ${esc(ratingStr)}</span><span>·</span><span>${esc(viewsStr)}</span></div>
+      <div class="tv-hero-actions">
+        <button class="tv-btn-play" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Regarder</button>
+        <button class="tv-btn-details" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">${ic('info')} ${esc(t('tv.details'))}</button>
       </div>
+      ${slides.length > 1 ? `<div class="tv-hero-dots" role="tablist">${slides.map((_, i) => `<button class="tv-hero-dot${i === idx ? ' is-active' : ''}" type="button" data-action="tvHeroSlide" data-idx="${i}" aria-label="Vedette ${i + 1}"></button>`).join('')}</div>` : ''}
     </div></section>`;
 }
+
+Actions.tvHeroSlide = (el) => {
+  TV.heroIdx = Number(el.dataset.idx) || 0;
+  const heroSlot = $('tvHomeHeroSlot');
+  const b = TV.bootstrapData;
+  if(heroSlot && b && Array.isArray(b.featured) && b.featured.length){
+    heroSlot.innerHTML = tvHero(b.featured, TV.heroIdx);
+  }else{
+    tvRenderHomeSection();
+  }
+};
 
 function tvApiFailure(res, fallback){
   return `<div class="tv-empty">${ic('alert')}<p>${esc(tvMessage(res, fallback))}</p><button class="btn btn-ghost" type="button" data-action="tvRetry">${esc(t('common.retry'))}</button></div>`;
@@ -199,32 +322,44 @@ function tvRenderOfflineSection(host){
 async function tvRenderHomeSection(){
   const host = $('tvHomeContent');
   if(!host) return;
+  const heroSlot = $('tvHomeHeroSlot');
   const bar = $('tvFilterBarWrap');
   if(bar) bar.innerHTML = tvFilterBarMarkup();
   const active = TV.activeFilter || 'all';
   if(active === 'offline'){
+    if(heroSlot) heroSlot.innerHTML = '';
     tvRenderOfflineSection(host);
     return;
   }
   if(active === 'all'){
     const b = TV.bootstrapData;
     if(!b){
+      if(heroSlot) heroSlot.innerHTML = '';
       tvRenderOfflineSection(host);
       return;
     }
     const featured = b.featured || [], carousels = b.carousels || [];
-    host.innerHTML = (featured[0] ? tvHero(featured[0]) : '') +
+    if(heroSlot){
+      heroSlot.innerHTML = featured.length ? tvHero(featured, TV.heroIdx || 0) : '';
+    }
+    const contItems = tvBuildContinueRow(b);
+    const continueHtml = contItems.length ? tvRow(t('tv.row.continue') || 'Continuer à regarder', contItems, '') : '';
+    const noticeHtml = TV.kid ? '' : tvNotice();
+    const reelsHtml = TV.reels && TV.reels.length ? `<div class="tv-reels-fab-wrap"><button class="tv-reels-fab" type="button" data-action="tvOpenReelsFeed">${ic('play')} Reels Plein Écran 9:16 (${TV.reels.length})</button></div>` : '';
+    host.innerHTML = noticeHtml + reelsHtml + continueHtml +
       carousels.map((c) => tvRow(c.title, c.items, c.slug)).join('');
     return;
   }
+  if(heroSlot) heroSlot.innerHTML = '';
   host.innerHTML = tvState('tv.loading');
-  const res = await apiFetch(tvPath('/api/v1/tv/series?genre=' + encodeURIComponent(active))).catch(() => null);
+  const res = await apiFetch(tvPath('/api/v1/tv/series?limit=60&genre=' + encodeURIComponent(active))).catch(() => null);
   const items = (res && res.ok && res.data && res.data.items) || [];
   if(!items.length){
     host.innerHTML = `<div class="tv-empty">${ic('film')}<p>${esc(t('tv.empty'))}</p></div>`;
     return;
   }
-  host.innerHTML = `<div class="tv-grid">${items.map(tvCard).join('')}</div>`;
+  const isTop10 = active === 'top-10';
+  host.innerHTML = `<div class="tv-grid">${items.map((it, i) => tvCard(it, { isTop10, rank: it.top10_rank || (i + 1) })).join('')}</div>`;
 }
 
 async function tvRenderHome(){
@@ -247,8 +382,7 @@ async function tvRenderHome(){
       tvBody().innerHTML = tvNotice() + `<div class="tv-empty">${ic('film')}<p>${esc(t(TV.kid ? 'tv.kids.empty' : 'tv.empty'))}</p></div>`;
       return;
     }
-    const reelsBtn = TV.reels.length ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><button class="tv-reels-fab" type="button" data-action="tvOpenReelsFeed">${ic('play')} Reels Plein Écran 9:16 (${TV.reels.length})</button></div>` : '';
-    tvBody().innerHTML = (TV.kid ? '' : tvNotice()) + reelsBtn + `<div id="tvFilterBarWrap">${tvFilterBarMarkup()}</div><div id="tvHomeContent"></div>`;
+    tvBody().innerHTML = `<div id="tvHomeHeroSlot"></div><div id="tvFilterBarWrap">${tvFilterBarMarkup()}</div><div id="tvHomeContent"></div>`;
     tvRenderHomeSection();
     return;
   }
@@ -272,7 +406,7 @@ async function tvRenderHome(){
     tvBody().innerHTML = tvNotice() + `<div class="tv-empty">${ic('film')}<p>${esc(t(TV.kid ? 'tv.kids.empty' : 'tv.empty'))}</p></div>`;
     return;
   }
-  tvBody().innerHTML = (TV.kid ? '' : tvNotice()) + (featured[0] ? tvHero(featured[0]) : '') + rows.map((row) => {
+  tvBody().innerHTML = (featured.length ? tvHero(featured, 0) : '') + (TV.kid ? '' : tvNotice()) + rows.map((row) => {
     const label = row.key === 'category' ? row.label : t(TV.catalogKeys[row.key] || 'tv.title');
     return tvRow(label, row.items, row.key === 'category' ? row.slug : '');
   }).join('');
@@ -280,10 +414,15 @@ async function tvRenderHome(){
 
 async function tvRenderCategory(view){
   tvBody().innerHTML = tvState('tv.loading');
-  const res = await apiFetch(tvPath('/api/tv/titles?limit=60&category=' + encodeURIComponent(view.slug))).catch(() => null);
-  if(!res || !res.ok){ tvBody().innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
-  const items = res.data.items || [];
-  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(view.label)}</h2>` + (items.length ? `<div class="tv-grid">${items.map(tvCard).join('')}</div>` : tvState('tv.search.none'));
+  let res = await apiFetch(tvPath('/api/v1/tv/series?limit=60&genre=' + encodeURIComponent(view.slug))).catch(() => null);
+  let items = (res && res.ok && res.data && res.data.items) || [];
+  if(!items.length){
+    res = await apiFetch(tvPath('/api/tv/titles?limit=60&category=' + encodeURIComponent(view.slug))).catch(() => null);
+    if(!res || !res.ok){ tvBody().innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
+    items = res.data.items || [];
+  }
+  const isTop10 = view.slug === 'top-10';
+  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(view.label)}</h2>` + (items.length ? `<div class="tv-grid">${items.map((it, i) => tvCard(it, { isTop10, rank: it.top10_rank || (i + 1) })).join('')}</div>` : tvState('tv.search.none'));
 }
 
 async function tvRenderList(view){
@@ -351,6 +490,110 @@ function tvDownloadButton(title, episodeId, media, canDownload){
   return `<button class="btn btn-ghost" type="button" data-action="tvDownload" data-title="${Number(title)}" data-episode="${Number(episodeId) || 0}" data-size="${Number(media && media.file_size) || 0}">${ic('download')} ${esc(t('tv.download'))}${size ? ' · ' + esc(size) : ''}</button>`;
 }
 
+function tvShareIconSvg(){
+  return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+}
+
+function tvDetailEpisodesMarkup(){
+  const st = TV.detailState;
+  if(!st || !Array.isArray(st.episodes) || !st.episodes.length) return '';
+  const eps = st.episodes;
+  const total = eps.length;
+  const chunk = 30;
+  const rangeStart = Math.max(0, Math.min(Number(st.rangeStart) || 0, Math.max(0, total - 1)));
+  const rangeEnd = Math.min(total, rangeStart + chunk);
+  const ranges = [];
+  for(let s = 0; s < total; s += chunk){
+    ranges.push({ start: s, label: `${s + 1}-${Math.min(total, s + chunk)}` });
+  }
+  const activeIdx = Math.max(0, Math.min(Number(st.activeIdx) || 0, total - 1));
+  const slice = eps.slice(rangeStart, rangeEnd);
+  const offlineRows = slice.slice(0, 6).map((ep, offset) => {
+    const idx = rangeStart + offset;
+    const epNum = Number(ep.number || (idx + 1));
+    const btn = tvOfflineButtonMarkup({
+      title_id: st.item.id,
+      episode_id: ep.id || epNum,
+      title: st.item.title,
+      episode_title: ep.title || `Épisode ${epNum}`,
+      poster_url: st.item.poster || (st.v1Series && st.v1Series.poster_url) || '',
+      format_tag: (st.v1Series && st.v1Series.format_tag) || st.item.format_tag || 'Mini-Drama',
+      duration_min: ep.duration_min || st.item.duration_min || 8,
+      synopsis: ep.synopsis || st.item.synopsis || '',
+      stream_url: ep.download_url || ep.stream_url || '',
+      source_kind: ep.source_kind || '',
+    }, false);
+    if(!btn) return '';
+    return `<div class="tv-ep-offline-row"><span><strong>Ép. ${epNum}</strong> · ${esc(ep.title || `Épisode ${epNum}`)}</span>${btn}</div>`;
+  }).filter(Boolean).join('');
+
+  return `<section class="tv-episodes-section">
+    <div class="tv-episodes-head"><h2>Épisodes</h2><span>${total} épisode${total > 1 ? 's' : ''}</span></div>
+    <div class="tv-ep-ranges" role="tablist">${ranges.map((r) =>
+      `<button class="tv-ep-range-pill${r.start === rangeStart ? ' is-active' : ''}" type="button" data-action="tvSelectEpRange" data-start="${r.start}">${esc(r.label)}</button>`
+    ).join('')}</div>
+    <div class="tv-ep-grid">${slice.map((ep, offset) => {
+      const idx = rangeStart + offset;
+      const num = Number(ep.number || (idx + 1));
+      const key = tvOfflineKey(st.item.id, ep.id || 0);
+      const isOff = !!TV_OFFLINE.getMeta(key);
+      return `<button class="tv-ep-num${idx === activeIdx ? ' is-active' : ''}${isOff ? ' is-offline' : ''}" type="button" data-action="tvPlayEpisodeIdx" data-id="${Number(st.item.id)}" data-idx="${idx}">${num}</button>`;
+    }).join('')}</div>
+    ${offlineRows ? `<div class="tv-ep-offline-strip">${offlineRows}</div>` : ''}
+  </section>`;
+}
+
+Actions.tvSelectEpRange = (el) => {
+  if(!TV.detailState) return;
+  TV.detailState.rangeStart = Number(el.dataset.start) || 0;
+  const host = $('tvDetailEpisodesWrap');
+  if(host) host.innerHTML = tvDetailEpisodesMarkup();
+};
+
+Actions.tvToggleSynopsis = (el) => {
+  const p = $('tvDetailSynopsis');
+  if(!p) return;
+  const clamped = p.classList.toggle('is-clamped');
+  el.textContent = clamped ? 'Plus' : 'Moins';
+};
+
+Actions.tvShareTitle = async (el) => {
+  const title = el.dataset.title || 'Labo Surf TV';
+  const id = Number(el.dataset.id) || 0;
+  const url = `${FREE_SURF_API_BASE || 'https://labosurf.com'}/tv?series=${id}`;
+  const text = `Regarde « ${title} » gratuitement sur Labo Surf TV !`;
+  try{
+    if(typeof navigator !== 'undefined' && typeof navigator.share === 'function'){
+      await navigator.share({ title, text, url });
+      return;
+    }
+    if(typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function'){
+      await navigator.clipboard.writeText(`${text} ${url}`);
+    }
+  }catch(e){}
+  toast('Lien prêt à partager !', 'success');
+};
+
+Actions.tvPlayEpisodeIdx = async (el) => {
+  const id = Number(el.dataset.id);
+  const idx = Math.max(0, Number(el.dataset.idx) || 0);
+  if(TV.detailState && Number(TV.detailState.item && TV.detailState.item.id) === id){
+    TV.detailState.activeIdx = idx;
+    document.querySelectorAll('#tvDetailEpisodesWrap .tv-ep-num').forEach((btn) => {
+      btn.classList.toggle('is-active', Number(btn.dataset.idx) === idx);
+    });
+    const mainBtn = $('tvWatchMainBtn');
+    const eps = TV.detailState.episodes || [];
+    const targetEp = eps[idx];
+    if(mainBtn && targetEp){
+      mainBtn.dataset.idx = String(idx);
+      const isFilm = eps.length <= 1 && TV.detailState.item.kind === 'film';
+      mainBtn.innerHTML = `${ic('play')} ${isFilm ? 'Regarder' : `Regarder ép. ${Number(targetEp.number || (idx + 1))}`}`;
+    }
+  }
+  await tvLaunchSeriesAt(id, idx);
+};
+
 async function tvRenderDetail(view){
   tvBody().innerHTML = tvState('tv.loading');
   const [res, v1Res] = await Promise.all([
@@ -363,36 +606,88 @@ async function tvRenderDetail(view){
   TV.currentV1Series = v1Series;
   TV.kid = res.data.kid_mode || null;
   tvHeader();
-  const art = tvImage(item.banner) || tvImage(item.poster);
+  const v1Eps = (v1Series && Array.isArray(v1Series.episodes)) ? v1Series.episodes : [];
+  const savedCont = tvLocalContinueList().find((c) => Number(c.title_id) === Number(item.id));
+  let activeIdx = 0;
+  if(savedCont && v1Eps.length){
+    const foundIdx = v1Eps.findIndex((e) => Number(e.id) === Number(savedCont.episode_id));
+    if(foundIdx >= 0) activeIdx = foundIdx;
+  }
+  TV.detailState = {
+    item,
+    v1Series,
+    episodes: v1Eps,
+    activeIdx,
+    rangeStart: Math.floor(activeIdx / 30) * 30,
+  };
+
+  const art = tvImage((v1Series && (v1Series.banner_url || v1Series.poster_url)) || item.banner || item.poster);
   const position = item.progress ? Number(item.progress.position_sec) || 0 : 0;
   const denied = item.availability === 'restricted' ? `<p class="tv-denied">${ic('lock')} ${esc(t('tv.denied.plan'))}</p>` : '';
   const youtube = item.media && item.media.kind === 'youtube' ? `<p class="tv-note">${esc(t('tv.youtubeNote'))}</p>` : '';
-  const primaryEp = !item.has_seasons && v1Series && Array.isArray(v1Series.episodes) ? v1Series.episodes[0] : null;
+  const primaryEp = !item.has_seasons && v1Eps.length ? v1Eps[0] : null;
   const filmOfflineBtn = primaryEp ? tvOfflineButtonMarkup({
     title_id: item.id,
     episode_id: primaryEp.id || 0,
     title: item.title,
     episode_title: primaryEp.title || '',
-    poster_url: item.poster || v1Series.poster_url || '',
+    poster_url: item.poster || (v1Series && v1Series.poster_url) || '',
     format_tag: (v1Series && v1Series.format_tag) || item.format_tag || 'Film Raconté',
     duration_min: item.duration_min || primaryEp.duration_min || 12,
     synopsis: item.synopsis || primaryEp.synopsis || '',
     stream_url: primaryEp.download_url || primaryEp.stream_url || '',
     source_kind: primaryEp.source_kind || '',
   }, false) : '';
+
+  const totalEps = v1Eps.length || Number(v1Series && v1Series.episode_count) || Number(item.episode_count) || 1;
+  const isFilm = Boolean((v1Series && v1Series.is_complete_story) || (!item.has_seasons && totalEps <= 1 && item.kind === 'film'));
+  const activeEpObj = v1Eps[activeIdx] || {};
+  const activeEpNum = Number(activeEpObj.number || (activeIdx + 1));
+  const epMeta = isFilm ? 'Récit complet' : `${totalEps} épisode${totalEps > 1 ? 's' : ''}`;
+  const ratingStr = tvFormatRating((v1Series && v1Series.rating) || item.rating);
+  const viewsStr = tvFormatViews((v1Series && v1Series.views_count) || item.views_count);
+  const langLabel = (v1Series && v1Series.language_label) || (item.original_lang === 'en' ? 'Anglais' : 'Français');
+  const posterModel = Object.assign({}, item, { poster: item.poster || (v1Series && v1Series.poster_url) || '' });
+
+  const hasReelStream = v1Eps.some((e) => e.stream_url);
+  const watchBtn = hasReelStream
+    ? `<button class="tv-btn-watch-main" id="tvWatchMainBtn" type="button" data-action="tvPlayEpisodeIdx" data-id="${Number(item.id)}" data-idx="${activeIdx}">${ic('play')} ${isFilm ? 'Regarder' : `Regarder ép. ${activeEpNum}`}</button>`
+    : (item.can_stream
+      ? `<button class="tv-btn-watch-main" id="tvWatchMainBtn" type="button" data-action="tvPlay" data-title="${Number(item.id)}" data-episode="0">${ic('play')} ${esc(t(position > 0 ? 'tv.resume' : 'tv.play'))}</button>`
+      : `<button class="tv-btn-watch-main" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Regarder</button>`);
+
+  const episodesBlock = v1Eps.length
+    ? `<div id="tvDetailEpisodesWrap">${tvDetailEpisodesMarkup()}</div>`
+    : (item.has_seasons
+      ? `<div class="tv-seasons"><div class="tv-season-tabs" role="tablist">${item.seasons.map((s, i) => `<button class="tv-season-tab" type="button" role="tab" data-action="tvSeason" data-title="${Number(item.id)}" data-season="${Number(s.id)}" aria-selected="${i === 0 ? 'true' : 'false'}">${esc(s.name || t('tv.season', { n: s.number }))}</button>`).join('')}</div><div id="tvEpisodes"></div></div>`
+      : '');
+
   tvBody().innerHTML = `<article class="tv-detail">
-      <div class="tv-detail-art">${art ? `<img src="${esc(art)}" alt="" decoding="async">` : ''}<div class="tv-hero-shade"></div></div>
-      <div class="tv-detail-head">${tvPosterMarkup(item, 'tv-detail-poster')}<div class="tv-detail-title"><h2>${esc(item.title)}</h2>
-        <p class="tv-meta">${[item.year, item.country, item.age ? item.age + '+' : '', tvDuration(item.duration_min), t('tv.kind.' + item.kind), item.original_lang === 'fr' || item.original_lang === 'en' ? t('tv.lang.' + item.original_lang) : ''].filter(Boolean).map(esc).join(' · ')}</p></div></div>
-      <div class="tv-actions"><button class="btn btn-primary" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Vertical 9:16</button>${tvPlayButton(item.id, 0, item.can_stream, position)}${filmOfflineBtn || tvDownloadButton(item.id, 0, item.media, item.can_download)}
-        <button class="btn btn-ghost" type="button" data-action="tvFavorite" data-id="${Number(item.id)}" data-on="${item.favorite ? 1 : 0}" aria-pressed="${item.favorite ? 'true' : 'false'}">${ic(item.favorite ? 'check' : 'plus')} ${esc(t(item.favorite ? 'tv.inList' : 'tv.addList'))}</button></div>
+      <div class="tv-detail-backdrop">
+        ${art ? `<img class="tv-detail-blurbg" src="${esc(art)}" alt="" decoding="async">` : ''}
+        <div class="tv-detail-fade"></div>
+        <div class="tv-detail-hero">
+          <div class="tv-detail-poster">${tvPosterMarkup(posterModel, '')}</div>
+          <div class="tv-detail-info">
+            <span class="tv-pill-brand">${esc(tvLangBadge(v1Series || item))}</span>
+            <h2 class="tv-detail-title">${esc(item.title)}</h2>
+            <div class="tv-detail-meta">${esc(epMeta)} · <span class="tv-star">★ ${esc(ratingStr)}</span> · ${esc(viewsStr)} · ${esc(langLabel)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="tv-detail-actions">
+        ${watchBtn}
+        <button class="tv-btn-square" type="button" data-action="tvShareTitle" data-id="${Number(item.id)}" data-title="${esc(item.title)}">${tvShareIconSvg()}<span>Partager</span></button>
+        <button class="tv-btn-square${item.favorite ? ' is-active' : ''}" type="button" data-action="tvFavorite" data-id="${Number(item.id)}" data-on="${item.favorite ? 1 : 0}" aria-pressed="${item.favorite ? 'true' : 'false'}">${ic(item.favorite ? 'check' : 'plus')}<span>${esc(t(item.favorite ? 'tv.inList' : 'tv.addList'))}</span></button>
+      </div>
       ${denied}${youtube}
-      ${item.synopsis ? `<p class="tv-synopsis">${esc(item.synopsis)}</p>` : ''}
-      ${item.categories && item.categories.length ? `<div class="tv-info"><span>${esc(t('tv.genres'))}</span><div>${item.categories.map((c) => `<span class="tv-chip">${esc(c.name)}</span>`).join('')}</div></div>` : ''}
+      ${filmOfflineBtn ? `<div class="tv-ep-offline-strip" style="padding:0 16px 14px"><div class="tv-ep-offline-row"><span><strong>Hors-ligne</strong> · Enregistrer en MP4</span>${filmOfflineBtn}</div></div>` : (item.can_download ? `<div class="tv-detail-genres">${tvDownloadButton(item.id, 0, item.media, item.can_download)}</div>` : '')}
+      ${item.synopsis ? `<div class="tv-detail-synopsis-wrap"><p class="tv-detail-synopsis is-clamped" id="tvDetailSynopsis">${esc(item.synopsis)}</p><button class="tv-synopsis-more" type="button" data-action="tvToggleSynopsis">Plus</button></div>` : ''}
+      ${item.categories && item.categories.length ? `<div class="tv-detail-genres">${item.categories.map((c) => `<span class="tv-chip">${esc(c.name)}</span>`).join('')}</div>` : ''}
       ${tvTracks(item.media)}
-      ${item.has_seasons ? `<div class="tv-seasons"><div class="tv-season-tabs" role="tablist">${item.seasons.map((s, i) => `<button class="tv-season-tab" type="button" role="tab" data-action="tvSeason" data-title="${Number(item.id)}" data-season="${Number(s.id)}" aria-selected="${i === 0 ? 'true' : 'false'}">${esc(s.name || t('tv.season', { n: s.number }))}</button>`).join('')}</div><div id="tvEpisodes"></div></div>` : ''}
+      ${episodesBlock}
       <p class="tv-note">${esc(t('tv.dataNotice'))}</p></article>`;
-  if(item.has_seasons && item.seasons.length) tvLoadEpisodes(item.id, item.seasons[0].id);
+  if(!v1Eps.length && item.has_seasons && item.seasons.length) tvLoadEpisodes(item.id, item.seasons[0].id);
 }
 
 async function tvLoadEpisodes(titleId, seasonId){
@@ -439,7 +734,12 @@ Actions.tvFavorite = async (el) => {
   if(!res || !res.ok){ toast(tvMessage(res, 'tv.err.action'), 'error'); return; }
   el.dataset.on = on ? '1' : '0';
   el.setAttribute('aria-pressed', on ? 'true' : 'false');
-  el.innerHTML = ic(on ? 'check' : 'plus') + ' ' + esc(t(on ? 'tv.inList' : 'tv.addList'));
+  el.classList.toggle('is-active', on);
+  if(el.classList.contains('tv-btn-square')){
+    el.innerHTML = `${ic(on ? 'check' : 'plus')}<span>${esc(t(on ? 'tv.inList' : 'tv.addList'))}</span>`;
+  }else{
+    el.innerHTML = ic(on ? 'check' : 'plus') + ' ' + esc(t(on ? 'tv.inList' : 'tv.addList'));
+  }
 };
 
 // ─── Lecture ───
@@ -505,7 +805,26 @@ Actions.tvClosePlayer = () => {
 };
 
 // Progression : envoyée au panel ; hors connexion, gardée sur le téléphone puis renvoyée.
+function tvSaveLocalContinue(title, episode, position, duration, episodeNumber){
+  if(!title || position < 2) return;
+  try{
+    const map = store.get('tvLocalContinue', {});
+    map[String(title)] = {
+      title_id: Number(title),
+      episode_id: Number(episode) || 0,
+      episode_number: Number(episodeNumber) || 1,
+      position_sec: Math.floor(Number(position) || 0),
+      duration_sec: Math.floor(Number(duration) || 0),
+      updated_at: Date.now(),
+    };
+    const keys = Object.keys(map).sort((a, b) => (map[b].updated_at || 0) - (map[a].updated_at || 0));
+    keys.slice(15).forEach((k) => delete map[k]);
+    store.set('tvLocalContinue', map);
+  }catch(e){}
+}
 async function tvSaveProgress(title, episode, position, duration){
+  const curItem = (TV_REEL && Array.isArray(TV_REEL.items)) ? TV_REEL.items[TV_REEL.idx] : null;
+  tvSaveLocalContinue(title, episode, position, duration, (curItem && (curItem.number || (TV_REEL.idx + 1))) || 1);
   const body = { title_id: title, episode_id: episode, position_sec: position, duration_sec: duration };
   let sent = false;
   if(authToken){
@@ -794,6 +1113,12 @@ async function tvAttachReelVideo(idx){
   if(!src) return;
   const video = slide.querySelector('video');
   video.muted = TV_REEL.muted;
+  video.classList.remove('is-portrait-stream', 'is-landscape-stream');
+  video.onloadedmetadata = () => {
+    const portrait = (video.videoHeight || 16) >= (video.videoWidth || 9);
+    video.classList.toggle('is-portrait-stream', portrait);
+    video.classList.toggle('is-landscape-stream', !portrait);
+  };
   const isHls = !localUrl && (item.source_kind === 'hls' || /\.m3u8(\?|$)/i.test(src) || src.indexOf('.ism/.m3u8') >= 0);
   if(isHls && !video.canPlayType('application/vnd.apple.mpegurl')){
     const HlsLib = await tvEnsureHls();
@@ -874,20 +1199,24 @@ function tvOpenReelPlayer(items, startIdx, seriesMeta){
 Actions.tvOpenReelsFeed = () => {
   if(TV.reels && TV.reels.length) tvOpenReelPlayer(TV.reels, 0, null);
 };
-Actions.tvOpenReelTitle = async (el) => {
-  const id = Number(el.dataset.id);
-  const res = await apiFetch(tvPath('/api/v1/tv/series/' + id)).catch(() => null);
-  if(!res || !res.ok || !res.data || !res.data.series) return toast(t('tv.err.load'));
-  const s = res.data.series;
+async function tvLaunchSeriesAt(id, startIdx){
+  let s = (TV.detailState && Number(TV.detailState.item && TV.detailState.item.id) === id && TV.detailState.v1Series) || null;
+  if(!s){
+    const res = await apiFetch(tvPath('/api/v1/tv/series/' + id)).catch(() => null);
+    if(!res || !res.ok || !res.data || !res.data.series) return toast(t('tv.err.load'));
+    s = res.data.series;
+  }
   const eps = (s.episodes || []).filter((e) => e.stream_url);
   if(!eps.length) return toast(t('tv.denied.plan'));
-  const items = eps.map((e) => ({
-    id: e.id || s.id, title_id: s.id, episode_id: e.id, title: s.title, episode_title: e.title,
+  const items = eps.map((e, i) => ({
+    id: e.id || s.id, title_id: s.id, episode_id: e.id, number: e.number || (i + 1),
+    title: s.title, episode_title: e.title,
     synopsis: e.synopsis || s.synopsis, poster_url: s.poster_url, format_tag: s.format_tag,
     duration_min: e.duration_min, stream_url: e.stream_url, download_url: e.download_url, source_kind: e.source_kind,
   }));
-  tvOpenReelPlayer(items, 0, s);
-};
+  tvOpenReelPlayer(items, Math.max(0, Math.min(Number(startIdx) || 0, items.length - 1)), s);
+}
+Actions.tvOpenReelTitle = async (el) => tvLaunchSeriesAt(Number(el.dataset.id), 0);
 Actions.tvCloseReel = () => {
   if(TV_REEL.hls){ try{ TV_REEL.hls.destroy(); }catch(e){} TV_REEL.hls = null; }
   document.querySelectorAll('.tv-reel-video').forEach((v) => { v.pause(); v.removeAttribute('src'); });

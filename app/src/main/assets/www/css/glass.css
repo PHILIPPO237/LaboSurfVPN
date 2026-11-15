@@ -68,23 +68,33 @@
 @media (max-height:640px), (max-width:370px){
   #app #screen-home{ --home-right-pad: var(--sp-3); }
 }
-#app .home-foot,
-#app .home-foot.is-inset{
-  margin-left: calc(-1 * var(--home-rail-pad)) !important;
-  margin-right: calc(-1 * var(--home-right-pad)) !important;
-  width: calc(100% + var(--home-rail-pad) + var(--home-right-pad)) !important;
+#app .home-foot{
+  margin-left: calc(-1 * var(--home-rail-pad) + 16px) !important;
+  margin-right: calc(-1 * var(--home-right-pad) + 16px) !important;
+  width: calc(100% + var(--home-rail-pad) + var(--home-right-pad) - 32px) !important;
   max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+#app .home-foot.is-inset{
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
   box-sizing: border-box !important;
 }
 #app .home-foot .banner-card{
   width: 100% !important;
+  max-width: 100% !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-radius: 0 !important;
+  border: 1.5px solid var(--accent-color, var(--accent, var(--brand, #0af072))) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 #app .home-foot .sig-home{
   width: 100%;

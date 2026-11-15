@@ -130,17 +130,20 @@
 
 .home-foot, .home-foot.is-inset{
   align-self:stretch; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; text-align:center;
-  /* Alignement bord à bord parfait (gauche et droite) sur toute la largeur de l'écran */
-  margin-left:calc(-1 * (var(--rail-left) + var(--rail-btn) + 32px));
-  margin-right:calc(-1 * var(--sp-4));
-  width:calc(100% + (var(--rail-left) + var(--rail-btn) + 32px) + var(--sp-4));
+  margin:12px 0 8px 0;
+  width:100%;
+  max-width:100%;
   box-sizing:border-box;
 }
-.home-foot .banner-card{ flex:1 1 auto; min-height:0; margin-bottom:var(--sp-2); width:100%; border-radius:0; }
+.home-foot .banner-card{
+  flex:1 1 auto; min-height:0; margin-bottom:var(--sp-2); width:100%; max-width:100%; box-sizing:border-box;
+  border-radius:14px; border:1.5px solid var(--accent-color, var(--accent, var(--brand, #0af072)));
+  background:var(--surface-2, rgba(10, 25, 18, 0.92)); overflow:hidden;
+}
 
 /* ---------- Bannière premium (annonces du panel + contenu par défaut) ----------
    .banner-card = cadre (bordure, relief) · .bn-fx = décor animé · .bn-body = contenu défilable · .bn-dots = indicateur (futur) */
-.banner-card{ isolation:isolate; border-radius:var(--r-lg); text-align:center; position:relative; overflow:hidden; margin-bottom:var(--sp-2); display:flex; flex-direction:column; }
+.banner-card{ isolation:isolate; border-radius:14px; text-align:center; position:relative; overflow:hidden; margin-bottom:var(--sp-2); display:flex; flex-direction:column; box-sizing:border-box; }
 .bn-body{ position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; padding:var(--sp-5) var(--sp-4); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
 /* Centré quand il y a de la place, aligné en haut (et défilable) quand le message est plus long que l'espace */
 .bn-body > *{ margin-block:auto; }

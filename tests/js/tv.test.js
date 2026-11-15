@@ -85,3 +85,26 @@ test('mode hors-ligne 9:16 : uniquement pour .mp4, masqué sur .m3u8, onglet Hor
   assert.match(js, /tvPlayOfflineReel/);
   assert.match(js, /tvDeleteOfflineItem/);
 });
+
+test('refonte TV mobile : Top 10 chiffré, grille 5 colonnes 1-30, hero dots, ratio 9:16, zéro violet et cadre pub', () => {
+  const fsMod = require('fs');
+  const pathMod = require('path');
+  const wwwDir = pathMod.resolve(__dirname, '../../app/src/main/assets/www');
+  const tvCss = fsMod.readFileSync(pathMod.join(wwwDir, 'css/tv.css'), 'utf8');
+  const homeCss = fsMod.readFileSync(pathMod.join(wwwDir, 'css/home.css'), 'utf8');
+
+  assert.match(js, /tv-top10-rank/);
+  assert.match(js, /tv-ep-grid/);
+  assert.match(js, /tv-ep-range-pill/);
+  assert.match(js, /tvSelectEpRange/);
+  assert.match(js, /tvPlayEpisodeIdx/);
+  assert.match(js, /tv-hero-dots/);
+  assert.match(js, /tvHeroSlide/);
+  assert.match(js, /onloadedmetadata/);
+  assert.match(js, /is-portrait-stream/);
+  assert.match(js, /tvShareTitle/);
+
+  assert.doesNotMatch(tvCss, /#(?:8b5cf6|a855f7|7c3aed|9333ea|6d28d9|c084fc|9b5de5)/i);
+  assert.match(tvCss, /--tv-brand:\s*var\(--brand,\s*#0af072\)/);
+  assert.match(homeCss, /\.banner-card[\s\S]*border-radius:\s*14px\s*!important/);
+});
