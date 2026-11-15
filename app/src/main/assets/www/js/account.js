@@ -259,6 +259,27 @@ function renderProfileView(info){
   $('profPanel').textContent = t('prof.scope.' + (['reseller', 'admin'].indexOf(p.panelScope) >= 0 ? p.panelScope : 'none'));
   $('profExtra').hidden = $('profResellerRow').hidden && $('profPanelRow').hidden;
   $('profActions').hidden = !(API.state.ok && p.statusOk && p.panelScope !== 'none');   // seulement si le SERVEUR indique un accès au panel (revendeur, administrateur) ; les routes du panel refusent de toute façon les autres
+  const cSel = $('profCountrySelect');
+  if(cSel){
+    const curCc = ((acc && (acc.country_code || acc.country)) || (p && (p.country_code || p.countryCode)) || 'CM').toUpperCase();
+    if(cSel.querySelector('option[value="' + curCc + '"]')) cSel.value = curCc;
+  }
+}
+if($('profCountrySelect')){
+  $('profCountrySelect').addEventListener('change', async (e) => {
+    const cc = (e.target.value || 'CM').toUpperCase();
+    try{
+      const r = await apiFetch('/api/user/country', { method: 'POST', auth: true, body: JSON.stringify({ country_code: cc }) });
+      if(r.ok){
+        if(Account.last) Account.last.country_code = cc;
+        if(typeof loadServers === 'function') await loadServers();
+        if(typeof Banner !== 'undefined' && Banner.refreshConn) Banner.refreshConn();
+        toast('Pays mis à jour : ' + cc, 'success');
+      } else {
+        toast('Impossible de changer de pays', 'error');
+      }
+    }catch(err){ toast(t('err.panelOffline'), 'error'); }
+  });
 }
 Actions.profRetry = () => { renderProfileView({ state: 'loading' }); reloadAccountCard(); };
 
@@ -510,6 +531,7 @@ Actions.login = async () => {
 Actions.register = async () => {
   const v = (id) => $(id).value;
   const u = v('regUsername').trim(), c = v('regContact').trim(), rs = v('regRecovery').trim(), p = v('regPassword'), p2 = v('regPasswordConfirm');
+  const cc = ($('regCountry') && $('regCountry').value) ? $('regCountry').value.trim().toUpperCase() : 'CM';
   const btn = $('regSubmitBtn');
   clearFormError('regError');
   if(!u || !c || !rs || !p || !p2){ showFormError('regError', t('acc.errFillAll')); return; }
@@ -518,7 +540,7 @@ Actions.register = async () => {
   setBusy(btn, true, 'acc.creating');
   try{
     const reg = await apiFetch('/api/auth/register', { method: 'POST', device: true,
-      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, password: p, confirm_password: p2, remember: RememberMe.wanted() }) });
+      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, country: cc, country_code: cc, password: p, confirm_password: p2, remember: RememberMe.wanted() }) });
     if(!reg.ok || !reg.data || reg.data.status !== 'ok'){
       showFormError('regError', apiMessage(reg, 'acc.errRegister'));
       return;

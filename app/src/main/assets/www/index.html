@@ -275,6 +275,18 @@
                 <div class="bc-text" id="homeBannerText"></div>
                 <a id="homeBannerLink" class="bc-link" href="#" target="_blank" rel="noopener" hidden><span data-i18n="banner.more"></span><svg class="ic" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
               </div>
+              <div id="homeBannerConn" class="bn-conn" hidden>
+                <div class="bn-conn-head">
+                  <span class="bn-conn-status">🟢 CONNECTÉ • LABOSURF VPN</span>
+                  <button type="button" class="bn-conn-logs" data-action="nav" data-screen="logs">📋 Logs</button>
+                </div>
+                <div class="bn-conn-cfg">
+                  <span class="bn-conn-cfg-name" id="bnConnCfg">📡 LaboSurfVPN</span>
+                  <span class="bn-conn-sub" id="bnConnSub">🛡️ Stable</span>
+                </div>
+                <div class="bn-conn-user" id="bnConnUser">👤 Abonné • ⏳ Actif</div>
+                <div class="bn-conn-welcome" id="bnConnWelcome">✨ Bienvenue sur LaboSurf VPN</div>
+              </div>
             </div>
             <div class="bn-dots" id="homeBannerDots" aria-hidden="true" hidden></div>
           </div>
@@ -424,6 +436,18 @@
           <label class="field"><span class="field-label" data-i18n="acc.username"></span><input class="input" type="text" id="regUsername" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" data-i18n-attr="placeholder:acc.usernamePh"></label>
           <label class="field"><span class="field-label" data-i18n="acc.contact"></span><input class="input" type="text" id="regContact" autocomplete="email" data-i18n-attr="placeholder:acc.contactPh"></label>
           <label class="field"><span class="field-label" data-i18n="acc.recovery"></span><input class="input" type="text" id="regRecovery" autocomplete="off" data-i18n-attr="placeholder:acc.recoveryPh"></label>
+          <label class="field"><span class="field-label">Pays de connexion</span>
+            <select class="input" id="regCountry">
+              <option value="CM">🇨🇲 Cameroun (CM)</option>
+              <option value="GA">🇬🇦 Gabon (GA)</option>
+              <option value="CI">🇨🇮 Côte d'Ivoire (CI)</option>
+              <option value="SN">🇸🇳 Sénégal (SN)</option>
+              <option value="CD">🇨🇩 RD Congo (CD)</option>
+              <option value="BJ">🇧🇯 Bénin (BJ)</option>
+              <option value="TG">🇹🇬 Togo (TG)</option>
+              <option value="ALL">🌍 Tous les pays (ALL)</option>
+            </select>
+          </label>
           <label class="field"><span class="field-label" data-i18n="acc.password"></span>
             <span class="pw-wrap"><input class="input" type="password" id="regPassword" autocomplete="new-password" placeholder="••••••••">
               <button type="button" class="pw-eye" data-action="togglePw" data-target="regPassword" data-i18n-attr="aria-label:acc.showPassword"><svg class="ic eye-on"><use href="#i-eye"/></svg><svg class="ic eye-off"><use href="#i-eye-off"/></svg></button></span>
@@ -531,6 +555,20 @@
             <div class="pf-offer pf-glass">
               <div class="pf-cell"><span class="pf-cap" data-i18n="prof.offer"></span><b class="pf-val" id="profOffer">—</b></div>
               <div class="pf-cell" id="profValidityCell"><span class="pf-cap" data-i18n="prof.validity"></span><svg class="pf-ring" id="profRing" viewBox="0 0 100 56" aria-hidden="true" hidden><path class="pf-ring-track" d="M8 50 A42 42 0 0 1 92 50"/><path class="pf-ring-val" id="profRingVal" d="M8 50 A42 42 0 0 1 92 50" pathLength="100" stroke-dasharray="0 100"/></svg><b class="pf-val" id="profValidity">—</b><span class="pf-sub" id="profExpiry"></span></div>
+            </div>
+
+            <div class="pf-extra pf-glass-soft" id="profCountryBox" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <span class="k" style="font-size:12px">Pays actif</span>
+              <select class="input" id="profCountrySelect" style="max-width:190px;padding:6px 10px;font-size:12px">
+                <option value="CM">🇨🇲 Cameroun</option>
+                <option value="GA">🇬🇦 Gabon</option>
+                <option value="CI">🇨🇮 Côte d'Ivoire</option>
+                <option value="SN">🇸🇳 Sénégal</option>
+                <option value="CD">🇨🇩 RD Congo</option>
+                <option value="BJ">🇧🇯 Bénin</option>
+                <option value="TG">🇹🇬 Togo</option>
+                <option value="ALL">🌍 Tous les pays</option>
+              </select>
             </div>
 
             <div class="section-title" id="profAllowedTitle" data-i18n="prof.allowedTitle" hidden></div>

@@ -77,8 +77,26 @@ function getSelectedProfile(){
   if(Profiles.state !== 'ready' || Profiles.selectedId === null || Profiles.selectedId === undefined) return null;
   return Profiles.list.find((p) => sameId(p.id, Profiles.selectedId)) || null;
 }
-const profileDisplayName = (p) => (p && (p.displayName || p.name)) || t('prof.defaultName', { n: (p && p.id ? p.id : 1) });
-const profileLocation = (p) => [p.serverName, [p.city, p.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+const profileDisplayName = (p) => (p && (p.publicLabel || p.public_label || p.displayName || p.name)) || t('prof.defaultName', { n: (p && p.id ? p.id : 1) });
+const profileLocation = (p) => (p && (p.publicSubtitle || p.public_subtitle)) || [p && p.serverName, [p && p.city, p && p.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+
+function getActiveConfigSummary(){
+  const prof = getSelectedProfile();
+  if(prof){
+    return {
+      title: profileDisplayName(prof),
+      subtitle: (prof.publicSubtitle || prof.public_subtitle || '').trim() || '🛡️ Stable',
+    };
+  }
+  const srv = getSelectedServer();
+  if(srv){
+    return {
+      title: serverDisplayName(srv),
+      subtitle: serverLocation(srv) || '🛡️ Stable',
+    };
+  }
+  return { title: 'LaboSurfVPN', subtitle: '🛡️ Stable' };
+}
 
 function profileRowHtml(p, selected){
   const badge = p.health === 'unknown' ? `<span class="server-meta"><span class="badge badge-warn">${esc(t('prof.healthUnknown'))}</span></span>` : '';
@@ -239,6 +257,28 @@ async function loadProfiles(){
   } else {
     Profiles.state = 'ready';
   }
+  try{
+    const up = await apiFetch('/api/user/profiles');
+    if(up.ok && up.data && up.data.status === 'ok' && Array.isArray(up.data.profiles) && up.data.profiles.length){
+      const mapped = up.data.profiles.map((x) => ({
+        id: x.id,
+        publicLabel: x.public_label || x.name || '',
+        publicSubtitle: x.public_subtitle || '🛡️ Stable',
+        displayName: x.public_label || x.name || '',
+        operatorName: x.operator_name || '',
+        vlessUri: x.vless_uri || '',
+        clientJson: x.client_json || null,
+        health: 'ok',
+        isUserProfile: true,
+      }));
+      Profiles.state = 'ready';
+      Profiles.list = mapped;
+      store.set('cached_profiles', Profiles.list);
+      if(up.data.country_code && typeof Account !== 'undefined' && Account.last){
+        Account.last.country_code = up.data.country_code;
+      }
+    }
+  }catch(e){}
   if(Profiles.state === 'ready' && Profiles.selectedId !== null && Profiles.selectedId !== undefined && !getSelectedProfile()){
     Profiles.selectedId = null;
     store.set('hostedProfile', null);

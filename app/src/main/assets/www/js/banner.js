@@ -9,6 +9,16 @@
 let currentAd = null;
 const BANNER_LONG_CHARS = 140;
 
+const Banner = {
+  ads: [],
+  welcomeBanner: 'Bienvenue sur LaboSurf VPN',
+  bannerDurationMs: 120000,
+  adDurationMs: 30000,
+  mode: 'ad',
+  adIndex: 0,
+  timer: 0,
+};
+
 function renderAdText(){
   if(!currentAd) return;
   const text = localizedField(currentAd, 'text');
@@ -28,34 +38,163 @@ function bannerSwap(){
   body.classList.remove('is-swap'); void body.offsetWidth; body.classList.add('is-swap');
 }
 
+function populateConnBanner(){
+  const cfg = (typeof getActiveConfigSummary === 'function') ? getActiveConfigSummary() : { title: 'LaboSurfVPN', subtitle: '🛡️ Stable' };
+  const acc = (typeof Account !== 'undefined' && Account.last) ? Account.last : {};
+  const user = acc.username || 'Abonné';
+  const cc = (acc.country_code || acc.country || 'ALL').toUpperCase();
+  let exp = 'Illimité';
+  if(acc.daysLeft !== undefined && acc.daysLeft !== null){
+    exp = acc.daysLeft <= 0 ? 'Expiré' : (acc.daysLeft + ' j restants');
+  } else if(acc.expires_at){
+    exp = String(acc.expires_at).slice(0, 10);
+  }
+  if($('bnConnCfg')) $('bnConnCfg').textContent = '📡 ' + (cfg.title || 'LaboSurfVPN');
+  if($('bnConnSub')) $('bnConnSub').textContent = cfg.subtitle || '🛡️ Stable';
+  if($('bnConnUser')) $('bnConnUser').textContent = `👤 ${user} (${cc}) • ⏳ ${exp}`;
+  if($('bnConnWelcome')) $('bnConnWelcome').textContent = '✨ ' + (Banner.welcomeBanner || 'Bienvenue sur LaboSurf VPN');
+}
+
+function renderBannerDots(){
+  const dots = $('homeBannerDots');
+  if(!dots) return;
+  const isOn = (typeof VPN !== 'undefined' && VPN.state === 'on');
+  const slides = [];
+  if(isOn) slides.push({ type: 'conn', idx: 0 });
+  if(Banner.ads.length) Banner.ads.forEach((_, i) => slides.push({ type: 'ad', idx: i }));
+  else if(!isOn) slides.push({ type: 'default', idx: 0 });
+
+  if(slides.length < 2){
+    dots.hidden = true;
+    dots.textContent = '';
+    return;
+  }
+  dots.hidden = false;
+  dots.textContent = '';
+  slides.forEach((s) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    const active = (s.type === Banner.mode && (s.type !== 'ad' || s.idx === Banner.adIndex));
+    b.className = 'bn-dot-btn' + (active ? ' is-active' : '');
+    b.onclick = () => {
+      Banner.mode = s.type;
+      if(s.type === 'ad') Banner.adIndex = s.idx;
+      renderBannerSlide(true);
+      scheduleBannerCycle();
+    };
+    dots.appendChild(b);
+  });
+}
+
+function renderBannerSlide(doSwap){
+  const card = $('homeBannerCard'), defaultBlock = $('homeBannerDefault'), adBlock = $('homeBannerAd'), connBlock = $('homeBannerConn');
+  if(!card || !defaultBlock || !adBlock) return;
+  const isOn = (typeof VPN !== 'undefined' && VPN.state === 'on');
+  if(!isOn && Banner.mode === 'conn') Banner.mode = Banner.ads.length ? 'ad' : 'default';
+
+  if(Banner.mode === 'conn' && isOn && connBlock){
+    populateConnBanner();
+    card.className = 'banner-card banner-style-conn';
+    defaultBlock.hidden = true;
+    adBlock.hidden = true;
+    connBlock.hidden = false;
+    renderBannerDots();
+    if(doSwap) bannerSwap();
+    fitHomeScreen();
+    return;
+  }
+
+  if(connBlock) connBlock.hidden = true;
+  const ad = Banner.ads.length ? Banner.ads[Banner.adIndex % Banner.ads.length] : null;
+  currentAd = ad;
+  if(!ad){
+    card.className = 'banner-card banner-style-default';
+    defaultBlock.hidden = false;
+    adBlock.hidden = true;
+    renderBannerDots();
+    if(doSwap) bannerSwap();
+    fitHomeScreen();
+    return;
+  }
+
+  card.className = 'banner-card banner-style-' + String(ad.style || 'neon').replace(/[^a-z0-9_-]/gi, '');
+  defaultBlock.hidden = true;
+  adBlock.hidden = false;
+  const img = $('homeBannerImg');
+  if(ad.image){
+    img.src = String(ad.image).startsWith('http') ? ad.image : `${FREE_SURF_API_BASE}${ad.image}`;
+    img.hidden = false;
+  } else img.hidden = true;
+  renderAdText();
+  const link = $('homeBannerLink');
+  if(ad.link){ link.href = ad.link; link.hidden = false; } else link.hidden = true;
+  renderBannerDots();
+  if(doSwap) bannerSwap();
+  fitHomeScreen();
+}
+
+function scheduleBannerCycle(){
+  clearTimeout(Banner.timer);
+  const isOn = (typeof VPN !== 'undefined' && VPN.state === 'on');
+  if(isOn){
+    if(Banner.mode === 'conn'){
+      if(!Banner.ads.length) return;
+      Banner.timer = setTimeout(() => {
+        Banner.mode = 'ad';
+        Banner.adIndex = 0;
+        renderBannerSlide(true);
+        scheduleBannerCycle();
+      }, Banner.bannerDurationMs);
+    } else {
+      Banner.timer = setTimeout(() => {
+        if(Banner.adIndex + 1 < Banner.ads.length){
+          Banner.adIndex++;
+        } else {
+          Banner.mode = 'conn';
+        }
+        renderBannerSlide(true);
+        scheduleBannerCycle();
+      }, Banner.adDurationMs);
+    }
+  } else if(Banner.ads.length > 1){
+    Banner.timer = setTimeout(() => {
+      Banner.adIndex = (Banner.adIndex + 1) % Banner.ads.length;
+      renderBannerSlide(true);
+      scheduleBannerCycle();
+    }, Banner.adDurationMs);
+  }
+}
+
+Banner.onVpnStateChange = (state) => {
+  if(state === 'on'){
+    Banner.mode = 'conn';
+    renderBannerSlide(true);
+  } else {
+    Banner.mode = Banner.ads.length ? 'ad' : 'default';
+    Banner.adIndex = 0;
+    renderBannerSlide(true);
+  }
+  scheduleBannerCycle();
+};
+Banner.refreshConn = () => {
+  if(Banner.mode === 'conn') populateConnBanner();
+};
+
 async function loadHomeBanner(){
-  const card = $('homeBannerCard'), defaultBlock = $('homeBannerDefault'), adBlock = $('homeBannerAd');
   try{
     // apiFetch (avec jeton s'il existe) : le panel renvoie alors la bannière du revendeur de l'utilisateur
     const res = await apiFetch('/api/ads/active?location=labo_surf_rail');
     if(!res.ok) return;
-    const ad = (res.data && Array.isArray(res.data.ads) && res.data.ads.length) ? res.data.ads[0] : null;
-    const changed = JSON.stringify(ad) !== JSON.stringify(currentAd);
-    currentAd = ad;
-    if(!ad){
-      card.className = 'banner-card banner-style-default';
-      defaultBlock.hidden = false; adBlock.hidden = true;
-      if(changed) bannerSwap();
-      return;
-    }
-    card.className = 'banner-card banner-style-' + String(ad.style || 'neon').replace(/[^a-z0-9_-]/gi, '');
-    defaultBlock.hidden = true; adBlock.hidden = false;
-
-    const img = $('homeBannerImg');
-    if(ad.image){
-      img.src = String(ad.image).startsWith('http') ? ad.image : `${FREE_SURF_API_BASE}${ad.image}`;
-      img.hidden = false;
-    } else img.hidden = true;
-
-    renderAdText();
-    const link = $('homeBannerLink');
-    if(ad.link){ link.href = ad.link; link.hidden = false; } else link.hidden = true;
-    if(changed) bannerSwap();
+    const d = res.data || {};
+    Banner.ads = Array.isArray(d.ads) ? d.ads : [];
+    if(d.welcome_banner) Banner.welcomeBanner = String(d.welcome_banner);
+    if(Number(d.banner_duration_sec) > 0) Banner.bannerDurationMs = Number(d.banner_duration_sec) * 1000;
+    if(Number(d.ad_duration_sec) > 0) Banner.adDurationMs = Number(d.ad_duration_sec) * 1000;
+    const isOn = (typeof VPN !== 'undefined' && VPN.state === 'on');
+    Banner.mode = isOn ? 'conn' : (Banner.ads.length ? 'ad' : 'default');
+    Banner.adIndex = 0;
+    renderBannerSlide(false);
+    scheduleBannerCycle();
   }catch(e){
     /* panel injoignable : la bannière par défaut reste affichée */
   }

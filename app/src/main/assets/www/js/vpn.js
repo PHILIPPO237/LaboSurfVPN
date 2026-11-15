@@ -54,6 +54,7 @@ function setVpnState(state, spec){
   if(state !== 'connecting'){ clearTimeout(VPN.mcTimer); VPN.mcTimer = null; VPN.mcRetries = 0; }
   VPN.errorSpec = state === 'error' ? normalizeErr(spec) : null;
   renderHome();
+  if(state !== prev && typeof Banner !== 'undefined' && Banner.onVpnStateChange) Banner.onVpnStateChange(state);
 }
 
 // Situation réelle de l'utilisateur AVANT de se connecter (uniquement quand le tunnel est à l'arrêt).
