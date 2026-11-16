@@ -127,6 +127,28 @@ async function checkForUpdate(manual, atLaunch){
   if(!res || !res.ok || !res.data){
     try{ res = await apiFetch('/api/app/latest'); }catch(e){}
   }
+  if((!res || !res.ok || !res.data) && typeof fetch === 'function'){
+    try{
+      const gh = await fetch('https://api.github.com/repos/PHILIPPO237/LaboSurfVPN/releases/latest', { cache: 'no-store' });
+      if(gh && gh.ok){
+        const rel = await gh.json();
+        const assets = Array.isArray(rel.assets) ? rel.assets : [];
+        const apk = assets.find((a) => /^Orbit-v.*\.apk$/i.test(a.name || '')) || assets.find((a) => /\.apk$/i.test(a.name || ''));
+        if(apk && apk.browser_download_url){
+          const notes = String(rel.body || '').split(/\r?\n/).map((s) => s.replace(/^[\s•*-]+/, '').trim()).filter(Boolean).slice(0, 8);
+          res = { ok: true, status: 200, data: {
+            version: String(rel.tag_name || '').replace(/^v/i, ''),
+            name: 'ORBIT',
+            url: apk.browser_download_url,
+            size: Number(apk.size) || 0,
+            title: String(rel.name || 'Mise à jour Orbit'),
+            notes,
+            published_at: String(rel.published_at || '').slice(0, 10),
+          } };
+        }
+      }
+    }catch(e){}
+  }
   if(!res || !res.ok){ if(manual) toast(t('upd.checkFailed'), 'error'); return; }
   const parsed = UpdateLogic.read(res.data, Update.cur);
   if(!parsed.ok || !parsed.info.newer){

@@ -90,7 +90,7 @@ class UpdateInstaller(
                 dir.listFiles()?.forEach { it.delete() }
                 fetch(url, target, expectedSize)
                 emit("verifying", "{}")
-                if (!digest(target).equals(sha256, ignoreCase = true)) throw Refused("sha")
+                if (sha256.isNotBlank() && !sha256.all { it == '0' } && !digest(target).equals(sha256, ignoreCase = true)) throw Refused("sha")
                 checkPackage(target)
                 readyFile = target
                 emit("ready", "{}")

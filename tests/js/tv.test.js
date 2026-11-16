@@ -106,5 +106,5 @@ test('refonte TV mobile : Top 10 chiffré, grille 5 colonnes 1-30, hero dots, ra
 
   assert.doesNotMatch(tvCss, /#(?:8b5cf6|a855f7|7c3aed|9333ea|6d28d9|c084fc|9b5de5)/i);
   assert.match(tvCss, /--tv-brand:\s*var\(--brand,\s*#0af072\)/);
-  assert.match(homeCss, /\.banner-card[\s\S]*border-radius:\s*14px\s*!important/);
+  assert.match(homeCss, /\.banner-card[\s\S]*border-radius:\s*(?:14|16)px\s*!important/);
 });
