@@ -158,5 +158,5 @@ jobs:
             gh release upload "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --clobber || true
             gh release edit "$RELEASE_TAG" --draft=false --title "Orbit $RELEASE_TAG" || true
           else
-            gh release create "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --verify-tag --title "Orbit $RELEASE_TAG" --notes "Release officielle Android Labo Surf VPN ($RELEASE_TAG, build 261116004) — Table Rase UI Sombre Emeraude & Glamourisme, 4 Services Terrain valides, Communaute Telegram & Factures Officielles."
+            gh release create "$RELEASE_TAG" "$APK" "$APK.sha256" Orbit-v*.apk Orbit-v*.apk.sha256 --verify-tag --title "Orbit $RELEASE_TAG" --notes "Release officielle Android Labo Surf VPN ($RELEASE_TAG, build 261117001) — Vitrine 3D, Bottom Glass Dock, Anti-Boucle Update & Communaute Telegram + WhatsApp."
           fi

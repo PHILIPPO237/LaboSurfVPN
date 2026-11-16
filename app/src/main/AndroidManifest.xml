@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Mise a jour depuis l'application : Android demande toujours la confirmation de l'utilisateur -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Choix de photo : l'appareil photo est propose s'il existe (Android 11+ : visibilite a declarer). La permission
          CAMERA n'est PAS demandee : l'app photo du systeme ecrit la photo via FileProvider. -->
     <queries>
@@ -20,7 +23,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="Labo Surf"
+        android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/Theme.LaboSurf"
@@ -46,6 +49,14 @@
                 <data android:scheme="https" android:host="${panelHost}" android:pathPrefix="/app/open" />
             </intent-filter>
         </activity>
+
+        <!-- LABOSURF TV : lecteur natif, separe du tunnel VPN -->
+        <activity
+            android:name=".tv.TvPlayerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.LaboSurf.Player"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode|screenLayout|smallestScreenSize|density" />
 
         <!-- Photo prise avec l'appareil photo : fichier du cache PRIVE de l'app (photos/), partage temporairement
              avec l'app photo du systeme ; jamais exporte, jamais d'acces au stockage de l'utilisateur. -->

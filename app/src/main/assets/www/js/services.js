@@ -12,6 +12,7 @@ function normalizeService(s){
   return {
     id: s.id === undefined ? null : s.id,
     type: String(s.type || '').trim(),
+    executionMode: String(s.execution_mode || 'direct').trim(),
     status: String(s.status || '').trim(),
     serverId: s.server_id === undefined ? null : s.server_id,
     createdAt: String(s.created_at || '').trim(),

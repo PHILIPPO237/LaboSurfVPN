@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Guide & Assistant — Labo Surf VPN</title>
+  <link rel="stylesheet" href="css/emerald-mobile.css">
+  <style>
+    body{margin:0;background:#060913;color:#F1F5F9;font-family:system-ui,-apple-system,sans-serif;padding-bottom:40px;}
+    .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(6,9,19,0.86);backdrop-filter:blur(18px);border-bottom:1px solid rgba(16,185,129,0.28);}
+    .card{margin:12px;padding:16px;border-radius:18px;background:rgba(12,20,36,0.75);backdrop-filter:blur(18px);border:1px solid rgba(16,185,129,0.28);}
+    .pill{background:rgba(255,255,255,0.08);border:1px solid rgba(16,185,129,0.35);color:#F1F5F9;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;}
+    .diag-btn{width:100%;text-align:left;padding:10px 12px;margin-top:8px;border-radius:12px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);color:#F1F5F9;font-weight:700;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a href="index.html" style="color:#10B981;text-decoration:none;font-weight:800;">← Retour</a>
+    <img src="img/logos/logo-horizontal-dark.png" alt="Labo Surf VPN" style="height:26px;">
+    <button type="button" class="pill" onclick="toggleLang()">FR / EN</button>
+  </header>
+
+  <section class="card">
+    <h2 style="margin:0 0 8px;color:#10B981;">📖 Guide Pas-à-Pas</h2>
+    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">1. <strong>Connexion 1 tap :</strong> Choisissez votre pays & opérateur (Camtel, MTN, Orange, Airtel), puis appuyez sur le bouton central Orbit <b>START</b>.</p>
+    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">2. <strong>5 Services Terrain :</strong> <i>Camtel UDP Pro Stable</i> (:5667), <i>Hysteria2 Ultra</i> (:443), <i>Smart Auto</i>, <i>Camtel Hybride</i> (DNSTT+Xray) et <i>Airtel DNSTT + Xray Pro</i>.</p>
+    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">3. <strong>Pass VIP & Parrainage :</strong> +100 Mo à l'inscription, +500 Mo au passage VIP, convertibles en Jours VIP.</p>
+    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">4. <strong>LABOSURF COMMUNITY :</strong> Canal Officiel, Grand Groupe, Salon Staff et Messagerie Privée 1-à-1.</p>
+  </section>
+
+  <section class="card" style="border-color:rgba(245,158,11,0.45);">
+    <h2 style="margin:0 0 8px;color:#F59E0B;">🧠 Assistant Diagnostic Rapide</h2>
+    <button class="diag-btn" onclick="diag('no_conn')">🔴 Ça ne se connecte pas</button>
+    <button class="diag-btn" onclick="diag('slow')">🐢 Connexion lente</button>
+    <button class="diag-btn" onclick="diag('vip')">👑 Activer mon code VIP</button>
+    <button class="diag-btn" onclick="diag('dns')">🔄 Réinitialiser la carte réseau / DNS</button>
+    <div id="diagOut" style="margin-top:10px;font-size:13px;color:#10B981;"></div>
+  </section>
+
+  <script>
+    function diag(k) {
+      const m = {
+        no_conn: '✓ Vérifiez vos données mobiles, sélectionnez "Camtel Smart Auto" ou "Camtel Hybride" et relancez START.',
+        slow: '✓ Passez sur "Camtel Hysteria2 Ultra" (VIP) ou "Camtel UDP Pro Stable" pour un débit optimal.',
+        vip: '✓ Ouvrez Profil > Tokens et collez votre code VIP reçu en Messagerie Privée.',
+        dns: '✓ DNS et cache réseau réinitialisés. Vous pouvez relancer le tunnel.'
+      };
+      document.getElementById('diagOut').textContent = m[k] || '';
+    }
+    function toggleLang() { alert('Langue basculée FR / EN'); }
+  </script>
+</body>
+</html>

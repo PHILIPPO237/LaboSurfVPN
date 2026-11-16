@@ -173,9 +173,10 @@ const ProfileOptions = (function(){
       const health = str(o.service_health).toLowerCase();
       options.push({
         id: id,
-        name: str(o.profile_name),
+        name: str(o.display_name || o.profile_name || o.name),
+        displayName: str(o.display_name || o.profile_name || o.name),
         serverId: posInt(o.server_id),
-        serverName: str(o.server_name),
+        serverName: str(o.server_display_name || o.server_name),
         country: str(o.country),
         city: str(o.city),
         health: health === 'available' ? 'available' : 'unknown',   // le panel n'envoie que available | unknown

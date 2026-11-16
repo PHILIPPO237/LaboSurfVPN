@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Mon Profil — Labo Surf VPN</title>
+  <style>
+    body{margin:0;background:#060913;color:#F1F5F9;font-family:system-ui,-apple-system,sans-serif;padding-bottom:40px;}
+    .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(6,9,19,0.86);backdrop-filter:blur(18px);border-bottom:1px solid rgba(16,185,129,0.28);}
+    .card{margin:12px;padding:16px;border-radius:18px;background:rgba(12,20,36,0.75);backdrop-filter:blur(18px);border:1px solid rgba(16,185,129,0.28);}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px;}
+    .stat{padding:14px;border-radius:16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);text-align:center;}
+    .ring{width:64px;height:64px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;border:3px solid #F59E0B;box-shadow:0 0 16px rgba(245,158,11,0.35);font-weight:900;color:#FBBF24;}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a href="index.html" style="color:#10B981;text-decoration:none;font-weight:800;">← Retour</a>
+    <img src="img/logos/title-simple-dark.png" alt="Labo Surf VPN" style="height:22px;">
+    <span style="font-size:12px;color:#F59E0B;font-weight:800;">🇨🇲 CM</span>
+  </header>
+
+  <section class="card" style="text-align:center;">
+    <img src="img/logos/icon-circle-dark.png" style="width:86px;height:86px;border-radius:50%;border:2.5px solid #10B981;">
+    <h2 style="margin:8px 0 4px;">Membre Labo Surf VPN</h2>
+    <span style="padding:3px 10px;border-radius:999px;background:rgba(245,158,11,0.2);border:1px solid #F59E0B;color:#FBBF24;font-size:11px;font-weight:800;">👑 VIP CERTIFIÉ</span>
+  </section>
+
+  <div class="grid">
+    <div class="stat"><div class="ring">30j</div><div style="font-size:12px;color:#94A3B8;">Jours VIP restants</div></div>
+    <div class="stat"><div class="ring" style="border-color:#10B981;color:#10B981;">4.2 Go</div><div style="font-size:12px;color:#94A3B8;">Data ↓ / ↑</div></div>
+    <div class="stat"><div class="ring" style="border-color:#0EA5E9;color:#38BDF8;">500 Mo</div><div style="font-size:12px;color:#94A3B8;">Filleuls & Bonus</div></div>
+    <div class="stat"><div class="ring" style="border-color:#8B5CF6;color:#DDD6FE;">18h</div><div style="font-size:12px;color:#94A3B8;">Temps protégé</div></div>
+  </div>
+</body>
+</html>

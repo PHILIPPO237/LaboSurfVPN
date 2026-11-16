@@ -123,14 +123,17 @@ function renderPass(acc){
 // la connexion sans compte). Les comptes gratuits gardent « Messages et annonces » dans le profil : c'est par là que
 // arrivent les offres de token et les factures.
 function isSubscriber(acc){ return !!acc && acc.plan !== 'gratuit' && acc.daysLeft !== 0; }
+// Messagerie du compte : plus de bouton dans le rail, l'écran reste ouvert par Compte > Messages (abonnés seulement).
+let messagesAvailable = false;
 function updateChatRail(acc){
   const sub = isSubscriber(acc);
-  $('railBtn-chat').hidden = !sub;
+  messagesAvailable = sub;
   if(!sub && currentScreen === 'chat' && acc) showScreen('account');
 }
 
 function renderAccountCard(acc){
   Account.last = acc;
+  try { store.set('cached_account', acc); } catch(e){}
   if(typeof ProfileTheme !== 'undefined') ProfileTheme.refresh();   // l'offre (VIP…) peut donner l'accent premium
   $('accNameTxt').textContent = acc.username;
   // Photo de profil si elle a été renseignée, sinon avatar par défaut (aussi en cas d'image introuvable)
@@ -256,6 +259,27 @@ function renderProfileView(info){
   $('profPanel').textContent = t('prof.scope.' + (['reseller', 'admin'].indexOf(p.panelScope) >= 0 ? p.panelScope : 'none'));
   $('profExtra').hidden = $('profResellerRow').hidden && $('profPanelRow').hidden;
   $('profActions').hidden = !(API.state.ok && p.statusOk && p.panelScope !== 'none');   // seulement si le SERVEUR indique un accès au panel (revendeur, administrateur) ; les routes du panel refusent de toute façon les autres
+  const cSel = $('profCountrySelect');
+  if(cSel){
+    const curCc = ((acc && (acc.country_code || acc.country)) || (p && (p.country_code || p.countryCode)) || 'CM').toUpperCase();
+    if(cSel.querySelector('option[value="' + curCc + '"]')) cSel.value = curCc;
+  }
+}
+if($('profCountrySelect')){
+  $('profCountrySelect').addEventListener('change', async (e) => {
+    const cc = (e.target.value || 'CM').toUpperCase();
+    try{
+      const r = await apiFetch('/api/user/country', { method: 'POST', auth: true, body: JSON.stringify({ country_code: cc }) });
+      if(r.ok){
+        if(Account.last) Account.last.country_code = cc;
+        if(typeof loadServers === 'function') await loadServers();
+        if(typeof Banner !== 'undefined' && Banner.refreshConn) Banner.refreshConn();
+        toast('Pays mis à jour : ' + cc, 'success');
+      } else {
+        toast('Impossible de changer de pays', 'error');
+      }
+    }catch(err){ toast(t('err.panelOffline'), 'error'); }
+  });
 }
 Actions.profRetry = () => { renderProfileView({ state: 'loading' }); reloadAccountCard(); };
 
@@ -298,7 +322,7 @@ Actions.openPanel = async (next) => {
 Actions.openCommunityWeb = () => Actions.openPanel('/tchatch');   // version web (fichiers, réactions) ; la communauté intégrée est dans js/livechat.js
 // Support : messages avec le revendeur ou l'administrateur (dans l'application si le compte y a accès, sinon sur le site)
 Actions.openSupport = () => {
-  if(authToken && !$('railBtn-chat').hidden){ showScreen('chat'); return; }
+  if(authToken && messagesAvailable){ showScreen('chat'); return; }
   Actions.openPanel('/mes-messages');
 };
 
@@ -378,8 +402,14 @@ function setSyncState(state){ Account.syncState = state; $('accSyncTime').textCo
 
 async function loadAndShowAccount(fallbackName){
   const [meRes, subRes] = await Promise.all([apiFetch('/api/user/me'), apiFetch('/api/user/subscription')]);
-  if(!authToken) return; // session expirée pendant le chargement
-  renderAccountCard(accountFromApi(meRes.ok ? meRes.data || {} : {}, subRes.ok ? subRes.data || {} : {}, fallbackName));
+  if(!authToken) return;
+  if(meRes.ok){
+    renderAccountCard(accountFromApi(meRes.data || {}, subRes.ok ? subRes.data || {} : {}, fallbackName));
+  } else {
+    const cachedAcc = store.get('cached_account', null);
+    if(cachedAcc) renderAccountCard(cachedAcc);
+    else renderAccountCard(accountFromApi({}, {}, fallbackName));
+  }
   if(meRes.ok) ProfileCache.save(meRes.data); else profileFallback(ProfileContract.failure(meRes));
   $('accLoggedOut').hidden = true;
   $('accLoggedIn').hidden = false;
@@ -501,15 +531,18 @@ Actions.login = async () => {
 Actions.register = async () => {
   const v = (id) => $(id).value;
   const u = v('regUsername').trim(), c = v('regContact').trim(), rs = v('regRecovery').trim(), p = v('regPassword'), p2 = v('regPasswordConfirm');
+  const cc = ($('regCountry') && $('regCountry').value) ? $('regCountry').value.trim().toUpperCase() : 'CM';
   const btn = $('regSubmitBtn');
   clearFormError('regError');
   if(!u || !c || !rs || !p || !p2){ showFormError('regError', t('acc.errFillAll')); return; }
+  if(!Account.regPhoto){ showFormError('regError', (typeof I18N !== 'undefined' && I18N.lang === 'en') ? 'Profile avatar photo is required.' : 'Photo d\'avatar obligatoire pour créer votre compte.'); return; }
   if(p !== p2){ showFormError('regError', t('acc.errMismatch')); return; }
   if(isBusy(btn)) return;
   setBusy(btn, true, 'acc.creating');
   try{
+    const refCode = ($('regReferral') && $('regReferral').value) ? $('regReferral').value.trim().toUpperCase() : '';
     const reg = await apiFetch('/api/auth/register', { method: 'POST', device: true,
-      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, password: p, confirm_password: p2, remember: RememberMe.wanted() }) });
+      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, country: cc, country_code: cc, password: p, confirm_password: p2, avatar_data: Account.regPhoto, referral_code: refCode, remember: RememberMe.wanted() }) });
     if(!reg.ok || !reg.data || reg.data.status !== 'ok'){
       showFormError('regError', apiMessage(reg, 'acc.errRegister'));
       return;
@@ -517,6 +550,10 @@ Actions.register = async () => {
     authToken = reg.data.token;
     authExpiresAt = sessionExpiryFrom(reg.data);
     toast(t('acc.created'), 'success');
+    if(reg.data.country_availability){
+      const ca = reg.data.country_availability;
+      toast(`${ca.official_count || 0} offre(s) officielle(s) et ${ca.beta_count || 0} Bêta disponibles pour ${ca.country_name || ca.country_code}`, 'info', 5500);
+    }
     // Photo facultative : envoyée avec l'API existante (POST /api/user/profile/avatar-upload), jeton du compte tout juste créé.
     // Un échec ne remet pas en cause le compte : il est déjà créé, la photo pourra être ajoutée depuis le profil.
     if(Account.regPhoto){
@@ -781,7 +818,7 @@ Actions.toggleAnnouncements = (el) => {
 // ─── Déconnexion du compte / session expirée ───
 function resetToLoggedOut(){
   authToken = null;
-  $('railBtn-chat').hidden = true;
+  messagesAvailable = false;
   if(currentScreen === 'chat') showScreen('account');
   if(typeof lcReset === 'function') lcReset();   // communauté : non-lus, salons et pastille effacés avec le compte
   authExpiresAt = null;
@@ -1103,9 +1140,6 @@ function updateAccountBadge(){
   tab.hidden = total === 0;
   tab.textContent = total > 9 ? '9+' : String(total);
   const cnt = (n) => n > 9 ? '9+' : String(n);
-  const chat = $('chatBadge');
-  chat.hidden = total === 0;
-  chat.textContent = cnt(total);
   const cardBadge = $('messagesCardBadge');
   cardBadge.hidden = Account.unreadMessages === 0;
   cardBadge.textContent = cnt(Account.unreadMessages);
@@ -1132,4 +1166,37 @@ document.addEventListener('langchange', () => {
   // Messages d'erreur de formulaire : transitoires, effacés au changement de langue (jamais affichés dans la mauvaise langue)
   document.querySelectorAll('.form-error.show').forEach((el) => el.classList.remove('show'));
 });
+
+Actions.redeemBetaToken = async (rawToken) => {
+  const tok = String(rawToken || '').trim().toUpperCase();
+  if(!tok){ toast('Entrez un Token Bêta valide.', 'warning'); return null; }
+  const res = await apiFetch('/api/v1/beta/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ token: tok }),
+  });
+  if(!res.ok || !res.data || res.data.status !== 'ok'){
+    toast(apiMessage(res, 'Token Bêta invalide ou expiré.'), 'warning');
+    return null;
+  }
+  toast('Token Bêta activé ! Configurations [TEST BÊTA] débloquées.', 'success');
+  if(typeof loadServers === 'function') await loadServers();
+  return res.data;
+};
+
+Actions.transferDevice = async (newDeviceId, newDeviceName, oldDeviceId) => {
+  const res = await apiFetch('/api/v1/devices/transfer', {
+    method: 'POST',
+    body: JSON.stringify({
+      new_device_id: newDeviceId,
+      new_device_name: newDeviceName || 'Appareil LaboSurf',
+      old_device_id: oldDeviceId || '',
+    }),
+  });
+  if(!res.ok || !res.data || res.data.status !== 'ok'){
+    toast(apiMessage(res, 'Transfert d’appareil refusé.'), 'warning');
+    return null;
+  }
+  toast('Appareil transféré avec succès.', 'success');
+  return res.data;
+};
 

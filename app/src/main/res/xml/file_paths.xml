@@ -2,4 +2,6 @@
 <!-- FileProvider : uniquement le sous-dossier « photos » du cache prive de l'app (photo prise pour le profil). -->
 <paths>
     <cache-path name="photos" path="photos/" />
+    <!-- Mise a jour : l'APK verifie, remis a l'installateur d'Android le temps de l'installation -->
+    <cache-path name="updates" path="updates/" />
 </paths>

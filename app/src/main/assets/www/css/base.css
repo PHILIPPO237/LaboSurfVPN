@@ -25,7 +25,7 @@ a{ color:inherit; }
 
 /* Structure : [ rail de navigation latéral (fixe) ] + [ écrans (scroll) ] + [ bandeau d'expiration ] */
 .app{
-  --rail-btn:52px; --rail-left:14px; --rail-gap:11px; --rail-n:6;
+  --rail-btn:52px; --rail-left:14px; --rail-gap:11px; --rail-n:7;
   position:relative; display:flex; flex-direction:column;
   height:100vh; height:100dvh; max-width:var(--maxw); margin:0 auto;
   padding-top:env(safe-area-inset-top);

@@ -1,0 +1,1524 @@
+// LABOSURF TV et KIDS. Le panel décide de tout (catalogue, droits, profil enfant) : ici, on affiche ce qu'il renvoie, sans rien inventer.
+// La lecture passe par un ticket du panel : le natif l'échange lui-même contre l'adresse de la source, l'interface ne la lui fournit jamais.
+// La vidéo utilise la connexion Internet normale : l'application est exclue du tunnel (voir LaboVpnService), que le VPN soit connecté ou non.
+
+const TV = {
+  stack: [],          // vues ouvertes ; la dernière est affichée
+  kid: null,          // profil enfant actif, tel que renvoyé par le panel
+  catalogKeys: { continue: 'tv.row.continue', my_list: 'tv.row.myList', recommended: 'tv.row.recommended', new: 'tv.row.new', popular: 'tv.row.popular', series: 'tv.row.series', mini_series: 'tv.row.miniSeries' },
+  pollTimer: 0,
+  player: null,
+};
+
+const TV_DENIED = {
+  plan_required: 'tv.denied.plan', license_expired: 'tv.denied.expired', territory: 'tv.denied.territory', no_media: 'tv.denied.noMedia', download_forbidden: 'tv.denied.download',
+  download_unavailable: 'tv.denied.download', kid_not_approved: 'tv.denied.kid', kid_age: 'tv.denied.kid', kid_category: 'tv.denied.kid', kid_ads: 'tv.denied.kid',
+  pin_bad: 'tv.pin.bad', pin_locked: 'tv.pin.locked', pin_unset: 'tv.pin.unset', pin_format: 'tv.pin.format', password_bad: 'tv.pin.passwordBad', name_required: 'tv.parental.nameRequired',
+};
+
+function tvMessage(res, fallback){
+  const code = res && res.data && res.data.code;
+  if(res && res.expired) return t('err.sessionExpired');
+  return t(TV_DENIED[code] || fallback);
+}
+
+function tvPath(path){ return path + (path.indexOf('?') >= 0 ? '&' : '?') + 'lang=' + encodeURIComponent(I18N.lang); }
+
+// Affiche uniquement une image du panel (/tv-images/…) ou une adresse HTTPS ; toute autre valeur est ignorée.
+function tvImage(url){
+  const value = String(url || '');
+  if(value.indexOf('/tv-images/') === 0) return FREE_SURF_API_BASE + value;
+  return /^https:\/\//i.test(value) ? value : '';
+}
+
+function tvNative(name){
+  try{ if(isNativeApp() && typeof window.LaboSurfNative[name] === 'function') return window.LaboSurfNative[name].bind(window.LaboSurfNative); }catch(e){}
+  return null;
+}
+
+function tvDuration(minutes){
+  const m = Number(minutes) || 0;
+  if(!m) return '';
+  return m >= 60 ? t('tv.duration.hm', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') }) : t('tv.duration.m', { m: m });
+}
+function tvSize(bytes){
+  const n = Number(bytes) || 0;
+  if(!n) return '';
+  return n >= 1073741824 ? (n / 1073741824).toFixed(1) + ' ' + t('tv.unit.gb') : Math.max(1, Math.round(n / 1048576)) + ' ' + t('tv.unit.mb');
+}
+
+function tvLanguageName(code){
+  const key = 'tv.lang.' + String(code || '').toLowerCase().slice(0, 2);
+  const label = t(key);
+  return label === key ? String(code || '') : label;
+}
+
+function tvClosePopups(){
+  const qm = $('tvQuickMenu');
+  if(qm) qm.hidden = true;
+}
+function tvPush(view){ tvClosePopups(); TV.stack.push(view); tvRender(); }
+function tvBack(){
+  tvClosePopups();
+  const ro = $('tvReelOverlay');
+  if(ro && !ro.hidden){ Actions.tvCloseReel(); return true; }
+  if(TV.stack.length > 1){ TV.stack.pop(); tvRender(); return true; }
+  return false;
+}
+Actions.tvBack = () => { if(!tvBack()) showScreen('home'); };
+Actions.tvToggleQuickMenu = () => {
+  const qm = $('tvQuickMenu');
+  if(qm) qm.hidden = !qm.hidden;
+};
+document.addEventListener('click', (ev) => {
+  const qm = $('tvQuickMenu');
+  if(!qm || qm.hidden) return;
+  if(ev.target && (ev.target.closest('#tvQuickMenu') || ev.target.closest('[data-action="tvToggleQuickMenu"]'))) return;
+  qm.hidden = true;
+});
+Actions.tvOpenSearch = () => tvPush({ name: 'search', query: '' });
+Actions.tvOpenList = () => tvPush({ name: 'list', key: 'favorites' });
+Actions.tvOpenHistory = () => tvPush({ name: 'list', key: 'history' });
+Actions.tvOpenDownloads = () => tvPush({ name: 'downloads' });
+Actions.tvOpenSettings = () => tvPush({ name: 'settings' });
+Actions.tvOpenKids = () => tvPush({ name: 'parental' });
+Actions.tvOpenTitle = (el) => tvPush({ name: 'detail', id: Number(el.dataset.id) });
+Actions.tvOpenCategory = (el) => tvPush({ name: 'category', slug: el.dataset.slug, label: el.dataset.label });
+Actions.tvExitKids = () => tvPush({ name: 'exitKids' });
+
+function tvOpen(){
+  if(!TV.stack.length) TV.stack = [{ name: 'home' }];
+  tvRender();
+}
+
+function tvBody(){ return $('tvBody'); }
+function tvState(key, cls){ return `<div class="tv-state ${cls || ''}" role="status">${esc(t(key))}</div>`; }
+
+function tvHeader(){
+  const kid = !!TV.kid;
+  document.documentElement.classList.toggle('tv-kids', kid && currentScreen === 'tv');
+  if($('screen-tv')) $('screen-tv').classList.toggle('is-kids', kid);
+  const titleEl = $('tvTitle');
+  if(titleEl){
+    if(kid) titleEl.textContent = t('tv.kids.title');
+    else titleEl.innerHTML = 'Labo Surf <span class="tv-brand-accent">TV</span>';
+  }
+  if($('tvExitKidsBtn')) $('tvExitKidsBtn').hidden = !kid;
+  if($('tvKidsBtn')) $('tvKidsBtn').hidden = kid;
+  if($('tvHistoryBtn')) $('tvHistoryBtn').hidden = kid;
+  if($('tvBellDot')) $('tvBellDot').hidden = !TV_OFFLINE.list().length;
+  tvClosePopups();
+}
+
+async function tvRender(){
+  const view = TV.stack[TV.stack.length - 1] || { name: 'home' };
+  clearTimeout(TV.pollTimer);
+  tvHeader();
+  if(!authToken && view.name !== 'downloads'){
+    tvBody().innerHTML = `<div class="tv-empty">${ic('user')}<p>${esc(t('tv.loginNeeded'))}</p><button class="btn btn-primary" type="button" data-action="nav" data-screen="account">${esc(t('tv.loginAction'))}</button><button class="btn btn-ghost" type="button" data-action="tvOpenDownloads">${esc(t('tv.downloads.title'))}</button></div>`;
+    return;
+  }
+  const render = { home: tvRenderHome, category: tvRenderCategory, search: tvRenderSearch, detail: tvRenderDetail, list: tvRenderList, downloads: tvRenderDownloads, parental: tvRenderParental, exitKids: tvRenderExitKids, settings: tvRenderSettings }[view.name];
+  if(render) await render(view);
+  $('screen-tv').scrollTop = 0;
+}
+
+// ─── Cartes et rangées ───
+function tvPosterMarkup(item, cls){
+  const url = tvImage(item.poster);
+  return url ? `<img class="${cls}" src="${esc(url)}" alt="" loading="lazy" decoding="async">` : `<span class="${cls} tv-poster-none" aria-hidden="true">${ic('film')}</span>`;
+}
+
+function tvFormatRating(val){
+  const n = Number(val);
+  return (n > 0 ? n : 8.4).toFixed(1).replace('.', ',');
+}
+
+function tvFormatViews(val){
+  const n = Math.max(1, Math.round(Number(val) || 1));
+  if(n === 1) return '1 vue';
+  if(n >= 1000) return (n / 1000).toFixed(1).replace('.', ',') + 'k vues';
+  return n + ' vues';
+}
+
+function tvLangBadge(item){
+  const badges = Array.isArray(item && item.badges) ? item.badges : [];
+  const joined = [badges.join(' '), item && item.format_tag, item && item.title].join(' ').toUpperCase();
+  if(joined.indexOf('VOSTFR') >= 0) return 'VOSTFR';
+  if(joined.indexOf('VF') >= 0 || (item && String(item.original_lang || '').toLowerCase() === 'fr')) return 'VF';
+  return badges[0] || item && item.format_tag || 'VF';
+}
+
+function tvEpFootLabel(item){
+  if(item && item.is_complete_story) return 'Film';
+  const ep = Number(item && item.episode_count) || 0;
+  if(ep > 0) return `${ep} ép.`;
+  return (item && item.kind === 'film') ? 'Film' : '1 ép.';
+}
+
+function tvLocalContinueList(){
+  const raw = store.get('tvLocalContinue', {});
+  return Object.values(raw || {}).sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0));
+}
+
+function tvCatalogIndex(b){
+  const map = {};
+  if(!b) return map;
+  const add = (arr) => {
+    if(!Array.isArray(arr)) return;
+    arr.forEach((it) => { if(it && it.id) map[Number(it.id)] = it; });
+  };
+  add(b.featured);
+  add(b.top10);
+  (b.carousels || []).forEach((c) => add(c.items));
+  return map;
+}
+
+function tvBuildContinueRow(b){
+  const local = tvLocalContinueList();
+  if(!local.length) return [];
+  const idx = tvCatalogIndex(b);
+  const out = [];
+  local.forEach((p) => {
+    const base = idx[Number(p.title_id)];
+    if(!base) return;
+    const dur = Math.max(Number(p.duration_sec) || 0, 1);
+    const pos = Math.max(0, Number(p.position_sec) || 0);
+    const pct = p.duration_sec > 0 ? Math.min(100, Math.max(6, Math.round((pos * 100) / dur))) : 20;
+    const epNum = Number(p.episode_number) || 1;
+    out.push(Object.assign({}, base, {
+      _continuePct: pct,
+      _continueSub: `Ép. ${epNum} · ${tvFmtSec(pos)}`,
+    }));
+  });
+  return out;
+}
+
+function tvCard(item, opts){
+  const cfg = opts || {};
+  const locked = item.availability === 'restricted';
+  const langBadge = tvLangBadge(item);
+  const viewsText = tvFormatViews(item.views_count);
+  const foot = tvEpFootLabel(item);
+  const isTop10 = !!cfg.isTop10;
+  const rank = Number(cfg.rank || item.top10_rank || 0);
+  const pct = Number(cfg.progressPct != null ? cfg.progressPct : item._continuePct) || 0;
+  const sub = cfg.sub || item._continueSub || '';
+  return `<button class="tv-card${isTop10 ? ' tv-card-top10' : ''}" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">
+    ${isTop10 && rank ? `<span class="tv-top10-rank" aria-hidden="true">${rank}</span>` : ''}
+    <span class="tv-poster-box">${tvPosterMarkup(item, '')}
+      ${langBadge ? `<span class="tv-badge-vf">${esc(langBadge)}</span>` : ''}
+      ${viewsText ? `<span class="tv-badge-views">${esc(viewsText)}</span>` : ''}
+      ${foot ? `<span class="tv-badge-eps">${esc(foot)}</span>` : ''}
+      ${locked ? `<span class="tv-lock" title="${esc(t('tv.restricted'))}">${ic('lock')}</span>` : ''}
+      ${pct > 0 ? `<span class="tv-card-progress"><span style="width:${pct}%"></span></span>` : ''}
+    </span>
+    <span class="tv-card-title">${esc(item.title)}</span>
+    ${sub ? `<span class="tv-card-sub">${esc(sub)}</span>` : ''}
+  </button>`;
+}
+
+function tvRow(label, items, category){
+  if(!Array.isArray(items) || !items.length) return '';
+  const isTop10 = category === 'top-10';
+  const more = category ? `<button class="tv-more-link" type="button" data-action="tvOpenCategory" data-slug="${esc(category)}" data-label="${esc(label)}">Tout voir &gt;</button>` : '';
+  return `<section class="tv-section"><header class="tv-row-head"><h2 class="tv-row-title">${esc(label)}</h2>${more}</header><div class="tv-track">${items.map((it, i) => tvCard(it, { isTop10, rank: it.top10_rank || (i + 1) })).join('')}</div></section>`;
+}
+
+function tvNotice(){
+  if(store.get('tvNoticeSeen', false)) return '';
+  return `<div class="tv-notice" role="note">${ic('info')}<p>${esc(t('tv.dataNotice'))}</p><button class="icon-btn" type="button" data-action="tvHideNotice" aria-label="${esc(t('common.close'))}">${ic('x')}</button></div>`;
+}
+Actions.tvHideNotice = (el) => { store.set('tvNoticeSeen', true); const box = el.closest('.tv-notice'); if(box) box.remove(); };
+
+function tvHero(featuredOrItem, activeIdx){
+  const list = Array.isArray(featuredOrItem) ? featuredOrItem : (featuredOrItem ? [featuredOrItem] : []);
+  const slides = list.slice(0, 5);
+  if(!slides.length) return '';
+  const idx = Math.max(0, Math.min(Number(activeIdx) || 0, slides.length - 1));
+  const item = slides[idx];
+  const epMeta = item.is_complete_story ? 'Récit complet' : `${Math.max(1, Number(item.episode_count) || 1)} épisodes`;
+  const ratingStr = tvFormatRating(item.rating);
+  const viewsStr = tvFormatViews(item.views_count);
+  return `<section class="tv-hero">
+    <div class="tv-hero-slides">${slides.map((s, i) => {
+      const art = tvImage(s.banner_url || s.poster_url || s.poster || s.banner);
+      return `<div class="tv-hero-slide${i === idx ? ' is-active' : ''}">${art ? `<img src="${esc(art)}" alt="${esc(s.title)}" decoding="async">` : ''}</div>`;
+    }).join('')}</div>
+    <div class="tv-hero-vignette"></div>
+    <div class="tv-hero-body">
+      <div class="tv-hero-badges"><span class="tv-pill-featured">À LA UNE</span><span class="tv-pill-brand">${esc(tvLangBadge(item))}</span></div>
+      <h2 class="tv-hero-title">${esc(item.title)}</h2>
+      <div class="tv-hero-meta"><span>${esc(epMeta)}</span><span>·</span><span class="tv-star">★ ${esc(ratingStr)}</span><span>·</span><span>${esc(viewsStr)}</span></div>
+      <div class="tv-hero-actions">
+        <button class="tv-btn-play" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Regarder</button>
+        <button class="tv-btn-details" type="button" data-action="tvOpenTitle" data-id="${Number(item.id)}">${ic('info')} ${esc(t('tv.details'))}</button>
+      </div>
+      ${slides.length > 1 ? `<div class="tv-hero-dots" role="tablist">${slides.map((_, i) => `<button class="tv-hero-dot${i === idx ? ' is-active' : ''}" type="button" data-action="tvHeroSlide" data-idx="${i}" aria-label="Vedette ${i + 1}"></button>`).join('')}</div>` : ''}
+    </div></section>`;
+}
+
+Actions.tvHeroSlide = (el) => {
+  TV.heroIdx = Number(el.dataset.idx) || 0;
+  const heroSlot = $('tvHomeHeroSlot');
+  const b = TV.bootstrapData;
+  if(heroSlot && b && Array.isArray(b.featured) && b.featured.length){
+    heroSlot.innerHTML = tvHero(b.featured, TV.heroIdx);
+  }else{
+    tvRenderHomeSection();
+  }
+};
+
+function tvApiFailure(res, fallback){
+  return `<div class="tv-empty">${ic('alert')}<p>${esc(tvMessage(res, fallback))}</p><button class="btn btn-ghost" type="button" data-action="tvRetry">${esc(t('common.retry'))}</button></div>`;
+}
+Actions.tvRetry = () => tvRender();
+
+function tvFilterBarMarkup(){
+  const raw = Array.isArray(TV.filters) ? TV.filters : [];
+  if(!raw.length && !TV_OFFLINE.list().length) return '';
+  const list = raw.filter((f) => f && f.slug !== 'offline');
+  if(!list.length) list.push({ slug: 'all', label: 'Tout' });
+  const offCount = TV_OFFLINE.list().length;
+  const offPill = { slug: 'offline', label: offCount ? `📂 Hors-ligne (${offCount})` : '📂 Hors-ligne' };
+  const allIdx = list.findIndex((f) => f.slug === 'all');
+  if(allIdx >= 0) list.splice(allIdx + 1, 0, offPill);
+  else list.unshift(offPill);
+  const active = TV.activeFilter || 'all';
+  return `<div class="tv-filter-bar" role="tablist">${list.map((f) =>
+    `<button class="tv-filter-pill ${active === f.slug ? 'active' : ''}" type="button" data-action="tvSelectFilter" data-slug="${esc(f.slug)}">${esc(f.label)}</button>`
+  ).join('')}</div>`;
+}
+
+Actions.tvSelectFilter = async (el) => {
+  TV.activeFilter = el.dataset.slug || 'all';
+  tvRenderHomeSection();
+};
+
+function tvRenderOfflineSection(host){
+  const target = host || $('tvHomeContent');
+  if(!target) return;
+  const items = TV_OFFLINE.list();
+  const totalBytes = items.reduce((sum, it) => sum + (Number(it.size) || 0), 0);
+  if(!items.length){
+    target.innerHTML = `<div class="tv-empty">${ic('download')}<p>Aucune vidéo enregistrée hors-ligne sur cet appareil. Touchez <strong>⬇️ Télécharger</strong> sur un film raconté ou épisode <code>.mp4</code> pour le regarder sans connexion.</p></div>`;
+    return;
+  }
+  target.innerHTML = `<div class="tv-offline-head"><span class="tv-note" style="margin:0"><strong>📂 ${items.length} vidéo(s) hors-ligne</strong> · ${esc(tvSize(totalBytes) || 'Stockage local')} (lecture 9:16 sans Internet)</span></div>
+    <div class="tv-grid">${items.map((it) => `<div class="tv-offline-card">
+      <button class="tv-card" type="button" data-action="tvPlayOfflineReel" data-offline-key="${esc(it.key)}">
+        <span class="tv-card-art">${it.poster_url ? `<img class="tv-card-img" src="${esc(tvImage(it.poster_url))}" alt="" loading="lazy" decoding="async">` : `<span class="tv-card-img tv-poster-none" aria-hidden="true">${ic('film')}</span>`}<span class="tv-card-grad"></span>
+        <span class="tv-card-badges"><span class="tv-badge accent">✅ Hors-ligne</span>${it.format_tag ? `<span class="tv-badge">${esc(it.format_tag)}</span>` : ''}</span>
+        <span class="tv-card-foot">${it.size ? `<span class="tv-card-ep">${esc(tvSize(it.size))}</span>` : ''}</span></span>
+        <span class="tv-card-title">${esc(it.title || 'Vidéo locale')}${it.episode_title && it.episode_title !== it.title ? ' · ' + esc(it.episode_title) : ''}</span>
+      </button>
+      <div class="tv-offline-card-actions">
+        <button class="btn btn-primary" type="button" data-action="tvPlayOfflineReel" data-offline-key="${esc(it.key)}">${ic('play')} Lire 9:16</button>
+        <button class="btn btn-ghost tv-offline-del" type="button" data-action="tvDeleteOfflineItem" data-offline-key="${esc(it.key)}" aria-label="Supprimer">${ic('trash')}</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+async function tvRenderHomeSection(){
+  const host = $('tvHomeContent');
+  if(!host) return;
+  const heroSlot = $('tvHomeHeroSlot');
+  const bar = $('tvFilterBarWrap');
+  if(bar) bar.innerHTML = tvFilterBarMarkup();
+  const active = TV.activeFilter || 'all';
+  if(active === 'offline'){
+    if(heroSlot) heroSlot.innerHTML = '';
+    tvRenderOfflineSection(host);
+    return;
+  }
+  if(active === 'all'){
+    const b = TV.bootstrapData;
+    if(!b){
+      if(heroSlot) heroSlot.innerHTML = '';
+      tvRenderOfflineSection(host);
+      return;
+    }
+    const featured = b.featured || [], carousels = b.carousels || [];
+    if(heroSlot){
+      heroSlot.innerHTML = featured.length ? tvHero(featured, TV.heroIdx || 0) : '';
+    }
+    const contItems = tvBuildContinueRow(b);
+    const continueHtml = contItems.length ? tvRow(t('tv.row.continue') || 'Continuer à regarder', contItems, '') : '';
+    const noticeHtml = TV.kid ? '' : tvNotice();
+    const reelsHtml = TV.reels && TV.reels.length ? `<div class="tv-reels-fab-wrap"><button class="tv-reels-fab" type="button" data-action="tvOpenReelsFeed">${ic('play')} Reels Plein Écran 9:16 (${TV.reels.length})</button></div>` : '';
+    host.innerHTML = noticeHtml + reelsHtml + continueHtml +
+      carousels.map((c) => tvRow(c.title, c.items, c.slug)).join('');
+    return;
+  }
+  if(heroSlot) heroSlot.innerHTML = '';
+  host.innerHTML = tvState('tv.loading');
+  const res = await apiFetch(tvPath('/api/v1/tv/series?limit=60&genre=' + encodeURIComponent(active))).catch(() => null);
+  const items = (res && res.ok && res.data && res.data.items) || [];
+  if(!items.length){
+    host.innerHTML = `<div class="tv-empty">${ic('film')}<p>${esc(t('tv.empty'))}</p></div>`;
+    return;
+  }
+  const isTop10 = active === 'top-10';
+  host.innerHTML = `<div class="tv-grid">${items.map((it, i) => tvCard(it, { isTop10, rank: it.top10_rank || (i + 1) })).join('')}</div>`;
+}
+
+async function tvRenderHome(){
+  tvBody().innerHTML = tvState('tv.loading');
+  tvFlushProgress();
+  let res = await apiFetch(tvPath('/api/v1/tv/bootstrap')).catch(() => null);
+  if(res && res.ok && res.data && Array.isArray(res.data.carousels)){
+    TV.kid = (res.data.viewer && res.data.viewer.kid_mode) ? { id: 1 } : null;
+    if(TV.kid){
+      const pRes = await apiFetch(tvPath('/api/tv/home')).catch(() => null);
+      if(pRes && pRes.ok) TV.kid = pRes.data.kid_mode || TV.kid;
+    }
+    tvHeader();
+    TV.bootstrapData = res.data;
+    TV.filters = res.data.filters || [];
+    TV.reels = res.data.reels || [];
+    TV.activeFilter = TV.activeFilter || 'all';
+    const featured = res.data.featured || [], carousels = res.data.carousels || [];
+    if(!featured.length && !carousels.length){
+      tvBody().innerHTML = tvNotice() + `<div class="tv-empty">${ic('film')}<p>${esc(t(TV.kid ? 'tv.kids.empty' : 'tv.empty'))}</p></div>`;
+      return;
+    }
+    tvBody().innerHTML = `<div id="tvHomeHeroSlot"></div><div id="tvFilterBarWrap">${tvFilterBarMarkup()}</div><div id="tvHomeContent"></div>`;
+    tvRenderHomeSection();
+    return;
+  }
+  try{ res = await apiFetch(tvPath('/api/tv/home')); }catch(e){ res = null; }
+  if(!res || !res.ok){
+    const offlineItems = TV_OFFLINE.list();
+    if(offlineItems.length || (typeof navigator !== 'undefined' && navigator.onLine === false)){
+      TV.filters = [{ slug: 'all', label: 'Tout' }];
+      TV.activeFilter = 'offline';
+      tvBody().innerHTML = `<div id="tvFilterBarWrap">${tvFilterBarMarkup()}</div><div id="tvHomeContent"></div>`;
+      tvRenderOfflineSection($('tvHomeContent'));
+      return;
+    }
+    tvBody().innerHTML = tvApiFailure(res, 'tv.err.load') + `<div class="tv-offline-link"><button class="btn btn-ghost" type="button" data-action="tvOpenDownloads">${ic('download')} ${esc(t('tv.downloads.title'))}</button></div>`;
+    return;
+  }
+  TV.kid = res.data.kid_mode || null;
+  tvHeader();
+  const featured = res.data.featured || [], rows = res.data.rows || [];
+  if(!featured.length && !rows.length){
+    tvBody().innerHTML = tvNotice() + `<div class="tv-empty">${ic('film')}<p>${esc(t(TV.kid ? 'tv.kids.empty' : 'tv.empty'))}</p></div>`;
+    return;
+  }
+  tvBody().innerHTML = (featured.length ? tvHero(featured, 0) : '') + (TV.kid ? '' : tvNotice()) + rows.map((row) => {
+    const label = row.key === 'category' ? row.label : t(TV.catalogKeys[row.key] || 'tv.title');
+    return tvRow(label, row.items, row.key === 'category' ? row.slug : '');
+  }).join('');
+}
+
+async function tvRenderCategory(view){
+  tvBody().innerHTML = tvState('tv.loading');
+  let res = await apiFetch(tvPath('/api/v1/tv/series?limit=60&genre=' + encodeURIComponent(view.slug))).catch(() => null);
+  let items = (res && res.ok && res.data && res.data.items) || [];
+  if(!items.length){
+    res = await apiFetch(tvPath('/api/tv/titles?limit=60&category=' + encodeURIComponent(view.slug))).catch(() => null);
+    if(!res || !res.ok){ tvBody().innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
+    items = res.data.items || [];
+  }
+  const isTop10 = view.slug === 'top-10';
+  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(view.label)}</h2>` + (items.length ? `<div class="tv-grid">${items.map((it, i) => tvCard(it, { isTop10, rank: it.top10_rank || (i + 1) })).join('')}</div>` : tvState('tv.search.none'));
+}
+
+async function tvRenderList(view){
+  tvBody().innerHTML = tvState('tv.loading');
+  const path = view.key === 'history' ? '/api/tv/progress' : '/api/tv/favorites';
+  const res = await apiFetch(tvPath(path)).catch(() => null);
+  if(!res || !res.ok){ tvBody().innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
+  const items = res.data.items || [];
+  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t(view.key === 'history' ? 'tv.history.title' : 'tv.row.myList'))}</h2>` + (items.length ? `<div class="tv-grid">${items.map(tvCard).join('')}</div>` : tvState(view.key === 'history' ? 'tv.history.empty' : 'tv.list.empty'));
+}
+
+// ─── Recherche ───
+const TV_KINDS = ['film', 'series', 'mini_series', 'cartoon', 'anime', 'animation'];
+async function tvRenderSearch(view){
+  const res = await apiFetch(tvPath('/api/tv/categories')).catch(() => null);
+  const categories = (res && res.ok && res.data.categories) || [];
+  const options = (items, selected) => items.map((o) => `<option value="${esc(o[0])}"${o[0] === selected ? ' selected' : ''}>${esc(o[1])}</option>`).join('');
+  tvBody().innerHTML = `<form class="tv-search" data-submit="tvSearch">
+      <input class="input" id="tvQuery" type="search" value="${esc(view.query || '')}" data-i18n-attr="placeholder:tv.search.placeholder" placeholder="${esc(t('tv.search.placeholder'))}" aria-label="${esc(t('tv.search.placeholder'))}">
+      <div class="tv-search-filters">
+        <select class="input" id="tvFCategory" aria-label="${esc(t('tv.search.category'))}"><option value="">${esc(t('tv.search.category'))}</option>${options(categories.map((c) => [c.slug, c.name]), view.category)}</select>
+        <select class="input" id="tvFKind" aria-label="${esc(t('tv.search.kind'))}"><option value="">${esc(t('tv.search.kind'))}</option>${options(TV_KINDS.map((k) => [k, t('tv.kind.' + k)]), view.kind)}</select>
+        <input class="input" id="tvFCountry" maxlength="2" value="${esc(view.country || '')}" placeholder="${esc(t('tv.search.country'))}" aria-label="${esc(t('tv.search.country'))}">
+        <input class="input" id="tvFYear" inputmode="numeric" maxlength="4" value="${esc(view.year || '')}" placeholder="${esc(t('tv.search.year'))}" aria-label="${esc(t('tv.search.year'))}">
+      </div>
+      <button class="btn btn-primary" type="submit">${ic('search')} ${esc(t('tv.search.action'))}</button>
+    </form><div id="tvResults"></div>`;
+  if(view.done) tvRunSearch(view);
+}
+async function tvRunSearch(view){
+  const box = $('tvResults');
+  box.innerHTML = tvState('tv.loading');
+  const params = new URLSearchParams();
+  [['q', view.query], ['category', view.category], ['kind', view.kind], ['country', view.country], ['year', view.year]].forEach((p) => { if(p[1]) params.set(p[0], p[1]); });
+  const res = await apiFetch(tvPath('/api/tv/search?' + params)).catch(() => null);
+  if(!res || !res.ok){ box.innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
+  const items = res.data.items || [];
+  box.innerHTML = items.length ? `<div class="tv-grid">${items.map(tvCard).join('')}</div>` : tvState('tv.search.none');
+}
+Actions.tvSearch = () => {
+  const view = TV.stack[TV.stack.length - 1];
+  Object.assign(view, { query: $('tvQuery').value.trim(), category: $('tvFCategory').value, kind: $('tvFKind').value, country: $('tvFCountry').value.trim().toUpperCase(), year: $('tvFYear').value.trim(), done: true });
+  tvRunSearch(view);
+};
+
+// ─── Fiche ───
+function tvTracks(media){
+  if(!media) return '';
+  const chips = (items) => items.map((x) => `<span class="tv-chip">${esc(x.label || tvLanguageName(x.lang))}</span>`).join('');
+  let out = '';
+  if(media.audio && media.audio.length) out += `<div class="tv-info"><span>${esc(t('tv.audio'))}</span><div>${chips(media.audio)}</div></div>`;
+  if(media.subtitles && media.subtitles.length) out += `<div class="tv-info"><span>${esc(t('tv.subtitles'))}</span><div>${chips(media.subtitles)}</div></div>`;
+  if(media.qualities && media.qualities.length) out += `<div class="tv-info"><span>${esc(t('tv.qualities'))}</span><div>${media.qualities.map((q) => `<span class="tv-chip">${esc(q)}</span>`).join('')}</div></div>`;
+  return out;
+}
+
+function tvPlayButton(title, episodeId, canStream, position){
+  if(!canStream) return '';
+  const kind = position > 0 ? 'tv.resume' : 'tv.play';
+  return `<button class="btn btn-primary" type="button" data-action="tvPlay" data-title="${Number(title)}" data-episode="${Number(episodeId) || 0}">${ic('play')} ${esc(t(kind))}</button>`;
+}
+function tvDownloadButton(title, episodeId, media, canDownload){
+  if(!canDownload) return '';
+  const size = tvSize(media && media.file_size);
+  return `<button class="btn btn-ghost" type="button" data-action="tvDownload" data-title="${Number(title)}" data-episode="${Number(episodeId) || 0}" data-size="${Number(media && media.file_size) || 0}">${ic('download')} ${esc(t('tv.download'))}${size ? ' · ' + esc(size) : ''}</button>`;
+}
+
+function tvShareIconSvg(){
+  return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+}
+
+function tvDetailEpisodesMarkup(){
+  const st = TV.detailState;
+  if(!st || !Array.isArray(st.episodes) || !st.episodes.length) return '';
+  const eps = st.episodes;
+  const total = eps.length;
+  const chunk = 30;
+  const rangeStart = Math.max(0, Math.min(Number(st.rangeStart) || 0, Math.max(0, total - 1)));
+  const rangeEnd = Math.min(total, rangeStart + chunk);
+  const ranges = [];
+  for(let s = 0; s < total; s += chunk){
+    ranges.push({ start: s, label: `${s + 1}-${Math.min(total, s + chunk)}` });
+  }
+  const activeIdx = Math.max(0, Math.min(Number(st.activeIdx) || 0, total - 1));
+  const slice = eps.slice(rangeStart, rangeEnd);
+  const offlineRows = slice.slice(0, 6).map((ep, offset) => {
+    const idx = rangeStart + offset;
+    const epNum = Number(ep.number || (idx + 1));
+    const btn = tvOfflineButtonMarkup({
+      title_id: st.item.id,
+      episode_id: ep.id || epNum,
+      title: st.item.title,
+      episode_title: ep.title || `Épisode ${epNum}`,
+      poster_url: st.item.poster || (st.v1Series && st.v1Series.poster_url) || '',
+      format_tag: (st.v1Series && st.v1Series.format_tag) || st.item.format_tag || 'Mini-Drama',
+      duration_min: ep.duration_min || st.item.duration_min || 8,
+      synopsis: ep.synopsis || st.item.synopsis || '',
+      stream_url: ep.download_url || ep.stream_url || '',
+      source_kind: ep.source_kind || '',
+    }, false);
+    if(!btn) return '';
+    return `<div class="tv-ep-offline-row"><span><strong>Ép. ${epNum}</strong> · ${esc(ep.title || `Épisode ${epNum}`)}</span>${btn}</div>`;
+  }).filter(Boolean).join('');
+
+  return `<section class="tv-episodes-section">
+    <div class="tv-episodes-head"><h2>Épisodes</h2><span>${total} épisode${total > 1 ? 's' : ''}</span></div>
+    <div class="tv-ep-ranges" role="tablist">${ranges.map((r) =>
+      `<button class="tv-ep-range-pill${r.start === rangeStart ? ' is-active' : ''}" type="button" data-action="tvSelectEpRange" data-start="${r.start}">${esc(r.label)}</button>`
+    ).join('')}</div>
+    <div class="tv-ep-grid">${slice.map((ep, offset) => {
+      const idx = rangeStart + offset;
+      const num = Number(ep.number || (idx + 1));
+      const key = tvOfflineKey(st.item.id, ep.id || 0);
+      const isOff = !!TV_OFFLINE.getMeta(key);
+      return `<button class="tv-ep-num${idx === activeIdx ? ' is-active' : ''}${isOff ? ' is-offline' : ''}" type="button" data-action="tvPlayEpisodeIdx" data-id="${Number(st.item.id)}" data-idx="${idx}">${num}</button>`;
+    }).join('')}</div>
+    ${offlineRows ? `<div class="tv-ep-offline-strip">${offlineRows}</div>` : ''}
+  </section>`;
+}
+
+Actions.tvSelectEpRange = (el) => {
+  if(!TV.detailState) return;
+  TV.detailState.rangeStart = Number(el.dataset.start) || 0;
+  const host = $('tvDetailEpisodesWrap');
+  if(host) host.innerHTML = tvDetailEpisodesMarkup();
+};
+
+Actions.tvToggleSynopsis = (el) => {
+  const p = $('tvDetailSynopsis');
+  if(!p) return;
+  const clamped = p.classList.toggle('is-clamped');
+  el.textContent = clamped ? 'Plus' : 'Moins';
+};
+
+Actions.tvShareTitle = async (el) => {
+  const title = el.dataset.title || 'Labo Surf TV';
+  const id = Number(el.dataset.id) || 0;
+  const url = `${FREE_SURF_API_BASE || 'https://labosurf.com'}/tv?series=${id}`;
+  const text = `Regarde « ${title} » gratuitement sur Labo Surf TV !`;
+  try{
+    if(typeof navigator !== 'undefined' && typeof navigator.share === 'function'){
+      await navigator.share({ title, text, url });
+      return;
+    }
+    if(typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function'){
+      await navigator.clipboard.writeText(`${text} ${url}`);
+    }
+  }catch(e){}
+  toast('Lien prêt à partager !', 'success');
+};
+
+Actions.tvPlayEpisodeIdx = async (el) => {
+  const id = Number(el.dataset.id);
+  const idx = Math.max(0, Number(el.dataset.idx) || 0);
+  if(TV.detailState && Number(TV.detailState.item && TV.detailState.item.id) === id){
+    TV.detailState.activeIdx = idx;
+    document.querySelectorAll('#tvDetailEpisodesWrap .tv-ep-num').forEach((btn) => {
+      btn.classList.toggle('is-active', Number(btn.dataset.idx) === idx);
+    });
+    const mainBtn = $('tvWatchMainBtn');
+    const eps = TV.detailState.episodes || [];
+    const targetEp = eps[idx];
+    if(mainBtn && targetEp){
+      mainBtn.dataset.idx = String(idx);
+      const isFilm = eps.length <= 1 && TV.detailState.item.kind === 'film';
+      mainBtn.innerHTML = `${ic('play')} ${isFilm ? 'Regarder' : `Regarder ép. ${Number(targetEp.number || (idx + 1))}`}`;
+    }
+  }
+  await tvLaunchSeriesAt(id, idx);
+};
+
+async function tvRenderDetail(view){
+  tvBody().innerHTML = tvState('tv.loading');
+  const [res, v1Res] = await Promise.all([
+    apiFetch(tvPath('/api/tv/titles/' + Number(view.id))).catch(() => null),
+    apiFetch(tvPath('/api/v1/tv/series/' + Number(view.id))).catch(() => null),
+  ]);
+  if(!res || !res.ok){ tvBody().innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
+  const item = res.data.title;
+  const v1Series = (v1Res && v1Res.ok && v1Res.data && v1Res.data.series) || null;
+  TV.currentV1Series = v1Series;
+  TV.kid = res.data.kid_mode || null;
+  tvHeader();
+  const v1Eps = (v1Series && Array.isArray(v1Series.episodes)) ? v1Series.episodes : [];
+  const savedCont = tvLocalContinueList().find((c) => Number(c.title_id) === Number(item.id));
+  let activeIdx = 0;
+  if(savedCont && v1Eps.length){
+    const foundIdx = v1Eps.findIndex((e) => Number(e.id) === Number(savedCont.episode_id));
+    if(foundIdx >= 0) activeIdx = foundIdx;
+  }
+  TV.detailState = {
+    item,
+    v1Series,
+    episodes: v1Eps,
+    activeIdx,
+    rangeStart: Math.floor(activeIdx / 30) * 30,
+  };
+
+  const art = tvImage((v1Series && (v1Series.banner_url || v1Series.poster_url)) || item.banner || item.poster);
+  const position = item.progress ? Number(item.progress.position_sec) || 0 : 0;
+  const denied = item.availability === 'restricted' ? `<p class="tv-denied">${ic('lock')} ${esc(t('tv.denied.plan'))}</p>` : '';
+  const youtube = item.media && item.media.kind === 'youtube' ? `<p class="tv-note">${esc(t('tv.youtubeNote'))}</p>` : '';
+  const primaryEp = !item.has_seasons && v1Eps.length ? v1Eps[0] : null;
+  const filmOfflineBtn = primaryEp ? tvOfflineButtonMarkup({
+    title_id: item.id,
+    episode_id: primaryEp.id || 0,
+    title: item.title,
+    episode_title: primaryEp.title || '',
+    poster_url: item.poster || (v1Series && v1Series.poster_url) || '',
+    format_tag: (v1Series && v1Series.format_tag) || item.format_tag || 'Film Raconté',
+    duration_min: item.duration_min || primaryEp.duration_min || 12,
+    synopsis: item.synopsis || primaryEp.synopsis || '',
+    stream_url: primaryEp.download_url || primaryEp.stream_url || '',
+    source_kind: primaryEp.source_kind || '',
+  }, false) : '';
+
+  const totalEps = v1Eps.length || Number(v1Series && v1Series.episode_count) || Number(item.episode_count) || 1;
+  const isFilm = Boolean((v1Series && v1Series.is_complete_story) || (!item.has_seasons && totalEps <= 1 && item.kind === 'film'));
+  const activeEpObj = v1Eps[activeIdx] || {};
+  const activeEpNum = Number(activeEpObj.number || (activeIdx + 1));
+  const epMeta = isFilm ? 'Récit complet' : `${totalEps} épisode${totalEps > 1 ? 's' : ''}`;
+  const ratingStr = tvFormatRating((v1Series && v1Series.rating) || item.rating);
+  const viewsStr = tvFormatViews((v1Series && v1Series.views_count) || item.views_count);
+  const langLabel = (v1Series && v1Series.language_label) || (item.original_lang === 'en' ? 'Anglais' : 'Français');
+  const posterModel = Object.assign({}, item, { poster: item.poster || (v1Series && v1Series.poster_url) || '' });
+
+  const hasReelStream = v1Eps.some((e) => e.stream_url);
+  const watchBtn = hasReelStream
+    ? `<button class="tv-btn-watch-main" id="tvWatchMainBtn" type="button" data-action="tvPlayEpisodeIdx" data-id="${Number(item.id)}" data-idx="${activeIdx}">${ic('play')} ${isFilm ? 'Regarder' : `Regarder ép. ${activeEpNum}`}</button>`
+    : (item.can_stream
+      ? `<button class="tv-btn-watch-main" id="tvWatchMainBtn" type="button" data-action="tvPlay" data-title="${Number(item.id)}" data-episode="0">${ic('play')} ${esc(t(position > 0 ? 'tv.resume' : 'tv.play'))}</button>`
+      : `<button class="tv-btn-watch-main" type="button" data-action="tvOpenReelTitle" data-id="${Number(item.id)}">${ic('play')} Regarder</button>`);
+
+  const episodesBlock = v1Eps.length
+    ? `<div id="tvDetailEpisodesWrap">${tvDetailEpisodesMarkup()}</div>`
+    : (item.has_seasons
+      ? `<div class="tv-seasons"><div class="tv-season-tabs" role="tablist">${item.seasons.map((s, i) => `<button class="tv-season-tab" type="button" role="tab" data-action="tvSeason" data-title="${Number(item.id)}" data-season="${Number(s.id)}" aria-selected="${i === 0 ? 'true' : 'false'}">${esc(s.name || t('tv.season', { n: s.number }))}</button>`).join('')}</div><div id="tvEpisodes"></div></div>`
+      : '');
+
+  tvBody().innerHTML = `<article class="tv-detail">
+      <div class="tv-detail-backdrop">
+        ${art ? `<img class="tv-detail-blurbg" src="${esc(art)}" alt="" decoding="async">` : ''}
+        <div class="tv-detail-fade"></div>
+        <div class="tv-detail-hero">
+          <div class="tv-detail-poster">${tvPosterMarkup(posterModel, '')}</div>
+          <div class="tv-detail-info">
+            <span class="tv-pill-brand">${esc(tvLangBadge(v1Series || item))}</span>
+            <h2 class="tv-detail-title">${esc(item.title)}</h2>
+            <div class="tv-detail-meta">${esc(epMeta)} · <span class="tv-star">★ ${esc(ratingStr)}</span> · ${esc(viewsStr)} · ${esc(langLabel)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="tv-detail-actions">
+        ${watchBtn}
+        <button class="tv-btn-square" type="button" data-action="tvShareTitle" data-id="${Number(item.id)}" data-title="${esc(item.title)}">${tvShareIconSvg()}<span>Partager</span></button>
+        <button class="tv-btn-square${item.favorite ? ' is-active' : ''}" type="button" data-action="tvFavorite" data-id="${Number(item.id)}" data-on="${item.favorite ? 1 : 0}" aria-pressed="${item.favorite ? 'true' : 'false'}">${ic(item.favorite ? 'check' : 'plus')}<span>${esc(t(item.favorite ? 'tv.inList' : 'tv.addList'))}</span></button>
+      </div>
+      ${denied}${youtube}
+      ${filmOfflineBtn ? `<div class="tv-ep-offline-strip" style="padding:0 16px 14px"><div class="tv-ep-offline-row"><span><strong>Hors-ligne</strong> · Enregistrer en MP4</span>${filmOfflineBtn}</div></div>` : (item.can_download ? `<div class="tv-detail-genres">${tvDownloadButton(item.id, 0, item.media, item.can_download)}</div>` : '')}
+      ${item.synopsis ? `<div class="tv-detail-synopsis-wrap"><p class="tv-detail-synopsis is-clamped" id="tvDetailSynopsis">${esc(item.synopsis)}</p><button class="tv-synopsis-more" type="button" data-action="tvToggleSynopsis">Plus</button></div>` : ''}
+      ${item.categories && item.categories.length ? `<div class="tv-detail-genres">${item.categories.map((c) => `<span class="tv-chip">${esc(c.name)}</span>`).join('')}</div>` : ''}
+      ${tvTracks(item.media)}
+      ${episodesBlock}
+      <p class="tv-note">${esc(t('tv.dataNotice'))}</p></article>`;
+  if(!v1Eps.length && item.has_seasons && item.seasons.length) tvLoadEpisodes(item.id, item.seasons[0].id);
+}
+
+async function tvLoadEpisodes(titleId, seasonId){
+  const box = $('tvEpisodes');
+  box.innerHTML = tvState('tv.loading');
+  const res = await apiFetch(tvPath('/api/tv/seasons/' + Number(seasonId) + '/episodes')).catch(() => null);
+  if(!res || !res.ok){ box.innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
+  const episodes = res.data.episodes || [];
+  const v1Series = TV.currentV1Series || null;
+  const v1ById = {};
+  if(v1Series && Array.isArray(v1Series.episodes)){
+    v1Series.episodes.forEach((ve) => { v1ById[Number(ve.id)] = ve; });
+  }
+  box.innerHTML = episodes.length ? episodes.map((e) => {
+    const pct = e.progress_duration_sec > 0 ? Math.min(100, Math.round(e.position_sec * 100 / e.progress_duration_sec)) : 0;
+    const v1Ep = v1ById[Number(e.id)] || null;
+    const epOfflineBtn = v1Ep ? tvOfflineButtonMarkup({
+      title_id: titleId,
+      episode_id: e.id,
+      title: (v1Series && v1Series.title) || '',
+      episode_title: e.title || v1Ep.title || '',
+      poster_url: (v1Series && v1Series.poster_url) || '',
+      format_tag: (v1Series && v1Series.format_tag) || '',
+      duration_min: e.duration_min || v1Ep.duration_min || 10,
+      synopsis: e.synopsis || v1Ep.synopsis || '',
+      stream_url: v1Ep.download_url || v1Ep.stream_url || '',
+      source_kind: v1Ep.source_kind || '',
+    }, false) : '';
+    return `<div class="tv-episode"><div class="tv-ep-head"><b>${Number(e.number)}. ${esc(e.title || t('tv.episode', { n: e.number }))}</b><span>${esc(tvDuration(e.duration_min))}</span></div>
+      ${e.synopsis ? `<p>${esc(e.synopsis)}</p>` : ''}
+      ${pct ? `<div class="tv-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>` : ''}
+      ${tvTracks(e.media)}
+      <div class="tv-actions">${tvPlayButton(titleId, e.id, e.can_stream, e.position_sec)}${epOfflineBtn || tvDownloadButton(titleId, e.id, e.media, e.can_download)}${e.can_stream || e.can_download || epOfflineBtn ? '' : `<span class="tv-note">${esc(t('tv.denied.noMedia'))}</span>`}</div></div>`;
+  }).join('') : tvState('tv.episodes.none');
+}
+Actions.tvSeason = (el) => {
+  document.querySelectorAll('.tv-season-tab').forEach((tab) => tab.setAttribute('aria-selected', tab === el ? 'true' : 'false'));
+  tvLoadEpisodes(Number(el.dataset.title), Number(el.dataset.season));
+};
+
+Actions.tvFavorite = async (el) => {
+  const on = el.dataset.on !== '1';
+  const res = await apiFetch('/api/tv/favorites', { method: 'POST', body: JSON.stringify({ title_id: Number(el.dataset.id), favorite: on }) }).catch(() => null);
+  if(!res || !res.ok){ toast(tvMessage(res, 'tv.err.action'), 'error'); return; }
+  el.dataset.on = on ? '1' : '0';
+  el.setAttribute('aria-pressed', on ? 'true' : 'false');
+  el.classList.toggle('is-active', on);
+  if(el.classList.contains('tv-btn-square')){
+    el.innerHTML = `${ic(on ? 'check' : 'plus')}<span>${esc(t(on ? 'tv.inList' : 'tv.addList'))}</span>`;
+  }else{
+    el.innerHTML = ic(on ? 'check' : 'plus') + ' ' + esc(t(on ? 'tv.inList' : 'tv.addList'));
+  }
+};
+
+// ─── Lecture ───
+async function tvRequestTicket(title, episode, mode){
+  const res = await apiFetch('/api/tv/play', { method: 'POST', body: JSON.stringify({ title_id: title, episode_id: episode, mode: mode }) }).catch(() => null);
+  if(!res || !res.ok){ toast(tvMessage(res, 'tv.err.play'), 'error'); return null; }
+  return res.data;
+}
+
+Actions.tvPlay = async (el) => {
+  el.disabled = true;
+  const granted = await tvRequestTicket(Number(el.dataset.title), Number(el.dataset.episode), 'stream');
+  el.disabled = false;
+  if(!granted) return;
+  const pref = store.get('tvPlayback', {});
+  if(granted.source_kind === 'youtube'){
+    const open = tvNative('tvOpenYoutube');
+    if(open){ open(granted.ticket); return; }
+    return tvWebPlayer(granted.ticket);
+  }
+  const play = tvNative('tvPlay');
+  if(play){ play(granted.ticket, I18N.lang, pref.audio || '', pref.subtitles || ''); return; }
+  tvWebPlayer(granted.ticket);
+};
+
+// Hors de l'application Android (navigateur de développement) : lecteur du navigateur, avec les mêmes tickets.
+async function tvWebPlayer(ticket){
+  const res = await apiFetch('/api/tv/play/redeem', { method: 'POST', body: JSON.stringify({ ticket: ticket, lang: I18N.lang }) }).catch(() => null);
+  if(!res || !res.ok){ toast(tvMessage(res, 'tv.err.play'), 'error'); return; }
+  const play = res.data.play;
+  const box = $('tvPlayerOverlay');
+  $('tvPlayerTitle').textContent = play.title + (play.episode_title ? ' · ' + play.episode_title : '');
+  const host = $('tvPlayerHost');
+  host.textContent = '';
+  if(play.kind === 'youtube'){
+    const frame = document.createElement('iframe');
+    frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(play.youtube_id);
+    frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    frame.setAttribute('allowfullscreen', '');
+    frame.title = play.title;
+    host.appendChild(frame);
+  } else {
+    if(!/^https:\/\//i.test(String(play.url || ''))){ toast(t('tv.err.play'), 'error'); return; }
+    const video = document.createElement('video');
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.src = play.url;
+    video.addEventListener('loadedmetadata', () => { if(play.position_sec) video.currentTime = play.position_sec; });
+    video.addEventListener('error', () => toast(t('tv.err.source'), 'error'));
+    const save = () => { if(video.currentTime > 0) tvSaveProgress(play.title_id, play.episode_id, Math.floor(video.currentTime), Math.floor(video.duration || 0)); };
+    video.addEventListener('pause', save);
+    video.addEventListener('ended', save);
+    TV.player = { video, save };
+    host.appendChild(video);
+  }
+  box.hidden = false;
+}
+Actions.tvClosePlayer = () => {
+  if(TV.player){ TV.player.save(); TV.player.video.pause(); TV.player = null; }
+  $('tvPlayerHost').textContent = '';
+  $('tvPlayerOverlay').hidden = true;
+};
+
+// Progression : envoyée au panel ; hors connexion, gardée sur le téléphone puis renvoyée.
+function tvSaveLocalContinue(title, episode, position, duration, episodeNumber){
+  if(!title || position < 2) return;
+  try{
+    const map = store.get('tvLocalContinue', {});
+    map[String(title)] = {
+      title_id: Number(title),
+      episode_id: Number(episode) || 0,
+      episode_number: Number(episodeNumber) || 1,
+      position_sec: Math.floor(Number(position) || 0),
+      duration_sec: Math.floor(Number(duration) || 0),
+      updated_at: Date.now(),
+    };
+    const keys = Object.keys(map).sort((a, b) => (map[b].updated_at || 0) - (map[a].updated_at || 0));
+    keys.slice(15).forEach((k) => delete map[k]);
+    store.set('tvLocalContinue', map);
+  }catch(e){}
+}
+async function tvSaveProgress(title, episode, position, duration){
+  const curItem = (TV_REEL && Array.isArray(TV_REEL.items)) ? TV_REEL.items[TV_REEL.idx] : null;
+  tvSaveLocalContinue(title, episode, position, duration, (curItem && (curItem.number || (TV_REEL.idx + 1))) || 1);
+  const body = { title_id: title, episode_id: episode, position_sec: position, duration_sec: duration };
+  let sent = false;
+  if(authToken){
+    try{ const res = await apiFetch('/api/tv/progress', { method: 'POST', body: JSON.stringify(body) }); sent = !!(res && res.ok); }catch(e){}
+  }
+  if(!sent){
+    const pending = store.get('tvPendingProgress', {});
+    pending[title + ':' + episode] = body;
+    store.set('tvPendingProgress', pending);
+  }
+}
+function tvFlushProgress(){
+  const pending = store.get('tvPendingProgress', {});
+  const keys = Object.keys(pending);
+  if(!keys.length) return;
+  store.remove('tvPendingProgress');
+  keys.forEach((k) => { const p = pending[k]; tvSaveProgress(p.title_id, p.episode_id, p.position_sec, p.duration_sec); });
+}
+window.onTvProgress = (title, episode, position, duration) => tvSaveProgress(Number(title), Number(episode), Number(position), Number(duration));
+
+// ─── Téléchargements : sur le téléphone de chacun, jamais sur le serveur ───
+Actions.tvDownload = async (el) => {
+  const start = tvNative('tvDownloadStart');
+  if(!start){ toast(t('tv.downloads.appOnly'), 'warning'); return; }
+  const size = Number(el.dataset.size) || 0;
+  const storage = tvStorage();
+  if(size && storage && storage.free < size){ toast(t('tv.downloads.noSpace', { need: tvSize(size), free: tvSize(storage.free) }), 'error', 6000); return; }
+  el.disabled = true;
+  const granted = await tvRequestTicket(Number(el.dataset.title), Number(el.dataset.episode), 'download');
+  el.disabled = false;
+  if(!granted) return;
+  start(granted.ticket, I18N.lang);
+  toast(t('tv.downloads.preparing'), 'info');
+};
+// Résultat envoyé par le natif une fois le fichier réellement demandé à Android
+window.onTvDownload = (code) => {
+  if(code === 'started') toast(t('tv.downloads.started'), 'success');
+  else if(code === 'no_space') toast(t('tv.downloads.noSpaceShort'), 'error', 6000);
+  else toast(t('tv.err.download'), 'error');
+  const view = TV.stack[TV.stack.length - 1];
+  if(currentScreen === 'tv' && view && view.name === 'downloads') tvRender();
+};
+
+function tvStorage(){
+  const fn = tvNative('tvStorage');
+  if(!fn) return null;
+  try{ return JSON.parse(fn()); }catch(e){ return null; }
+}
+function tvDownloadsList(){
+  const fn = tvNative('tvDownloadsList');
+  if(!fn) return null;
+  try{ return JSON.parse(fn()); }catch(e){ return []; }
+}
+
+function tvRenderDownloads(){
+  const localItems = TV_OFFLINE.list();
+  const nativeItems = tvDownloadsList();
+  const visible = nativeItems === null ? [] : (TV.kid ? nativeItems.filter((d) => d.kid) : nativeItems);
+  const storage = tvStorage();
+  const localBytes = localItems.reduce((sum, it) => sum + (Number(it.size) || 0), 0);
+  const nativeBytes = visible.reduce((sum, d) => sum + (Number(d.downloaded) || 0), 0);
+  const used = localBytes + nativeBytes;
+  const status = (d) => d.expired ? t('tv.downloads.expired') : t('tv.downloads.status.' + d.status);
+  const localHtml = localItems.map((it) => `
+    <div class="tv-episode">
+      <div class="tv-ep-head"><b>${esc(it.title || 'Vidéo hors-ligne')}${it.episode_title && it.episode_title !== it.title ? ' · ' + esc(it.episode_title) : ''}</b><span>${esc(tvSize(it.size))}</span></div>
+      <p class="tv-note">✅ Hors-ligne · ${esc(it.format_tag || '9:16')}</p>
+      <div class="tv-actions">
+        <button class="btn btn-primary" type="button" data-action="tvPlayOfflineReel" data-offline-key="${esc(it.key)}">${ic('play')} Lire 9:16</button>
+        <button class="btn btn-ghost" type="button" data-action="tvDeleteOfflineItem" data-offline-key="${esc(it.key)}">${ic('trash')} ${esc(t('tv.downloads.delete'))}</button>
+      </div>
+    </div>`).join('');
+  const nativeHtml = visible.map((d) => {
+    const pct = d.size > 0 ? Math.min(100, Math.round(d.downloaded * 100 / d.size)) : 0;
+    const running = d.status === 'running' || d.status === 'pending' || d.status === 'paused';
+    return `<div class="tv-episode"><div class="tv-ep-head"><b>${esc(d.title)}${d.episode ? ' · ' + esc(d.episode) : ''}</b><span>${esc(tvSize(d.size))}</span></div>
+      <p class="tv-note">${esc(status(d))}${running && pct ? ' · ' + pct + ' %' : ''}</p>
+      ${running ? `<div class="tv-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>` : ''}
+      <div class="tv-actions">${d.status === 'done' && !d.expired ? `<button class="btn btn-primary" type="button" data-action="tvPlayOffline" data-id="${esc(d.id)}">${ic('play')} ${esc(t('tv.play'))}</button>` : ''}
+        <button class="btn btn-ghost" type="button" data-action="tvDeleteDownload" data-id="${esc(d.id)}">${ic('trash')} ${esc(t(running ? 'tv.downloads.cancel' : 'tv.downloads.delete'))}</button></div></div>`;
+  }).join('');
+  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t('tv.downloads.title'))}</h2>
+    ${storage ? `<p class="tv-note">${esc(t('tv.downloads.storage', { used: tvSize(used) || '0 ' + t('tv.unit.mb'), free: tvSize(storage.free) }))}</p>` : (localBytes ? `<p class="tv-note">Espace utilisé hors-ligne : ${esc(tvSize(localBytes))}</p>` : '')}
+    ${(localHtml || nativeHtml) ? (localHtml + nativeHtml) : tvState('tv.downloads.empty')}`;
+  if(visible.some((d) => d.status === 'running' || d.status === 'pending' || d.status === 'paused')) TV.pollTimer = setTimeout(() => { if(currentScreen === 'tv' && TV.stack[TV.stack.length - 1].name === 'downloads') tvRenderDownloads(); }, 1500);
+}
+Actions.tvPlayOffline = (el) => {
+  const play = tvNative('tvPlayOffline');
+  if(!play) return;
+  const pref = store.get('tvPlayback', {});
+  if(!play(el.dataset.id, pref.audio || 'fr', pref.subtitles || '')){ toast(t('tv.downloads.expired'), 'error'); tvRender(); }
+};
+Actions.tvDeleteDownload = async (el) => {
+  const remove = tvNative('tvDownloadDelete');
+  if(!remove) return;
+  const ok = await confirmDialog({ title: t('tv.downloads.deleteTitle'), message: t('tv.downloads.deleteBody'), confirm: t('tv.downloads.delete'), danger: true });
+  if(ok){ remove(el.dataset.id); tvRender(); }
+};
+
+// ─── Préférences de lecture (séparées de la langue de l'interface) ───
+function tvRenderSettings(){
+  const pref = store.get('tvPlayback', {});
+  const langs = [['', t('tv.pref.auto')], ['fr', t('tv.lang.fr')], ['en', t('tv.lang.en')]];
+  const opts = (selected, extra) => (extra ? [['off', t('tv.pref.off')]] : []).concat(langs).map((o) => `<option value="${o[0]}"${o[0] === (selected || '') ? ' selected' : ''}>${esc(o[1])}</option>`).join('');
+  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t('tv.pref.title'))}</h2><p class="tv-note">${esc(t('tv.pref.note'))}</p>
+    <form class="tv-form" data-submit="tvSaveSettings">
+      <label>${esc(t('tv.audio'))}<select class="input" id="tvPrefAudio">${opts(pref.audio)}</select></label>
+      <label>${esc(t('tv.subtitles'))}<select class="input" id="tvPrefSubs">${opts(pref.subtitles, true)}</select></label>
+      <button class="btn btn-primary" type="submit">${esc(t('tv.save'))}</button></form>`;
+}
+Actions.tvSaveSettings = () => {
+  store.set('tvPlayback', { audio: $('tvPrefAudio').value, subtitles: $('tvPrefSubs').value });
+  toast(t('tv.pref.saved'), 'success');
+  tvBack();
+};
+
+// ─── KIDS et contrôle parental : tout est vérifié par le panel ───
+async function tvParentalCall(path, body, okKey){
+  const res = await apiFetch('/api/tv/parental' + path, { method: 'POST', body: JSON.stringify(body || {}) }).catch(() => null);
+  if(!res || !res.ok){ toast(tvMessage(res, 'tv.err.action'), 'error', 5000); return null; }
+  if(okKey) toast(t(okKey), 'success');
+  return res.data;
+}
+
+async function tvRenderParental(){
+  tvBody().innerHTML = tvState('tv.loading');
+  const res = await apiFetch(tvPath('/api/tv/parental')).catch(() => null);
+  if(!res || !res.ok){ tvBody().innerHTML = tvApiFailure(res, 'tv.err.load'); return; }
+  const data = res.data;
+  TV.kid = data.kid_mode || null;
+  tvHeader();
+  if(TV.kid){ TV.stack = [{ name: 'home' }]; tvRender(); return; }
+  if(!data.pin_set){
+    tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t('tv.kids.title'))}</h2><p class="tv-note">${esc(t('tv.kids.intro'))}</p>
+      <form class="tv-form" data-submit="tvCreatePin"><label>${esc(t('tv.pin.new'))}<input class="input" id="tvNewPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8"></label>
+      <button class="btn btn-primary" type="submit">${esc(t('tv.pin.create'))}</button></form>`;
+    return;
+  }
+  TV.kidCategories = data.categories || [];
+  const profiles = data.profiles || [];
+  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t('tv.kids.who'))}</h2>
+    <div class="tv-profiles">${profiles.filter((p) => p.active).map((p) => `<button class="tv-profile" type="button" data-action="tvEnterKids" data-id="${Number(p.id)}"><span class="tv-profile-face">${esc(String(p.name).charAt(0).toUpperCase())}</span><b>${esc(p.name)}</b><small>${esc(t('tv.kids.upTo', { age: p.max_age }))}</small></button>`).join('') || `<p class="tv-note">${esc(t('tv.kids.noProfile'))}</p>`}</div>
+    <h2 class="tv-section-title">${esc(t('tv.parental.title'))}</h2>
+    <p class="tv-note">${esc(t('tv.parental.note'))}</p>
+    ${profiles.map((p) => tvProfileForm(p)).join('')}
+    ${tvProfileForm({ id: 0, name: '', max_age: 6, categories: [], active: 1 })}
+    <details class="tv-fold"><summary>${esc(t('tv.pin.change'))}</summary><form class="tv-form" data-submit="tvChangePin">
+      <label>${esc(t('tv.pin.current'))}<input class="input" id="tvCurPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></label>
+      <label>${esc(t('tv.pin.new'))}<input class="input" id="tvChgPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8"></label>
+      <button class="btn btn-primary" type="submit">${esc(t('tv.save'))}</button></form></details>
+    ${tvResetForm()}`;
+}
+
+function tvResetForm(){
+  return `<details class="tv-fold"><summary>${esc(t('tv.pin.forgot'))}</summary><form class="tv-form" data-submit="tvResetPin"><p class="tv-note">${esc(t('tv.pin.forgotNote'))}</p>
+      <label>${esc(t('tv.pin.accountPassword'))}<input class="input" id="tvResetPassword" type="password" autocomplete="current-password"></label>
+      <label>${esc(t('tv.pin.new'))}<input class="input" id="tvResetPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8"></label>
+      <button class="btn btn-primary" type="submit">${esc(t('tv.pin.reset'))}</button></form></details>`;
+}
+
+function tvProfileForm(p){
+  const id = Number(p.id);
+  const selected = new Set(p.categories || []);
+  return `<details class="tv-fold"${id ? '' : ''}><summary>${esc(id ? p.name : t('tv.parental.add'))}</summary>
+    <form class="tv-form" data-submit="tvSaveProfile" data-id="${id}">
+      <label>${esc(t('tv.parental.name'))}<input class="input" name="name" maxlength="40" value="${esc(p.name)}"></label>
+      <label>${esc(t('tv.parental.maxAge'))}<input class="input" name="max_age" type="number" min="0" max="17" value="${Number(p.max_age)}"></label>
+      <fieldset class="tv-checks"><legend>${esc(t('tv.parental.categories'))}</legend><p class="tv-note">${esc(t('tv.parental.categoriesNote'))}</p>
+        ${(TV.kidCategories || []).map((c) => `<label class="tv-check"><input type="checkbox" name="cat" value="${Number(c.id)}"${selected.has(c.id) ? ' checked' : ''}> ${esc(c.name)}</label>`).join('')}</fieldset>
+      <label class="tv-check"><input type="checkbox" name="active"${p.active ? ' checked' : ''}> ${esc(t('tv.parental.active'))}</label>
+      <label>${esc(t('tv.pin.current'))}<input class="input" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></label>
+      <div class="tv-actions"><button class="btn btn-primary" type="submit">${esc(t('tv.save'))}</button>${id ? `<button class="btn btn-ghost" type="button" data-action="tvDeleteProfile" data-id="${id}">${ic('trash')} ${esc(t('tv.downloads.delete'))}</button>` : ''}</div>
+    </form></details>`;
+}
+
+Actions.tvCreatePin = async () => { if(await tvParentalCall('/pin', { pin: $('tvNewPin').value }, 'tv.pin.saved')) tvRender(); };
+Actions.tvChangePin = async () => { if(await tvParentalCall('/pin', { pin: $('tvChgPin').value, current_pin: $('tvCurPin').value }, 'tv.pin.saved')) tvRender(); };
+Actions.tvResetPin = async () => {
+  const done = await tvParentalCall('/reset', { pin: $('tvResetPin').value, password: $('tvResetPassword').value }, 'tv.pin.saved');
+  if(done){ TV.kid = null; TV.stack = [{ name: 'home' }, { name: 'parental' }]; tvRender(); }
+};
+Actions.tvSaveProfile = async (form) => {
+  const id = Number(form.dataset.id);
+  const body = { name: form.elements.name.value, max_age: Number(form.elements.max_age.value), active: form.elements.active.checked, pin: form.elements.pin.value,
+                 categories: [...form.querySelectorAll('[name="cat"]:checked')].map((c) => Number(c.value)) };
+  if(await tvParentalCall(id ? `/profiles/${id}/update` : '/profiles/new', body, 'tv.parental.saved')) tvRender();
+};
+Actions.tvDeleteProfile = async (el) => {
+  const form = el.closest('form');
+  if(await tvParentalCall(`/profiles/${Number(el.dataset.id)}/delete`, { pin: form.elements.pin.value }, 'tv.parental.saved')) tvRender();
+};
+Actions.tvEnterKids = async (el) => {
+  const data = await tvParentalCall('/enter', { profile_id: Number(el.dataset.id) });
+  if(!data) return;
+  TV.kid = data.kid_mode;
+  TV.stack = [{ name: 'home' }];
+  tvRender();
+};
+
+function tvRenderExitKids(){
+  tvBody().innerHTML = `<h2 class="tv-section-title">${esc(t('tv.kids.exit'))}</h2><p class="tv-note">${esc(t('tv.kids.exitNote'))}</p>
+    <form class="tv-form" data-submit="tvExitKidsConfirm"><label>${esc(t('tv.pin.current'))}<input class="input" id="tvExitPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></label>
+    <button class="btn btn-primary" type="submit">${esc(t('tv.kids.exit'))}</button></form>${tvResetForm()}`;
+}
+Actions.tvExitKidsConfirm = async () => {
+  const done = await tvParentalCall('/exit', { pin: $('tvExitPin').value });
+  if(!done) return;
+  TV.kid = null;
+  TV.stack = [{ name: 'home' }];
+  tvRender();
+};
+
+document.addEventListener('langchange', () => { if(currentScreen === 'tv') tvRender(); });
+
+// -------------------- VerticalReelPlayer Plein Écran 9:16 --------------------
+const TV_REEL = { items: [], idx: 0, hls: null, hlsLoading: null, muted: false, series: null };
+
+function tvEnsureHls(){
+  if(window.Hls) return Promise.resolve(window.Hls);
+  if(TV_REEL.hlsLoading) return TV_REEL.hlsLoading;
+  TV_REEL.hlsLoading = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
+    s.onload = () => resolve(window.Hls || null);
+    s.onerror = () => resolve(null);
+    document.head.appendChild(s);
+  });
+  return TV_REEL.hlsLoading;
+}
+
+function tvEnsureReelOverlay(){
+  let box = $('tvReelOverlay');
+  if(box) return box;
+  box = document.createElement('div');
+  box.id = 'tvReelOverlay';
+  box.className = 'tv-reel-overlay';
+  box.hidden = true;
+  box.innerHTML = `<div class="tv-reel-top"><button type="button" data-action="tvCloseReel">&larr; ${esc(t('common.back'))}</button><button type="button" data-action="tvToggleReelDrawer">Épisodes</button></div>
+    <div class="tv-reel-feed" id="tvReelFeed"></div>
+    <div class="tv-reel-bar"><button type="button" id="tvReelToggle">&#10074;&#10074;</button><input type="range" id="tvReelScrub" min="0" max="100" value="0" aria-label="Progress"><span class="tv-reel-time" id="tvReelTime">0:00</span></div>
+    <div class="tv-reel-drawer" id="tvReelDrawer" hidden></div>`;
+  document.body.appendChild(box);
+  $('tvReelToggle').addEventListener('click', () => {
+    const slide = document.querySelector(`.tv-reel-slide[data-ridx="${TV_REEL.idx}"]`);
+    const v = slide && slide.querySelector('video');
+    if(!v) return;
+    if(v.paused){ v.play().catch(() => {}); $('tvReelToggle').innerHTML = '&#10074;&#10074;'; }
+    else { v.pause(); $('tvReelToggle').innerHTML = '&#9654;'; }
+  });
+  $('tvReelScrub').addEventListener('input', (ev) => {
+    const slide = document.querySelector(`.tv-reel-slide[data-ridx="${TV_REEL.idx}"]`);
+    const v = slide && slide.querySelector('video');
+    if(v && v.duration) v.currentTime = (Number(ev.target.value) / 100) * v.duration;
+  });
+  $('tvReelFeed').addEventListener('click', (ev) => {
+    const v = ev.target && ev.target.closest('video');
+    if(!v) return;
+    if(v.paused){ v.play().catch(() => {}); $('tvReelToggle').innerHTML = '&#10074;&#10074;'; }
+    else { v.pause(); $('tvReelToggle').innerHTML = '&#9654;'; }
+  });
+  return box;
+}
+
+function tvFmtSec(s){
+  const n = Math.max(0, Math.floor(s || 0));
+  return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+}
+
+async function tvAttachReelVideo(idx){
+  if(TV_REEL.hls){ try{ TV_REEL.hls.destroy(); }catch(e){} TV_REEL.hls = null; }
+  document.querySelectorAll('.tv-reel-video').forEach((v) => { v.pause(); v.removeAttribute('src'); });
+  TV_REEL.idx = idx;
+  const item = TV_REEL.items[idx];
+  const slide = document.querySelector(`.tv-reel-slide[data-ridx="${idx}"]`);
+  if(!slide || !item) return;
+  const offlineKey = item.offline_key || tvOfflineKey(item.title_id || item.id, item.episode_id || 0);
+  let localUrl = item.blobUrl || TV_OFFLINE.blobUrls[offlineKey] || '';
+  if(!localUrl && TV_OFFLINE.getMeta(offlineKey)){
+    const blob = await tvOfflineGetBlob(offlineKey).catch(() => null);
+    if(blob){
+      localUrl = URL.createObjectURL(blob);
+      TV_OFFLINE.blobUrls[offlineKey] = localUrl;
+    }
+  }
+  const src = localUrl || item.stream_url || '';
+  if(!src) return;
+  const video = slide.querySelector('video');
+  video.muted = TV_REEL.muted;
+  video.classList.remove('is-portrait-stream', 'is-landscape-stream');
+  video.onloadedmetadata = () => {
+    const portrait = (video.videoHeight || 16) >= (video.videoWidth || 9);
+    video.classList.toggle('is-portrait-stream', portrait);
+    video.classList.toggle('is-landscape-stream', !portrait);
+  };
+  const isHls = !localUrl && (item.source_kind === 'hls' || /\.m3u8(\?|$)/i.test(src) || src.indexOf('.ism/.m3u8') >= 0);
+  if(isHls && !video.canPlayType('application/vnd.apple.mpegurl')){
+    const HlsLib = await tvEnsureHls();
+    if(HlsLib && HlsLib.isSupported()){
+      TV_REEL.hls = new HlsLib({ enableWorker: true });
+      TV_REEL.hls.loadSource(src);
+      TV_REEL.hls.attachMedia(video);
+      TV_REEL.hls.on(HlsLib.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+    }else{
+      video.src = src;
+      video.play().catch(() => {});
+    }
+  }else{
+    video.src = src;
+    video.play().catch(() => {});
+  }
+  const scrub = $('tvReelScrub'), tm = $('tvReelTime');
+  video.ontimeupdate = () => {
+    const d = video.duration || 0;
+    if(scrub) scrub.value = d > 0 ? String(Math.round((video.currentTime / d) * 100)) : '0';
+    if(tm) tm.textContent = `${tvFmtSec(video.currentTime)} / ${tvFmtSec(d)}`;
+    if(video.currentTime > 5 && Math.floor(video.currentTime) % 10 === 0){
+      tvSaveProgress(Number(item.title_id || item.id), Number(item.episode_id || 0), Math.floor(video.currentTime), Math.floor(d));
+    }
+  };
+  if($('tvReelToggle')) $('tvReelToggle').innerHTML = '&#10074;&#10074;';
+}
+
+function tvOpenReelPlayer(items, startIdx, seriesMeta){
+  if(!items || !items.length) return toast(t('tv.err.load'));
+  TV_REEL.items = items;
+  TV_REEL.series = seriesMeta || null;
+  const box = tvEnsureReelOverlay();
+  const feed = $('tvReelFeed');
+  const drawer = $('tvReelDrawer');
+  drawer.hidden = true;
+  feed.innerHTML = items.map((r, idx) => `
+    <div class="tv-reel-slide" data-ridx="${idx}">
+      <div class="tv-reel-stage">
+        <img class="tv-reel-poster" src="${esc(tvImage(r.poster_url || r.poster))}" alt="">
+        <video class="tv-reel-video" playsinline webkit-playsinline preload="metadata" loop></video>
+        <div class="tv-reel-scrim"></div>
+        <div class="tv-reel-hud">
+          <span class="tv-badge accent">${esc(r.format_tag || 'Labo Surf TV')}</span>
+          <h3>${esc(r.title)}${r.episode_title && r.episode_title !== r.title ? ' · ' + esc(r.episode_title) : ''}</h3>
+          <p>${esc(r.synopsis || '')}</p>
+        </div>
+        <div class="tv-reel-side">
+          <button type="button" class="tv-reel-side-btn" data-action="tvToggleReelMute">${TV_REEL.muted ? 'Muet' : 'Son'}</button>
+          ${tvOfflineButtonMarkup(r, true)}
+          <button type="button" class="tv-reel-side-btn" data-action="tvReelOpenDetail" data-id="${Number(r.title_id || r.id)}">Infos</button>
+        </div>
+      </div>
+    </div>`).join('');
+  box.hidden = false;
+
+  drawer.innerHTML = items.length > 1
+    ? `<h3 style="margin:0 0 10px;font-size:14px">${esc((seriesMeta && seriesMeta.title) || 'Sélection 9:16')}</h3><div style="display:grid;gap:6px">${items.map((it, i) => `<button type="button" class="tv-episode" style="text-align:left;cursor:pointer" data-action="tvJumpReel" data-idx="${i}"><div class="tv-ep-head"><strong>${esc(it.episode_title || it.title)}</strong><span>${it.duration_min || 8}m</span></div></button>`).join('')}</div>`
+    : `<p class="tv-note">Glissez verticalement pour parcourir les récits.</p>`;
+
+  const slides = feed.querySelectorAll('.tv-reel-slide');
+  if(typeof IntersectionObserver === 'function'){
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if(en.isIntersecting && en.intersectionRatio >= 0.7){
+          const idx = Number(en.target.dataset.ridx);
+          if(idx !== TV_REEL.idx) tvAttachReelVideo(idx);
+        }
+      });
+    }, { root: feed, threshold: 0.72 });
+    slides.forEach((s) => obs.observe(s));
+  }
+  const target = feed.querySelector(`.tv-reel-slide[data-ridx="${startIdx || 0}"]`);
+  if(target && typeof target.scrollIntoView === 'function') target.scrollIntoView();
+  tvAttachReelVideo(startIdx || 0);
+}
+
+Actions.tvOpenReelsFeed = () => {
+  if(TV.reels && TV.reels.length) tvOpenReelPlayer(TV.reels, 0, null);
+};
+async function tvLaunchSeriesAt(id, startIdx){
+  let s = (TV.detailState && Number(TV.detailState.item && TV.detailState.item.id) === id && TV.detailState.v1Series) || null;
+  if(!s){
+    const res = await apiFetch(tvPath('/api/v1/tv/series/' + id)).catch(() => null);
+    if(!res || !res.ok || !res.data || !res.data.series) return toast(t('tv.err.load'));
+    s = res.data.series;
+  }
+  const eps = (s.episodes || []).filter((e) => e.stream_url);
+  if(!eps.length) return toast(t('tv.denied.plan'));
+  const items = eps.map((e, i) => ({
+    id: e.id || s.id, title_id: s.id, episode_id: e.id, number: e.number || (i + 1),
+    title: s.title, episode_title: e.title,
+    synopsis: e.synopsis || s.synopsis, poster_url: s.poster_url, format_tag: s.format_tag,
+    duration_min: e.duration_min, stream_url: e.stream_url, download_url: e.download_url, source_kind: e.source_kind,
+  }));
+  tvOpenReelPlayer(items, Math.max(0, Math.min(Number(startIdx) || 0, items.length - 1)), s);
+}
+Actions.tvOpenReelTitle = async (el) => tvLaunchSeriesAt(Number(el.dataset.id), 0);
+Actions.tvCloseReel = () => {
+  if(TV_REEL.hls){ try{ TV_REEL.hls.destroy(); }catch(e){} TV_REEL.hls = null; }
+  document.querySelectorAll('.tv-reel-video').forEach((v) => { v.pause(); v.removeAttribute('src'); });
+  const box = $('tvReelOverlay');
+  if(box) box.hidden = true;
+};
+Actions.tvToggleReelDrawer = () => {
+  const d = $('tvReelDrawer');
+  if(d) d.hidden = !d.hidden;
+};
+Actions.tvToggleReelMute = () => {
+  TV_REEL.muted = !TV_REEL.muted;
+  document.querySelectorAll('.tv-reel-video').forEach((v) => { v.muted = TV_REEL.muted; });
+  document.querySelectorAll('[data-action="tvToggleReelMute"]').forEach((b) => { b.textContent = TV_REEL.muted ? 'Muet' : 'Son'; });
+};
+Actions.tvJumpReel = (el) => {
+  const d = $('tvReelDrawer'); if(d) d.hidden = true;
+  const idx = Number(el.dataset.idx) || 0;
+  const slide = document.querySelector(`.tv-reel-slide[data-ridx="${idx}"]`);
+  if(slide && typeof slide.scrollIntoView === 'function') slide.scrollIntoView({ behavior: 'smooth' });
+  tvAttachReelVideo(idx);
+};
+Actions.tvReelOpenDetail = (el) => {
+  Actions.tvCloseReel();
+  tvPush({ name: 'detail', id: Number(el.dataset.id) });
+};
+
+// -------------------- Stockage local hors-ligne (téléphone, zéro charge VPS) --------------------
+const TV_OFFLINE_META_KEY = 'labosurf_tv_offline_meta_v1';
+const TV_OFFLINE_DB_NAME = 'labosurf_tv_offline_db';
+const TV_OFFLINE_STORE = 'videos';
+const TV_OFFLINE_CACHE = 'labosurf-tv-offline-v1';
+
+const TV_OFFLINE = {
+  progress: {},
+  blobUrls: {},
+  getMap(){
+    try{ return JSON.parse(localStorage.getItem(TV_OFFLINE_META_KEY) || '{}') || {}; }catch(e){ return {}; }
+  },
+  setMap(map){
+    try{ localStorage.setItem(TV_OFFLINE_META_KEY, JSON.stringify(map || {})); }catch(e){}
+  },
+  getMeta(key){ return this.getMap()[key] || null; },
+  list(){
+    return Object.values(this.getMap()).sort((a, b) => (b.saved_at || 0) - (a.saved_at || 0));
+  },
+  saveMeta(key, meta){
+    const map = this.getMap();
+    map[key] = meta;
+    this.setMap(map);
+  },
+  removeMeta(key){
+    const map = this.getMap();
+    delete map[key];
+    this.setMap(map);
+  },
+};
+
+function tvOfflineKey(titleId, episodeId){
+  return String(Number(titleId) || 0) + '_' + String(Number(episodeId) || 0);
+}
+
+function tvIsDownloadableMp4(url, sourceKind){
+  const s = String(url || '').trim();
+  const k = String(sourceKind || '').toLowerCase();
+  if(!s || k === 'hls' || k === 'youtube' || /\.m3u8(\?|$)/i.test(s) || s.indexOf('.ism/.m3u8') >= 0) return false;
+  return /^https:\/\//i.test(s) && (/\.mp4(\?|$)/i.test(s) || k === 'file');
+}
+
+function tvOfflineOpenDb(){
+  return new Promise((resolve, reject) => {
+    if(typeof indexedDB === 'undefined') return reject(new Error('no_idb'));
+    const req = indexedDB.open(TV_OFFLINE_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains(TV_OFFLINE_STORE)) db.createObjectStore(TV_OFFLINE_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error('idb_err'));
+  });
+}
+
+async function tvOfflinePutBlob(key, blob){
+  if(typeof caches !== 'undefined'){
+    try{
+      const c = await caches.open(TV_OFFLINE_CACHE);
+      await c.put('https://labosurf.local/tv-offline/' + encodeURIComponent(key), new Response(blob, { headers: { 'Content-Type': blob.type || 'video/mp4' } }));
+    }catch(e){}
+  }
+  try{
+    const db = await tvOfflineOpenDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(TV_OFFLINE_STORE, 'readwrite');
+      tx.objectStore(TV_OFFLINE_STORE).put(blob, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }catch(e){}
+}
+
+async function tvOfflineGetBlob(key){
+  try{
+    const db = await tvOfflineOpenDb();
+    const blob = await new Promise((resolve) => {
+      const tx = db.transaction(TV_OFFLINE_STORE, 'readonly');
+      const r = tx.objectStore(TV_OFFLINE_STORE).get(key);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => resolve(null);
+    });
+    if(blob) return blob;
+  }catch(e){}
+  if(typeof caches !== 'undefined'){
+    try{
+      const c = await caches.open(TV_OFFLINE_CACHE);
+      const match = await c.match('https://labosurf.local/tv-offline/' + encodeURIComponent(key));
+      if(match) return await match.blob();
+    }catch(e){}
+  }
+  return null;
+}
+
+async function tvOfflineDeleteBlob(key){
+  if(TV_OFFLINE.blobUrls[key]){
+    try{ URL.revokeObjectURL(TV_OFFLINE.blobUrls[key]); }catch(e){}
+    delete TV_OFFLINE.blobUrls[key];
+  }
+  if(typeof caches !== 'undefined'){
+    try{
+      const c = await caches.open(TV_OFFLINE_CACHE);
+      await c.delete('https://labosurf.local/tv-offline/' + encodeURIComponent(key));
+    }catch(e){}
+  }
+  try{
+    const db = await tvOfflineOpenDb();
+    await new Promise((resolve) => {
+      const tx = db.transaction(TV_OFFLINE_STORE, 'readwrite');
+      tx.objectStore(TV_OFFLINE_STORE).delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  }catch(e){}
+}
+
+function tvOfflineButtonMarkup(meta, compact){
+  if(!meta) return '';
+  const url = String(meta.download_url || meta.stream_url || '').trim();
+  const kind = meta.source_kind || '';
+  if(!tvIsDownloadableMp4(url, kind)) return '';
+  const titleId = Number(meta.title_id || meta.id || 0);
+  const episodeId = Number(meta.episode_id || 0);
+  const key = tvOfflineKey(titleId, episodeId);
+  const cls = compact ? 'tv-reel-side-btn tv-offline-btn' : 'btn btn-ghost tv-offline-btn';
+  if(TV_OFFLINE.getMeta(key)){
+    return `<button type="button" class="${cls} is-done" data-action="tvOpenOfflineTab" data-offline-key="${esc(key)}">✅ Hors-ligne</button>`;
+  }
+  if(TV_OFFLINE.progress[key] != null){
+    return `<button type="button" class="${cls} is-busy" disabled data-offline-key="${esc(key)}">⏳ ${Number(TV_OFFLINE.progress[key])}%</button>`;
+  }
+  return `<button type="button" class="${cls}" data-action="tvOfflineDownload" data-offline-key="${esc(key)}" data-title-id="${titleId}" data-episode-id="${episodeId}" data-title="${esc(meta.title || '')}" data-episode-title="${esc(meta.episode_title || '')}" data-poster="${esc(meta.poster_url || meta.poster || '')}" data-format-tag="${esc(meta.format_tag || 'Film Raconté')}" data-duration="${Number(meta.duration_min || 10)}" data-synopsis="${esc(String(meta.synopsis || '').slice(0, 220))}" data-stream-url="${esc(url)}" data-source-kind="${esc(kind || 'file')}">⬇️ Télécharger</button>`;
+}
+
+function tvSyncOfflineButtons(key){
+  const done = !!TV_OFFLINE.getMeta(key);
+  const pct = TV_OFFLINE.progress[key];
+  document.querySelectorAll('[data-offline-key]').forEach((btn) => {
+    if(btn.dataset.offlineKey !== key || (btn.dataset.action !== 'tvOfflineDownload' && btn.dataset.action !== 'tvOpenOfflineTab' && !btn.classList.contains('tv-offline-btn'))) return;
+    if(done){
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      btn.classList.add('is-done');
+      btn.dataset.action = 'tvOpenOfflineTab';
+      btn.textContent = '✅ Hors-ligne';
+    }else if(pct != null){
+      btn.disabled = true;
+      btn.classList.remove('is-done');
+      btn.classList.add('is-busy');
+      btn.textContent = `⏳ ${Number(pct)}%`;
+    }else{
+      btn.disabled = false;
+      btn.classList.remove('is-busy', 'is-done');
+      btn.dataset.action = 'tvOfflineDownload';
+      btn.textContent = '⬇️ Télécharger';
+    }
+  });
+  const bar = $('tvFilterBarWrap');
+  if(bar) bar.innerHTML = tvFilterBarMarkup();
+}
+
+Actions.tvOfflineDownload = async (el) => {
+  const key = el.dataset.offlineKey;
+  const streamUrl = el.dataset.streamUrl || '';
+  const sourceKind = el.dataset.sourceKind || 'file';
+  if(!key || !tvIsDownloadableMp4(streamUrl, sourceKind)){
+    toast('Ce flux en direct (.m3u8) ne peut pas être enregistré hors-ligne.', 'warning');
+    return;
+  }
+  if(TV_OFFLINE.getMeta(key)){ Actions.tvOpenOfflineTab(); return; }
+  if(TV_OFFLINE.progress[key] != null) return;
+
+  TV_OFFLINE.progress[key] = 0;
+  tvSyncOfflineButtons(key);
+  try{
+    const resp = await fetch(streamUrl);
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const total = Number(resp.headers.get('content-length') || 0);
+    let blob;
+    if(resp.body && typeof resp.body.getReader === 'function'){
+      const reader = resp.body.getReader();
+      const chunks = [];
+      let received = 0;
+      let lastPct = -1;
+      for(;;){
+        const step = await reader.read();
+        if(step.done) break;
+        if(step.value){
+          chunks.push(step.value);
+          received += step.value.byteLength;
+          const pct = total > 0 ? Math.min(99, Math.round((received * 100) / total)) : Math.min(95, Math.max(5, Math.round(received / 131072)));
+          if(pct !== lastPct){
+            lastPct = pct;
+            TV_OFFLINE.progress[key] = pct;
+            tvSyncOfflineButtons(key);
+          }
+        }
+      }
+      blob = new Blob(chunks, { type: resp.headers.get('content-type') || 'video/mp4' });
+    }else{
+      TV_OFFLINE.progress[key] = 50;
+      tvSyncOfflineButtons(key);
+      blob = await resp.blob();
+    }
+    await tvOfflinePutBlob(key, blob);
+    TV_OFFLINE.saveMeta(key, {
+      key,
+      title_id: Number(el.dataset.titleId) || 0,
+      episode_id: Number(el.dataset.episodeId) || 0,
+      title: el.dataset.title || 'Labo Surf TV',
+      episode_title: el.dataset.episodeTitle || '',
+      poster_url: el.dataset.poster || '',
+      format_tag: el.dataset.formatTag || 'Film Raconté',
+      duration_min: Number(el.dataset.duration) || 10,
+      synopsis: el.dataset.synopsis || '',
+      stream_url: streamUrl,
+      source_kind: 'file',
+      size: blob.size || 0,
+      saved_at: Date.now(),
+    });
+    delete TV_OFFLINE.progress[key];
+    tvSyncOfflineButtons(key);
+    toast('Vidéo enregistrée ✅ Hors-ligne !', 'success');
+  }catch(e){
+    delete TV_OFFLINE.progress[key];
+    tvSyncOfflineButtons(key);
+    toast('Téléchargement impossible pour cette source.', 'error');
+  }
+};
+
+Actions.tvOpenOfflineTab = () => {
+  Actions.tvCloseReel();
+  TV.activeFilter = 'offline';
+  TV.stack = [{ name: 'home' }];
+  if($('tvHomeContent') && $('tvFilterBarWrap')){
+    tvRenderHomeSection();
+  }else{
+    tvRender();
+  }
+};
+
+Actions.tvPlayOfflineReel = (el) => {
+  const key = el.dataset.offlineKey;
+  const list = TV_OFFLINE.list();
+  if(!list.length) return;
+  const idx = Math.max(0, list.findIndex((it) => it.key === key));
+  const items = list.map((it) => ({
+    id: it.episode_id || it.title_id,
+    title_id: it.title_id,
+    episode_id: it.episode_id,
+    offline_key: it.key,
+    title: it.title,
+    episode_title: it.episode_title || it.title,
+    synopsis: it.synopsis || 'Lecture locale 9:16 hors-ligne',
+    poster_url: it.poster_url,
+    format_tag: it.format_tag || 'Hors-ligne',
+    duration_min: it.duration_min || 10,
+    stream_url: it.stream_url,
+    source_kind: 'file',
+  }));
+  tvOpenReelPlayer(items, idx, { title: '📂 Hors-ligne' });
+};
+
+Actions.tvDeleteOfflineItem = async (el) => {
+  const key = el.dataset.offlineKey;
+  if(!key) return;
+  await tvOfflineDeleteBlob(key);
+  TV_OFFLINE.removeMeta(key);
+  const bar = $('tvFilterBarWrap');
+  if(bar) bar.innerHTML = tvFilterBarMarkup();
+  if($('tvHomeContent') && TV.activeFilter === 'offline'){
+    tvRenderOfflineSection($('tvHomeContent'));
+  }else{
+    const view = TV.stack[TV.stack.length - 1];
+    if(view && view.name === 'downloads') tvRenderDownloads();
+  }
+  toast('Vidéo supprimée du téléphone.', 'success');
+};

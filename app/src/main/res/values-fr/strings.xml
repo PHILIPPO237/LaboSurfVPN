@@ -3,4 +3,8 @@
     <string name="app_name">Labo Surf</string>
     <string name="notif_channel">Labo Surf VPN</string>
     <string name="notif_active">Connexion sécurisée active</string>
+    <string name="tv_error_authorize">Lecture impossible pour le moment.</string>
+    <string name="tv_retry">Réessayer</string>
+    <string name="tv_next_episode">Épisode suivant</string>
+    <string name="tv_error_source">Cette vidéo ne peut pas être lue. Vérifiez votre connexion.</string>
 </resources>

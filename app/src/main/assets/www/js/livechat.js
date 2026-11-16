@@ -41,18 +41,10 @@ function lcFmtTime(v){
 }
 
 // Ouverture directe : session valide -> salons ; sinon connexion puis retour ici. Aucune page intermédiaire, aucune ressaisie.
-Actions.openCommunity = () => {
-  if(!API.state.ok){ toast(t('lc.err.unavailable.m'), 'warning', 3500); return; }
-  if(!sessionStillValid()){
-    LC.wantReturn = true;
-    showScreen('account');
-    toast(t('lc.err.login.m'), 'info', 4200);
-    return;
-  }
-  LC.wantReturn = true;   // si la session expire pendant le chargement, la reconnexion ramène ici
-  showScreen('livechat');
-  lcLoadRooms();
-};
+// Décision du propriétaire (2026-11-06) : la communauté n'existe plus que dans sa version web (session reprise par code d'échange).
+// Le bouton Communauté (rail, accueil) ouvre directement le menu de la communauté, d'où part la version web (openCommunityWeb).
+// Les salons intégrés ne sont plus atteignables ; le code ci-dessous reste en attente d'un nettoyage.
+Actions.openCommunity = () => showScreen('community');
 Actions.lcRetry = () => { if(LC.room) lcOpenRoom(LC.room); else lcLoadRooms(); };
 Actions.lcLogin = () => { LC.wantReturn = true; showScreen('account'); };
 Actions.lcBack = () => { if(LC.room) Actions.lcRooms(); else showScreen('settings'); };

@@ -1,0 +1,4 @@
+/* Galaxie de l'accueil : posée sur le fond de l'accueil, qui garde sa couleur, et sous tout son contenu. */
+#screen-home{ isolation:isolate; }
+.home-galaxy{ position:absolute; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; display:none; }
+:root[data-screen="home"]:not([data-theme="light"]) .home-galaxy{ display:block; }

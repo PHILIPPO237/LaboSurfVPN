@@ -2,7 +2,7 @@
 // Met en cache l'interface pour qu'elle s'ouvre meme sans reseau.
 // Ne gere PAS le tunnel VPN (ca, ce sera du code natif Android plus tard).
 
-const CACHE_NAME = "labo-surf-v107";
+const CACHE_NAME = "labo-surf-v110";
 const ASSETS = [
   "./index.html",
   "./css/tokens.css",
@@ -16,6 +16,9 @@ const ASSETS = [
   "./css/home.css",
   "./css/secondary.css",
   "./css/orbite-pages.css",
+  "./css/update.css",
+  "./js/sky.js",
+  "./js/update.js",
   "./js/theme.js",
   "./js/profile-theme.js",
   "./js/splash.js",

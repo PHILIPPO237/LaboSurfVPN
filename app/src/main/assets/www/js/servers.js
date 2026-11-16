@@ -3,19 +3,20 @@
 // chargement, erreur, liste vide). Les champs optionnels (ping, statut, charge) ne s'affichent
 // que si l'API les fournit — voir normalizeServer().
 
+const cachedServersInit = (function(){ try { return store.get('cached_servers', []) || []; }catch(e){ return []; } })();
+const cachedProfilesInit = (function(){ try { return store.get('cached_profiles', []) || []; }catch(e){ return []; } })();
+
 const Servers = {
-  list: [],
-  state: 'idle',       // idle (non connecté) | loading | ready | error
+  list: Array.isArray(cachedServersInit) ? cachedServersInit : [],
+  state: Array.isArray(cachedServersInit) && cachedServersInit.length ? 'ready' : 'idle',
   selectedId: store.get('server', null),
   query: '',
 };
-const SEARCH_THRESHOLD = 5; // la recherche apparaît au-delà de ce nombre de serveurs
+const SEARCH_THRESHOLD = 5;
 
-// Profils au choix : GET /api/user/connect/options (le panel n'y met que ceux réellement disponibles).
-// Sans choix (« Automatique »), la connexion garde le comportement historique : le panel choisit sur le serveur retenu.
 const Profiles = {
-  list: [],
-  state: 'idle',       // idle | loading | ready | error | unsupported (panel sans cette route : section masquée)
+  list: Array.isArray(cachedProfilesInit) ? cachedProfilesInit : [],
+  state: Array.isArray(cachedProfilesInit) && cachedProfilesInit.length ? 'ready' : 'idle',
   selectedId: store.get('hostedProfile', null),
 };
 
@@ -39,7 +40,8 @@ function normalizeServer(s, i){
   return {
     id: s.id,
     index: i,
-    name: s.name || '',
+    name: s.display_name || s.name || '',
+    displayName: s.display_name || s.name || '',
     country: s.country || '',
     city: s.city || '',
     countryCode: /^[A-Za-z]{2}$/.test(code) ? code.toUpperCase() : '',
@@ -50,7 +52,7 @@ function normalizeServer(s, i){
   };
 }
 
-const serverDisplayName = (s) => s.name || t('srv.defaultName', { n: s.index + 1 });
+const serverDisplayName = (s) => (s && (s.displayName || s.name)) || t('srv.defaultName', { n: (s && s.index !== undefined ? s.index + 1 : 1) });
 const sameId = (a, b) => a !== undefined && a !== null && String(a) === String(b);
 
 function flagEmoji(code){
@@ -75,8 +77,26 @@ function getSelectedProfile(){
   if(Profiles.state !== 'ready' || Profiles.selectedId === null || Profiles.selectedId === undefined) return null;
   return Profiles.list.find((p) => sameId(p.id, Profiles.selectedId)) || null;
 }
-const profileDisplayName = (p) => p.name || t('prof.defaultName', { n: p.id });
-const profileLocation = (p) => [p.serverName, [p.city, p.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+const profileDisplayName = (p) => (p && (p.publicLabel || p.public_label || p.displayName || p.name)) || t('prof.defaultName', { n: (p && p.id ? p.id : 1) });
+const profileLocation = (p) => (p && (p.publicSubtitle || p.public_subtitle)) || [p && p.serverName, [p && p.city, p && p.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+
+function getActiveConfigSummary(){
+  const prof = getSelectedProfile();
+  if(prof){
+    return {
+      title: profileDisplayName(prof),
+      subtitle: (prof.publicSubtitle || prof.public_subtitle || '').trim() || '🛡️ Stable',
+    };
+  }
+  const srv = getSelectedServer();
+  if(srv){
+    return {
+      title: serverDisplayName(srv),
+      subtitle: serverLocation(srv) || '🛡️ Stable',
+    };
+  }
+  return { title: 'LaboSurfVPN', subtitle: '🛡️ Stable' };
+}
 
 function profileRowHtml(p, selected){
   const badge = p.health === 'unknown' ? `<span class="server-meta"><span class="badge badge-warn">${esc(t('prof.healthUnknown'))}</span></span>` : '';
@@ -182,12 +202,12 @@ function renderServers(){
 
 async function loadServers(){
   if(!authToken){
-    Servers.state = 'idle'; Servers.list = [];
-    Profiles.state = 'idle'; Profiles.list = [];
+    if(!Servers.list.length){ Servers.state = 'idle'; Servers.list = []; }
+    if(!Profiles.list.length){ Profiles.state = 'idle'; Profiles.list = []; }
     renderServers();
     return;
   }
-  Servers.state = 'loading';
+  if(!Servers.list.length) Servers.state = 'loading';
   renderServers();
   $('srvRefresh').classList.add('is-spinning');
   try{
@@ -195,12 +215,14 @@ async function loadServers(){
     if(res.ok && res.data && res.data.status === 'ok' && Array.isArray(res.data.servers)){
       Servers.list = res.data.servers.map(normalizeServer);
       Servers.state = 'ready';
+      store.set('cached_servers', Servers.list);
       if(getSelectedServer()) Servers.selectedId = getSelectedServer().id;
     } else if(!res.expired){
-      Servers.state = 'error';
+      if(!Servers.list.length) Servers.state = 'error';
     }
   }catch(e){
-    Servers.state = 'error';
+    if(!Servers.list.length) Servers.state = 'error';
+    else Servers.state = 'ready';
   }finally{
     $('srvRefresh').classList.remove('is-spinning');
   }
@@ -210,19 +232,58 @@ async function loadServers(){
 
 // Profils au choix. Un panel qui ne connaît pas encore cette route (404) : section masquée, comportement historique.
 async function loadProfiles(){
-  if(!authToken){ Profiles.state = 'idle'; Profiles.list = []; return; }
-  Profiles.state = 'loading';
+  if(!authToken){
+    if(!Profiles.list.length){ Profiles.state = 'idle'; Profiles.list = []; }
+    return;
+  }
+  if(!Profiles.list.length) Profiles.state = 'loading';
   let parsed;
   try{
     parsed = ProfileOptions.parse(await apiFetch('/api/user/connect/options'));
   }catch(e){
     parsed = { state: 'error' };
   }
-  if(parsed.authLost){ Profiles.state = 'idle'; Profiles.list = []; return; }   // la session est gérée par apiFetch/l'écran compte
-  Profiles.state = parsed.state;
-  Profiles.list = parsed.state === 'ready' ? parsed.options : [];
-  // le profil mémorisé n'est plus proposé par le panel : on le dit, et on revient au choix automatique
-  if(parsed.state === 'ready' && Profiles.selectedId !== null && Profiles.selectedId !== undefined && !getSelectedProfile()){
+  if(parsed.authLost){
+    if(!Profiles.list.length){ Profiles.state = 'idle'; Profiles.list = []; }
+    return;
+  }
+  if(parsed.state === 'ready'){
+    Profiles.state = 'ready';
+    Profiles.list = parsed.options;
+    store.set('cached_profiles', Profiles.list);
+  } else if(!Profiles.list.length){
+    Profiles.state = parsed.state;
+    Profiles.list = [];
+  } else {
+    Profiles.state = 'ready';
+  }
+  try{
+    const up = await apiFetch('/api/v1/client/configs');
+    const items = (up.ok && up.data && up.data.status === 'ok') ? (up.data.configs || up.data.profiles) : null;
+    if(Array.isArray(items) && items.length){
+      const mapped = items.map((x) => ({
+        id: x.id,
+        publicLabel: (x.badge ? x.badge + ' ' : '') + (x.display_name || x.public_label || x.name || ''),
+        publicSubtitle: x.public_subtitle || '🛡️ Stable',
+        displayName: (x.badge ? x.badge + ' ' : '') + (x.display_name || x.public_label || x.name || ''),
+        operatorName: x.operator || x.operator_name || '',
+        badge: x.badge || '',
+        status: x.status || 'published',
+        vlessUri: x.vless_uri || '',
+        clientJson: x.client_json || null,
+        sshCredentials: x.ssh_credentials || null,
+        health: 'ok',
+        isUserProfile: true,
+      }));
+      Profiles.state = 'ready';
+      Profiles.list = mapped;
+      store.set('cached_profiles', Profiles.list);
+      if(up.data.country_code && typeof Account !== 'undefined' && Account.last){
+        Account.last.country_code = up.data.country_code;
+      }
+    }
+  }catch(e){}
+  if(Profiles.state === 'ready' && Profiles.selectedId !== null && Profiles.selectedId !== undefined && !getSelectedProfile()){
     Profiles.selectedId = null;
     store.set('hostedProfile', null);
     toast(t('prof.gone'), 'warning');
@@ -244,7 +305,12 @@ Actions.selectProfile = (el) => {
     store.set('server', p.serverId);
   }
   renderServers();
-  if(VPN.state === 'on'){ toast(t('srv.appliedNext'), 'info'); return; }
+  if(VPN.state === 'on'){
+    toast(t('srv.switching') || 'Bascule de service en cours...', 'info');
+    if(typeof fastSwitchService === 'function') fastSwitchService();
+    else if(typeof disconnectVpn === 'function'){ disconnectVpn(); setTimeout(connectVpn, 700); }
+    return;
+  }
   setTimeout(() => showScreen('home'), 220);
 };
 
@@ -258,7 +324,12 @@ Actions.selectServer = (el) => {
   const prof = getSelectedProfile();
   if(prof && !sameId(prof.serverId, s.id)){ Profiles.selectedId = null; store.set('hostedProfile', null); }
   renderServers();
-  if(VPN.state === 'on'){ toast(t('srv.appliedNext'), 'info'); return; }
+  if(VPN.state === 'on'){
+    toast(t('srv.switching') || 'Bascule de service en cours...', 'info');
+    if(typeof fastSwitchService === 'function') fastSwitchService();
+    else if(typeof disconnectVpn === 'function'){ disconnectVpn(); setTimeout(connectVpn, 700); }
+    return;
+  }
   setTimeout(() => showScreen('home'), 220); // retour à l'accueil une fois le choix fait
 };
 
