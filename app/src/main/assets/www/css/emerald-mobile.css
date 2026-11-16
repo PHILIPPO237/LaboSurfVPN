@@ -1,0 +1,56 @@
+/* Sombre Emeraude & Glamourisme — Mobile UI Layer (Labo Surf VPN) */
+
+/* Exception A : Ecran d'accueil preserve + Vitre Cristal Transparente (Clear Glass) elargie */
+#app #screen-home .home-foot {
+  margin: 12px 12px 8px 12px !important;
+  width: calc(100% - 24px) !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+#app #screen-home .home-foot .banner-card {
+  background: rgba(10, 24, 34, 0.24) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+  border: 1.5px solid rgba(16, 185, 129, 0.55) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 18px rgba(16, 185, 129, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+  border-radius: 16px !important;
+}
+#app #screen-home .home-foot .banner-card.banner-style-conn {
+  background: rgba(8, 28, 34, 0.28) !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.65) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38), 0 0 20px rgba(245, 158, 11, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Pleine largeur 100% sur toutes les sous-pages secondaires (Zero rail lateral) */
+body.ls-secondary .rail,
+body.ls-secondary #rail {
+  display: none !important;
+}
+body.ls-secondary .screen:not(#screen-home) {
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Papillon Flottant & Mini-Assistant */
+.ls-mob-butterfly {
+  position: fixed; top: 12px; left: 12px; right: 12px; z-index: 990;
+  background: rgba(8, 18, 30, 0.92);
+  backdrop-filter: blur(18px);
+  border: 1.5px solid #F59E0B;
+  border-radius: 16px;
+  padding: 12px 14px;
+  color: #F1F5F9;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.25);
+}
+.ls-mob-assistant {
+  position: fixed; bottom: 14px; right: 14px; left: 14px; z-index: 880;
+  background: rgba(8, 22, 32, 0.88);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: #E2E8F0; font-size: 12px; line-height: 1.35;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}

@@ -39,20 +39,21 @@ function bannerSwap(){
 }
 
 function populateConnBanner(){
-  const cfg = (typeof getActiveConfigSummary === 'function') ? getActiveConfigSummary() : { title: 'LaboSurfVPN', subtitle: '🛡️ Stable' };
+  const cfg = (typeof getActiveConfigSummary === 'function') ? getActiveConfigSummary() : { title: 'Labo Surf VPN', subtitle: '🛡️ Stable' };
   const acc = (typeof Account !== 'undefined' && Account.last) ? Account.last : {};
-  const user = acc.username || 'Abonné';
+  const en = (typeof I18N !== 'undefined' && I18N.lang === 'en');
+  const user = acc.username || (en ? 'Member' : 'Abonné');
   const cc = (acc.country_code || acc.country || 'ALL').toUpperCase();
-  let exp = 'Illimité';
+  let exp = en ? 'Unlimited' : 'Illimité';
   if(acc.daysLeft !== undefined && acc.daysLeft !== null){
-    exp = acc.daysLeft <= 0 ? 'Expiré' : (acc.daysLeft + ' j restants');
+    exp = acc.daysLeft <= 0 ? (en ? 'Expired' : 'Expiré') : (acc.daysLeft + (en ? ' d left' : ' j restants'));
   } else if(acc.expires_at){
     exp = String(acc.expires_at).slice(0, 10);
   }
-  if($('bnConnCfg')) $('bnConnCfg').textContent = '📡 ' + (cfg.title || 'LaboSurfVPN');
+  if($('bnConnCfg')) $('bnConnCfg').textContent = '📡 ' + (cfg.title || 'Labo Surf VPN');
   if($('bnConnSub')) $('bnConnSub').textContent = cfg.subtitle || '🛡️ Stable';
   if($('bnConnUser')) $('bnConnUser').textContent = `👤 ${user} (${cc}) • ⏳ ${exp}`;
-  if($('bnConnWelcome')) $('bnConnWelcome').textContent = '✨ ' + (Banner.welcomeBanner || 'Bienvenue sur LaboSurf VPN');
+  if($('bnConnWelcome')) $('bnConnWelcome').textContent = '✨ ' + (Banner.welcomeBanner || (en ? 'Welcome to Labo Surf VPN' : 'Bienvenue sur Labo Surf VPN'));
 }
 
 function renderBannerDots(){

@@ -535,12 +535,14 @@ Actions.register = async () => {
   const btn = $('regSubmitBtn');
   clearFormError('regError');
   if(!u || !c || !rs || !p || !p2){ showFormError('regError', t('acc.errFillAll')); return; }
+  if(!Account.regPhoto){ showFormError('regError', (typeof I18N !== 'undefined' && I18N.lang === 'en') ? 'Profile avatar photo is required.' : 'Photo d\'avatar obligatoire pour créer votre compte.'); return; }
   if(p !== p2){ showFormError('regError', t('acc.errMismatch')); return; }
   if(isBusy(btn)) return;
   setBusy(btn, true, 'acc.creating');
   try{
+    const refCode = ($('regReferral') && $('regReferral').value) ? $('regReferral').value.trim().toUpperCase() : '';
     const reg = await apiFetch('/api/auth/register', { method: 'POST', device: true,
-      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, country: cc, country_code: cc, password: p, confirm_password: p2, remember: RememberMe.wanted() }) });
+      body: JSON.stringify({ username: u, contact: c, recovery_secret: rs, country: cc, country_code: cc, password: p, confirm_password: p2, avatar_data: Account.regPhoto, referral_code: refCode, remember: RememberMe.wanted() }) });
     if(!reg.ok || !reg.data || reg.data.status !== 'ok'){
       showFormError('regError', apiMessage(reg, 'acc.errRegister'));
       return;
