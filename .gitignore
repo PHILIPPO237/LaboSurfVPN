@@ -28,11 +28,3 @@ __pycache__/
 *.pfx
 *.secrets.json
 signing/
-
-# Secrets et variables d'environnement
-.env
-.env.*
-!.env.example
-*.token
-*.key
-*.pem

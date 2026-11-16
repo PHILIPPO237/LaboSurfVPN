@@ -623,7 +623,7 @@
   radial-gradient(.8px .8px at 66% 66%, #cfe9ff, transparent), radial-gradient(.8px .8px at 96% 72%, #fff, transparent),
   radial-gradient(.8px .8px at 22% 82%, #fff, transparent), radial-gradient(1px 1px at 50% 88%, #bff5dc, transparent),
   radial-gradient(.8px .8px at 80% 92%, #fff, transparent), radial-gradient(.8px .8px at 8% 94%, #cfe9ff, transparent); }
-:root:not(#nv) #app .rail{ --rail-top:clamp(46px, calc(15vh - 16px), 136px); }   /* remonté de ~40 px : le bas de l'écran revient entièrement à la bannière */
+:root:not(#nv) #app .rail{ --rail-top:clamp(88px, calc(18vh + 24px), 194px); }
 
 /* Écran court (< 700 px) : la vitrine de 188 px doit tout contenir sans couper les boutons */
 @media (max-height:700px){
@@ -631,97 +631,4 @@
   :root:not(#nv) #app .home-foot .bd-tagline{ min-height:1.4em; font-size:max(1.06em, 13px); }
   :root:not(#nv) #app .home-foot .banner-style-default .bn-body{ padding-top:24px; padding-bottom:10px; }
   :root:not(#nv) #app .home-foot .bd-act{ min-height:44px; }
-}
-
-
-/* ==========================================================================
-   CADRE PUBLICITAIRE CONTENU ET BORDURE VISIBLE (ACCUEIL)
-   Conteneur strictement borné avec marges horizontales symétriques,
-   coins arrondis propres et bordure nette harmonisée au thème LaboSurfVPN.
-   ========================================================================== */
-#app #screen-home .home-foot{
-  margin: 12px calc(-1 * var(--home-right-pad, var(--sp-4)) + 16px) 8px calc(-1 * var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px)) + 16px) !important;
-  width: calc(100% + var(--home-rail-pad, calc(var(--rail-left) + var(--rail-btn) + 32px)) + var(--home-right-pad, var(--sp-4)) - 32px) !important;
-  max-width: none !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  box-sizing: border-box !important;
-}
-#app #screen-home .home-foot.is-inset{
-  margin: 10px 0 8px 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  box-sizing: border-box !important;
-}
-
-#app #screen-home .home-foot .banner-card{
-  width: 100% !important;
-  max-width: 100% !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  border: 1.5px solid var(--accent-color, var(--accent, var(--brand, #0af072))) !important;
-  border-radius: 16px !important;
-  background: var(--surface-2, rgba(10, 25, 18, 0.92)) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.52), 0 0 18px var(--brand-soft, rgba(10, 240, 114, 0.14)) !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
-
-#app #screen-home .conn-card .tiles,
-#app #screen-home #homeTiles{
-  border-bottom: none !important;
-  box-shadow: none !important;
-}
-#app #screen-home .conn-card .tiles::after{
-  display: none !important;
-}
-
-#app #screen-home .home-foot .banner-card.banner-style-conn{
-  border: 1.5px solid #10B981 !important;
-  background: linear-gradient(135deg, #0B192C 0%, #0F292E 100%) !important;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.56), 0 0 18px rgba(16, 185, 129, 0.22) !important;
-}
-
-.bn-conn{ display:flex; flex-direction:column; gap:7px; padding:4px 0; text-align:left; }
-.bn-conn-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.bn-conn-status{ font:700 12px/1.2 var(--font-display); letter-spacing:.03em; color:#10B981; }
-.bn-conn-logs{
-  appearance:none; border:1px solid rgba(56,189,248,.35); background:rgba(56,189,248,.12);
-  color:#E2F1F8; border-radius:8px; padding:4px 9px; font:600 11px/1.1 var(--font-body); cursor:pointer;
-}
-.bn-conn-cfg{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-.bn-conn-cfg-name{ font:700 14px/1.25 var(--font-display); color:#38BDF8; }
-.bn-conn-sub{
-  font:600 11px/1.1 var(--font-body); color:#D1FAE5; background:rgba(16,185,129,.16);
-  border:1px solid rgba(16,185,129,.35); border-radius:999px; padding:2px 8px;
-}
-.bn-conn-user{ font:600 12px/1.3 var(--font-body); color:#FBBF24; }
-.bn-conn-welcome{
-  font:500 12px/1.35 var(--font-body); color:#E2E8F0;
-  background:rgba(255,255,255,.05); border-left:2.5px solid #10B981;
-  border-radius:6px; padding:5px 8px;
-}
-.bn-dots{ display:flex; justify-content:center; align-items:center; gap:6px; padding:2px 0 8px; position:relative; z-index:2; }
-.bn-dot-btn{
-  width:7px; height:7px; border-radius:999px; border:0; padding:0; cursor:pointer;
-  background:rgba(255,255,255,.28); transition:width .2s ease, background .2s ease;
-}
-.bn-dot-btn.is-active{ width:18px; background:#10B981; }
-.bd-tagline{ white-space:normal; text-align:center; }
-
-#app #screen-home .home-foot .banner-card .bn-body{
-  padding-left: var(--sp-4);
-  padding-right: var(--sp-4);
-  box-sizing: border-box;
-}
-
-#app #screen-home .home-foot .sig-home{
-  width: 100%;
-  box-sizing: border-box;
-  padding-left: var(--sp-4);
-  padding-right: var(--sp-4);
-  margin-top: 6px;
-  position: static;
 }

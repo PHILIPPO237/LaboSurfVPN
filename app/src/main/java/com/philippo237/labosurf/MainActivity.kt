@@ -47,17 +47,6 @@ class MainActivity : AppCompatActivity() {
 
     private var pendingServerConfig: String? = null
 
-    // Mise a jour depuis l'application : les evenements du telechargement sont remis a js/update.js
-    private val updater: UpdateInstaller by lazy {
-        UpdateInstaller(applicationContext, panelHost) { type, json ->
-            runOnUiThread {
-                val jsType = org.json.JSONObject.quote(type)
-                val jsJson = org.json.JSONObject.quote(json)
-                webView.evaluateJavascript("window.LaboUpdateEvent && window.LaboUpdateEvent($jsType, $jsJson)", null)
-            }
-        }
-    }
-
     // Horodatage (horloge monotone) de la derniere reinitialisation du reseau de la WebView (voir NativeBridge.resetNetwork)
     private var lastNetworkReset = 0L
 
@@ -107,10 +96,6 @@ class MainActivity : AppCompatActivity() {
             notifyWeb(nativeState, detail)
         }
         // Trafic RÉELLEMENT mesuré par le moteur (octets qui ont traversé le tunnel) — jamais une estimation
-        // LABOSURF TV : position de lecture remontee par le lecteur natif, enregistree par l'interface (js/tv.js)
-        com.philippo237.labosurf.tv.TvEvents.progressListener = { title, episode, position, duration ->
-            runOnUiThread { webView.evaluateJavascript("window.onTvProgress($title, $episode, $position, $duration)", null) }
-        }
         LaboVpnService.statsListener = { rx, tx, rxSpeed, txSpeed ->
             runOnUiThread {
                 webView.evaluateJavascript("window.onNativeVpnStats($rx, $tx, $rxSpeed, $txSpeed)", null)
@@ -220,7 +205,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         LaboVpnService.stateListener = null
         LaboVpnService.statsListener = null
-        com.philippo237.labosurf.tv.TvEvents.progressListener = null
         super.onDestroy()
     }
 
@@ -351,28 +335,6 @@ class MainActivity : AppCompatActivity() {
             return code
         }
 
-        // ─── Mise a jour depuis l'application (js/update.js, UpdateInstaller.kt) ───
-        @JavascriptInterface
-        fun updateDownload(url: String, sha256: String, size: String) = updater.download(url, sha256, size.toLongOrNull() ?: -1L)
-
-        @JavascriptInterface
-        fun updateCancel() = updater.cancel()
-
-        @JavascriptInterface
-        fun updateInstall(): String = updater.install()
-
-        @JavascriptInterface
-        fun updateCanInstall(): Boolean = updater.canInstall()
-
-        @JavascriptInterface
-        fun updateAllowInstall(): Boolean = updater.openInstallPermission()
-
-        @JavascriptInterface
-        fun updateCleanup() = updater.cleanup()
-
-        @JavascriptInterface
-        fun updateIsMetered(): Boolean = updater.isMetered()
-
         /** Version affichee dans Reglages > Application. */
         @JavascriptInterface
         fun getAppVersion(): String = try {
@@ -380,20 +342,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             ""
         }
-
-        /** Numero de build installe (versionCode) : « ORBITE 1.6.0 (261103001) », voir js/update.js. Vide si illisible. */
-        @JavascriptInterface
-        fun getAppBuild(): String = try {
-            val info = packageManager.getPackageInfo(packageName, 0)
-            @Suppress("DEPRECATION")
-            (if (android.os.Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()).toString()
-        } catch (e: Exception) {
-            ""
-        }
-
-        /** Nom de la version (« ORBITE »), fixe a la compilation. Vide pour les versions anterieures. */
-        @JavascriptInterface
-        fun getReleaseName(): String = BuildConfig.RELEASE_NAME
 
         /** Aligne barre d'etat / de navigation Android sur le theme de l'interface (js/theme.js). */
         @JavascriptInterface
@@ -444,50 +392,6 @@ class MainActivity : AppCompatActivity() {
             val id = "ins-" + java.util.UUID.randomUUID().toString().replace("-", "")
             prefs.edit().putString(INSTALL_ID_KEY, id).apply()
             return id
-        }
-
-        // ─── LABOSURF TV : un ticket du panel, jamais une adresse. Le natif l'echange lui-meme aupres du panel (voir TvApi). ───
-        @JavascriptInterface
-        fun tvPlay(ticket: String, lang: String, audio: String, subtitles: String) {
-            if (ticket.isBlank()) return
-            runOnUiThread { startActivity(com.philippo237.labosurf.tv.TvPlayerActivity.streamIntent(this@MainActivity, ticket, lang, audio, subtitles)) }
-        }
-
-        @JavascriptInterface
-        fun tvOpenYoutube(ticket: String) {
-            Thread {
-                val videoId = try { com.philippo237.labosurf.tv.TvApi.redeem(ticket, "").optString("youtube_id") } catch (e: Exception) { "" }
-                if (Regex("^[A-Za-z0-9_-]{11}$").matches(videoId)) {
-                    // Lecteur officiel, jamais une extraction du flux : l'application YouTube, sinon le navigateur
-                    runOnUiThread { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=$videoId"))) }
-                } else {
-                    runOnUiThread { android.widget.Toast.makeText(this@MainActivity, R.string.tv_error_authorize, android.widget.Toast.LENGTH_LONG).show() }
-                }
-            }.start()
-        }
-
-        @JavascriptInterface
-        fun tvDownloadStart(ticket: String, lang: String) {
-            Thread {
-                val code = com.philippo237.labosurf.tv.TvDownloads.start(applicationContext, ticket, lang)
-                runOnUiThread { webView.evaluateJavascript("window.onTvDownload(${org.json.JSONObject.quote(code)})", null) }
-            }.start()
-        }
-
-        @JavascriptInterface
-        fun tvDownloadsList(): String = com.philippo237.labosurf.tv.TvDownloads.list(applicationContext)
-
-        @JavascriptInterface
-        fun tvStorage(): String = com.philippo237.labosurf.tv.TvDownloads.storage(applicationContext)
-
-        @JavascriptInterface
-        fun tvDownloadDelete(id: String) = com.philippo237.labosurf.tv.TvDownloads.delete(applicationContext, id)
-
-        @JavascriptInterface
-        fun tvPlayOffline(id: String, audio: String, subtitles: String): Boolean {
-            if (!com.philippo237.labosurf.tv.TvDownloads.isPlayable(applicationContext, id)) return false
-            runOnUiThread { startActivity(com.philippo237.labosurf.tv.TvPlayerActivity.offlineIntent(this@MainActivity, id, audio, subtitles)) }
-            return true
         }
 
         /** Nom lisible de l'appareil pour la liste « Mes appareils » (ex. « Samsung SM-A155F ») : ni numero de serie ni IMEI. */

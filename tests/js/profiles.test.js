@@ -88,7 +88,7 @@ test('contrat : corps de connexion exact et réponse réelle', () => {
 // ================================================================ interface
 test('plusieurs profils : récupérés après les serveurs et affichés avec « Automatique »', async () => {
   const a = await ready();
-  assert.deepEqual(a.calls.apiFetch.map((c) => c.path), ['/api/user/servers', '/api/user/connect/options', '/api/v1/client/configs']);
+  assert.deepEqual(a.calls.apiFetch.map((c) => c.path), ['/api/user/servers', '/api/user/connect/options']);
   assert.equal(a.ev('Profiles.state'), 'ready');
   assert.equal(a.ev('Profiles.list.length'), 3);
   const html = a.ev("document.getElementById('srvList').innerHTML");
@@ -219,7 +219,7 @@ test('l\'application ne parle qu\'au panel : aucune adresse de l\'agent PRO', ()
   const { WWW } = require('./harness.js');
   for(const f of fs.readdirSync(path.join(WWW, 'js')).filter((x) => x.endsWith('.js'))){
     const src = fs.readFileSync(path.join(WWW, 'js', f), 'utf8');
-    // routes de l'agent (/api/v1/… hors routes client/TV du panel), son port, ses en-têtes signés : rien de tout cela dans l'application
-    assert.doesNotMatch(src, /\/api\/v1\/(?!(?:tv\/|client\/configs|beta\/redeem|devices\/transfer))|:9443|X-LS-(Signature|Key-Id|Nonce|Timestamp)/i, f);
+    // routes de l'agent (/api/v1/…), son port, ses en-têtes signés : rien de tout cela dans l'application
+    assert.doesNotMatch(src, /\/api\/v1\/|:9443|X-LS-(Signature|Key-Id|Nonce|Timestamp)/i, f);
   }
 });

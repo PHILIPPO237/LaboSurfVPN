@@ -14,20 +14,6 @@ class UdpLinkTest {
         assertEquals("abcDEF123_-xyz", l.password)
     }
 
-    @Test fun parsesUserinfoPasswordLinkEmittedByHarmonizedPro() {
-        val direct = UdpLink.parse("udp://test_udp:LaboSurf2026!@162.248.100.115:5667")
-        assertEquals("test_udp", direct.username)
-        assertEquals("162.248.100.115", direct.host)
-        assertEquals(5667, direct.port)
-        assertEquals("LaboSurf2026!", direct.password)
-
-        val encoded = UdpLink.parse("udp://test_udp:LaboSurf2026%21@162.248.100.115:5667")
-        assertEquals("test_udp", encoded.username)
-        assertEquals("162.248.100.115", encoded.host)
-        assertEquals(5667, encoded.port)
-        assertEquals("LaboSurf2026!", encoded.password)
-    }
-
     @Test fun percentEncodingIsDecodedButPlusStaysPlus() {
         assertEquals("a+b c%", UdpLink.parse("udp://u@h.example:1?pass=a+b%20c%25").password)
         assertEquals("100%", UdpLink.parse("udp://u@h.example:1?pass=100%").password)   // « % » orphelin conservé

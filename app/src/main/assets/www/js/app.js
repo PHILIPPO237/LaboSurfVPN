@@ -5,14 +5,14 @@
 // Rien n'est supprimé : Serveurs s'ouvre depuis Services, Historique et Espace revendeur depuis Compte,
 // Communauté depuis Réglages (voir PARENT_OF).
 
-const SCREENS = ['home', 'tv', 'services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'livechat', 'settings', 'about', 'logs', 'legal'];
+const SCREENS = ['home', 'services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'livechat', 'settings', 'about', 'logs', 'legal'];
 // Sous-écrans : le bouton du parent reste allumé sur le rail, et « retour » y ramène
 const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', community: 'settings', legal: 'settings', logs: 'settings', about: 'settings' };
 let currentScreen = 'home';
 document.documentElement.dataset.screen = 'home';
 
 // Sens de la transition : sous-page = +1 (le contenu arrive du bas), retour = -1, sinon selon la position des boutons dans le rail
-const RAIL_ORDER = ['home', 'services', 'account', 'chat', 'livechat', 'settings', 'logs', 'about', 'tv'];   // même ordre que le rail (du plus au moins prioritaire)
+const RAIL_ORDER = ['home', 'services', 'account', 'chat', 'livechat', 'settings', 'logs', 'about'];   // même ordre que le rail (du plus au moins prioritaire)
 function transitionDir(from, to){
   if(PARENT_OF[to] === from) return 1;
   if(PARENT_OF[from] === to) return -1;
@@ -46,9 +46,7 @@ function showScreen(name){
   });
   if(!wasActive) $('screen-' + name).scrollTop = 0;
 
-  if(typeof TV !== 'undefined') document.documentElement.classList.toggle('tv-kids', name === 'tv' && !!TV.kid);
   if(name === 'home') fitHomeScreen();
-  if(name === 'tv') tvOpen();
   if(name === 'logs') renderLogs();   // diagnostic à jour à chaque ouverture
   if(name === 'services' && authToken && Services.state === 'idle') loadServices();
   if(name === 'servers' && authToken && Servers.state === 'idle') loadServers();
@@ -96,13 +94,10 @@ function renderRailMinis(){
 window.LaboBack = function(){
   if(!Splash.isDone()){ Splash.skip(); return true; }   // animation d'ouverture : le retour la passe
   if(Onboarding.isOpen()){ Onboarding.finish(); return true; }
-  if(Update.open){ updClose(); return true; }   // mise à jour obligatoire : la page reste ouverte
   if(!$('dialogBackdrop').hidden){ closeDialog(false); return true; }
   if(Guide.isOpen()){ Guide.close(); return true; }
   if(currentScreen === 'account' && Account.view !== 'menu'){ setAccView('menu'); return true; }
   if(currentScreen === 'legal'){ Actions.legalBack(); return true; }
-  if(typeof TV !== 'undefined' && !$('tvPlayerOverlay').hidden){ Actions.tvClosePlayer(); return true; }
-  if(currentScreen === 'tv' && tvBack()) return true;
   if(currentScreen === 'livechat' && typeof LC !== 'undefined' && LC.room){ Actions.lcRooms(); return true; }   // salon ouvert : retour à la liste des salons
   if(PARENT_OF[currentScreen]){ showScreen(PARENT_OF[currentScreen]); return true; }
   if(currentScreen !== 'home'){ showScreen('home'); return true; }
@@ -124,25 +119,7 @@ loadHomeBanner();
 setInterval(loadHomeBanner, 5 * 60 * 1000);   // rafraîchi toutes les 5 min
 restoreRememberedSession();                   // « rester connecté » : compte rouvert sans ressaisir les identifiants
 setTimeout(fitHomeScreen, 300);               // filet de sécurité : polices / images finissent de charger
-
-// Rail : son bas s'arrête juste au bord haut de la bannière (la position haute est calculée, jamais figée en px, car la
-// hauteur de la bannière dépend de l'écran). Raccourcis dépliés : on ne recalcule pas, ils recouvrent la bannière à dessein.
-const RAIL_GAP = 6;
-function alignRail(){
-  const rail = $('rail'), group = $('railGroup'), foot = document.querySelector('.home-foot');
-  if(!rail || !foot || !group || group.classList.contains('open') || !rail.offsetHeight) return;
-  const host = rail.offsetParent || rail.parentElement;
-  const top = foot.getBoundingClientRect().top - host.getBoundingClientRect().top - rail.offsetHeight - RAIL_GAP;
-  if(top > 0) rail.style.setProperty('--rail-top', Math.max(42, Math.round(top)) + 'px');
-}
-if(window.ResizeObserver){ const ro = new ResizeObserver(() => alignRail()); const f = document.querySelector('.home-foot'); if(f) ro.observe(f); }
-window.addEventListener('resize', alignRail);
-document.addEventListener('langchange', () => setTimeout(alignRail, 0));
-new MutationObserver(() => setTimeout(alignRail, 60)).observe(document.documentElement, { attributes:true, attributeFilter:['data-screen'] });
-setTimeout(alignRail, 400);
-setTimeout(alignRail, 1500);
 Splash.whenDone(() => Onboarding.maybeStart());
-Splash.whenDone(updStart);
 Splash.whenDone(() => {   // retour d'un « Vider le cache » (rechargement) : on le confirme
   try{ if(sessionStorage.getItem('ls.cacheCleared')){ sessionStorage.removeItem('ls.cacheCleared'); toast(t('cache.done'), 'success'); } }catch(e){}
 });                      // première ouverture seulement (passable)

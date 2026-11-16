@@ -1,10 +1,8 @@
 package com.philippo237.labosurf.udp
 
 /**
- * Lien de connexion UDP émis par LABOSURF_PRO / Panel :
- * - format harmonisé `udp://<utilisateur>:<mot de passe>@<hôte>:<port>`
- * - ou format historique `udp://<utilisateur>@<hôte>:<port>?pass=<mot de passe>`
- * Lu tel quel : jamais reconstruit ni « corrigé » côté Android.
+ * Lien de connexion UDP émis par LABOSURF_PRO : `udp://<utilisateur>@<hôte>:<port>?pass=<mot de passe>`
+ * (internal/clientcfg/access.go). Lu tel quel : jamais reconstruit ni « corrigé » côté Android.
  * Le mot de passe n'apparaît JAMAIS dans toString() ni dans les messages d'erreur.
  */
 class UdpLink private constructor(val username: String, val host: String, val port: Int, val password: String) {
@@ -24,10 +22,7 @@ class UdpLink private constructor(val username: String, val host: String, val po
             val query = if (q >= 0) rest.substring(q + 1) else ""
             val at = authority.lastIndexOf('@')
             if (at <= 0) throw Invalid("nom d'utilisateur manquant")
-            val userInfo = authority.substring(0, at)
-            val userColon = userInfo.indexOf(':')
-            val user = safeDecode(if (userColon >= 0) userInfo.substring(0, userColon) else userInfo)
-            var pass = if (userColon >= 0) safeDecode(userInfo.substring(userColon + 1)) else ""
+            val user = safeDecode(authority.substring(0, at))
             val hostPort = authority.substring(at + 1)
             val colon = hostPort.lastIndexOf(':')
             if (colon <= 0) throw Invalid("port manquant")
@@ -35,14 +30,10 @@ class UdpLink private constructor(val username: String, val host: String, val po
             val port = hostPort.substring(colon + 1).toIntOrNull() ?: throw Invalid("port invalide")
             if (host.isEmpty()) throw Invalid("hôte manquant")
             if (port < 1 || port > 65535) throw Invalid("port hors limites")
-            if (pass.isEmpty()) {
-                for (kv in query.split("&")) {
-                    val eq = kv.indexOf('=')
-                    if (eq > 0) {
-                        val key = kv.substring(0, eq)
-                        if (key == "pass" || key == "password") pass = safeDecode(kv.substring(eq + 1))
-                    }
-                }
+            var pass = ""
+            for (kv in query.split("&")) {
+                val eq = kv.indexOf('=')
+                if (eq > 0 && kv.substring(0, eq) == "pass") pass = safeDecode(kv.substring(eq + 1))
             }
             if (pass.isEmpty()) throw Invalid("mot de passe manquant")
             if (user.isEmpty()) throw Invalid("nom d'utilisateur manquant")

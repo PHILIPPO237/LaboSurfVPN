@@ -11,10 +11,9 @@ const empty = () => ({ ok: true, status: 200, expired: false, data: { status: 'o
 const app = () => loadApp({ native: { engine: { integrated: false, protocols: [] }, apiBase: 'https://panel.example.tld' }, respond: empty });
 const iso = (d) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
 const render = (a, me, sub) => a.ev(`renderAccountCard(accountFromApi(${JSON.stringify(me)}, ${JSON.stringify(sub || {})}, ''))`);
-// Le bouton Messages a quitté le rail (décision du 2026-11-06) : la disponibilité de la messagerie se lit dans messagesAvailable.
-const railHidden = (a) => a.ev('!messagesAvailable');
+const railHidden = (a) => a.ev("document.getElementById('railBtn-chat').hidden");
 
-test('messagerie : disponible seulement pour un abonné (offre payante non expirée), sans bouton dans le rail', () => {
+test('rail : le bouton Chat n\'apparaît que pour un abonné (offre payante non expirée)', () => {
   const a = app();
   render(a, { type: 'VIP', username: 'a', expiration: iso(12) });
   assert.equal(railHidden(a), false, 'VIP actif : visible');
@@ -91,15 +90,14 @@ test('annonces : repliées par défaut, le bouton les déplie et le dit (aria-ex
   assert.equal(btn.expanded, 'false');
 });
 
-test('structure : le chat n\'a plus de bouton dans le rail, le profil y mène, l\'ancienne sous-vue a disparu', () => {
+test('structure : le chat est un écran du rail (bouton caché par défaut), le profil y mène, l\'ancienne sous-vue a disparu', () => {
   const html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8');
-  assert.doesNotMatch(html, /id="railBtn-chat"/);
-  assert.doesNotMatch(html, /id="chatBadge"/);
+  assert.match(html, /<button class="rail-btn" type="button" id="railBtn-chat" data-action="nav" data-screen="chat" hidden/);
   assert.match(html, /<section class="screen" id="screen-chat"/);
   assert.match(html, /<button class="row" type="button" data-action="nav" data-screen="chat">/);
   assert.doesNotMatch(html, /accViewMessages/);
   assert.doesNotMatch(html, /data-action="accOpen" data-view="messages"/);
-  for (const id of ['messagesThread', 'msgComposerInput', 'msgAttachInput', 'messagesCardBadge', 'announcementsList']) {
+  for (const id of ['messagesThread', 'msgComposerInput', 'msgAttachInput', 'chatBadge', 'messagesCardBadge', 'announcementsList']) {
     assert.equal((html.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1, id);
   }
 });
