@@ -2,8 +2,8 @@
 
 /* Exception A : Ecran d'accueil preserve + Vitre Cristal Transparente (Clear Glass) elargie */
 #app #screen-home .home-foot {
-  margin: 12px 12px 8px 12px !important;
-  width: calc(100% - 24px) !important;
+  margin: 10px 8px 8px 8px !important;
+  width: calc(100% - 16px) !important;
   max-width: none !important;
   box-sizing: border-box !important;
 }

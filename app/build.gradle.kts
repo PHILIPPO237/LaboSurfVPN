@@ -22,10 +22,10 @@ android {
         applicationId = "com.philippo237.labosurf"
         minSdk = 24        // Android 7.0+ (couvre la grande majorite des telephones au Cameroun)
         targetSdk = 34
-        // Numerotation « ORBITE 1.6.3 (261116002) » : nom + numero (versionName, la suite continue : 1.6.2 -> 1.6.3)
+        // Numerotation « ORBITE 1.6.4 (261116003) » : nom + numero (versionName, la suite continue : 1.6.3 -> 1.6.4)
         // + numero de build (versionCode, AAMMJJNNN, toujours croissant ; les anciens vont de 1 a 14).
-        versionCode = 261116002
-        versionName = "1.6.3"
+        versionCode = 261116003
+        versionName = "1.6.4"
         buildConfigField("String", "RELEASE_NAME", "\"ORBITE\"")
         buildConfigField("String", "PANEL_BASE_URL", "\"$panelBaseUrl\"")
         // App Link (https://<hôte du panel>/app/open) : vérifié par Android grâce à /.well-known/assetlinks.json servi par le panel

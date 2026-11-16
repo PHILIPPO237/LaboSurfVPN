@@ -123,7 +123,10 @@ async function checkForUpdate(manual, atLaunch){
   Update.lastCheck = Date.now();
   store.set('update.lastCheck', Update.lastCheck);
   let res = null;
-  try{ res = await apiFetch('/api/app/version'); }catch(e){}
+  try{ res = await apiFetch('/api/app/latest-version'); }catch(e){}
+  if(!res || !res.ok || !res.data){
+    try{ res = await apiFetch('/api/app/version'); }catch(e){}
+  }
   if(!res || !res.ok || !res.data){
     try{ res = await apiFetch('/api/app/latest'); }catch(e){}
   }

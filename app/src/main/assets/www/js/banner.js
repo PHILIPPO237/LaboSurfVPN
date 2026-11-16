@@ -38,20 +38,33 @@ function bannerSwap(){
   body.classList.remove('is-swap'); void body.offsetWidth; body.classList.add('is-swap');
 }
 
+const COUNTRY_OPS_SHOWCASE = {
+  CM: { flag: '🇨🇲', name: 'Cameroun', ops: 'MTN · Orange · Camtel · Nexttel' },
+  CI: { flag: '🇨🇮', name: "Côte d'Ivoire", ops: 'Orange CI · MTN CI · Moov Africa' },
+  SN: { flag: '🇸🇳', name: 'Sénégal', ops: 'Orange SN · Free SN · Expresso' },
+  GA: { flag: '🇬🇦', name: 'Gabon', ops: 'Airtel GA · Moov Gabon' },
+  ML: { flag: '🇲🇱', name: 'Mali', ops: 'Orange ML · Moov Malitel' },
+  BF: { flag: '🇧🇫', name: 'Burkina Faso', ops: 'Orange BF · Moov BF · Telecel' },
+  BJ: { flag: '🇧🇯', name: 'Bénin', ops: 'MTN BJ · Moov BJ' },
+  TG: { flag: '🇹🇬', name: 'Togo', ops: 'Togocom · Moov TG' },
+  CD: { flag: '🇨🇩', name: 'RD Congo', ops: 'Vodacom · Orange · Airtel' },
+};
+
 function populateConnBanner(){
   const cfg = (typeof getActiveConfigSummary === 'function') ? getActiveConfigSummary() : { title: 'Labo Surf VPN', subtitle: '🛡️ Stable' };
   const acc = (typeof Account !== 'undefined' && Account.last) ? Account.last : {};
   const en = (typeof I18N !== 'undefined' && I18N.lang === 'en');
   const user = acc.username || (en ? 'Member' : 'Abonné');
-  const cc = (acc.country_code || acc.country || 'ALL').toUpperCase();
+  const cc = (acc.country_code || acc.country || 'CM').toUpperCase();
+  const cInfo = COUNTRY_OPS_SHOWCASE[cc] || COUNTRY_OPS_SHOWCASE.CM;
   let exp = en ? 'Unlimited' : 'Illimité';
   if(acc.daysLeft !== undefined && acc.daysLeft !== null){
     exp = acc.daysLeft <= 0 ? (en ? 'Expired' : 'Expiré') : (acc.daysLeft + (en ? ' d left' : ' j restants'));
   } else if(acc.expires_at){
     exp = String(acc.expires_at).slice(0, 10);
   }
-  if($('bnConnCfg')) $('bnConnCfg').textContent = '📡 ' + (cfg.title || 'Labo Surf VPN');
-  if($('bnConnSub')) $('bnConnSub').textContent = cfg.subtitle || '🛡️ Stable';
+  if($('bnConnCfg')) $('bnConnCfg').textContent = `${cInfo.flag} ${cfg.title || 'Labo Surf VPN'}`;
+  if($('bnConnSub')) $('bnConnSub').textContent = `${cfg.subtitle || '🛡️ Stable'} · ${cInfo.ops}`;
   if($('bnConnUser')) $('bnConnUser').textContent = `👤 ${user} (${cc}) • ⏳ ${exp}`;
   if($('bnConnWelcome')) $('bnConnWelcome').textContent = '✨ ' + (Banner.welcomeBanner || (en ? 'Welcome to Labo Surf VPN' : 'Bienvenue sur Labo Surf VPN'));
 }
