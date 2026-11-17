@@ -21,17 +21,18 @@
   </header>
 
   <section class="card" style="text-align:center;">
-    <img src="img/logos/icon-circle-dark.png" style="width:86px;height:86px;border-radius:50%;border:2.5px solid #10B981;">
-    <h2 style="margin:8px 0 4px;">Membre Labo Surf VPN</h2>
-    <span style="padding:3px 10px;border-radius:999px;background:rgba(245,158,11,0.2);border:1px solid #F59E0B;color:#FBBF24;font-size:11px;font-weight:800;">👑 VIP CERTIFIÉ</span>
+    <img id="mobAvatar" src="img/logos/icon-circle-dark.png" alt="" style="width:86px;height:86px;border-radius:50%;border:2.5px solid #10B981;object-fit:cover;">
+    <h2 id="mobName" style="margin:8px 0 4px;">Membre Labo Surf VPN</h2>
+    <span id="mobBadge" style="padding:3px 10px;border-radius:999px;background:rgba(245,158,11,0.2);border:1px solid #F59E0B;color:#FBBF24;font-size:11px;font-weight:800;">—</span>
   </section>
 
   <div class="grid">
-    <div class="stat"><div class="ring">30j</div><div style="font-size:12px;color:#94A3B8;">Jours VIP restants</div></div>
-    <div class="stat"><div class="ring" style="border-color:#10B981;color:#10B981;">4.2 Go</div><div style="font-size:12px;color:#94A3B8;">Data ↓ / ↑</div></div>
-    <div class="stat"><div class="ring" style="border-color:#0EA5E9;color:#38BDF8;">500 Mo</div><div style="font-size:12px;color:#94A3B8;">Filleuls & Bonus</div></div>
-    <div class="stat"><div class="ring" style="border-color:#8B5CF6;color:#DDD6FE;">18h</div><div style="font-size:12px;color:#94A3B8;">Temps protégé</div></div>
+    <div class="stat"><div class="ring" id="mobDays">—</div><div style="font-size:12px;color:#94A3B8;">Jours restants</div></div>
+    <div class="stat"><div class="ring" id="mobData" style="border-color:#10B981;color:#10B981;">—</div><div style="font-size:12px;color:#94A3B8;">Data consommée</div></div>
+    <div class="stat"><div class="ring" id="mobRef" style="border-color:#0EA5E9;color:#38BDF8;">—</div><div style="font-size:12px;color:#94A3B8;">Filleuls &amp; Bonus</div></div>
+    <div class="stat"><div class="ring" id="mobQuota" style="border-color:#8B5CF6;color:#DDD6FE;">—</div><div style="font-size:12px;color:#94A3B8;">Quota restant</div></div>
   </div>
+  <div id="mobNote" style="margin:0 14px 8px;font-size:11px;color:#94A3B8;"></div>
 
   <div style="margin:12px;">
     <a href="community.html#dm" style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(14,165,233,0.22),rgba(16,185,129,0.22));border:1px solid #10B981;color:#F1F5F9;font-weight:800;text-decoration:none;">
@@ -40,7 +41,31 @@
     </a>
   </div>
   <script>
-    fetch((window.FREE_SURF_API_BASE || 'https://laboratoire.free-surf237-4all.xyz') + '/api/community/dms/unread-count')
+    const API = window.FREE_SURF_API_BASE || sessionStorage.getItem('ls_bridge_api') || 'https://laboratoire.free-surf237-4all.xyz';
+    const TOKEN = sessionStorage.getItem('ls_bridge_token') || '';
+    const H = TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {};
+    const getJSON = (path) => fetch(API + path, { cache: 'no-store', headers: H }).then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); });
+    function gb(v) {
+      if (typeof v !== 'number' || !isFinite(v) || v < 0) return '—';
+      if (v >= 1) return (Math.round(v * 100) / 100).toLocaleString('fr-FR') + ' Go';
+      const mb = v * 1024;
+      return (mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10).toLocaleString('fr-FR') + ' Mo';
+    }
+    function set(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+    // Données réelles uniquement : chaque chiffre vient du Panel ; inconnu = « — », jamais 0 inventé.
+    getJSON('/api/user/me').then(me => {
+      set('mobName', me.username || 'Membre Labo Surf VPN');
+      if (me.avatar) document.getElementById('mobAvatar').src = API + me.avatar;
+      const premium = String(me.type || '').toLowerCase() !== 'gratuit' && String(me.type || '') !== '';
+      const badge = document.getElementById('mobBadge');
+      badge.textContent = (premium ? '👑 ' : '🆓 ') + (me.type || 'Gratuit');
+      set('mobDays', typeof me.remaining_days === 'number' ? me.remaining_days + ' j' : (me.expiration || '—'));
+      set('mobData', me.usage_available === true ? gb(me.quota_used_gb) : '—');
+      set('mobQuota', me.usage_available === true && typeof me.remaining_gb === 'number' ? gb(me.remaining_gb) : '—');
+      if (me.usage_available !== true) document.getElementById('mobNote').textContent = 'Consommation indisponible pour le moment (mesure LABOSURF PRO non disponible).';
+    }).catch(() => { document.getElementById('mobNote').textContent = 'Connectez-vous dans l’application pour afficher les données réelles de votre compte.'; });
+    getJSON('/api/user/referral').then(d => { set('mobRef', typeof d.referral_mb === 'number' ? d.referral_mb + ' Mo' : '—'); }).catch(() => {});
+    fetch(API + '/api/community/dms/unread-count', { cache: 'no-store', headers: H })
       .then(r => r.json()).then(d => { if (d && d.unread > 0) { const b = document.getElementById('mobDmBadge'); b.textContent = d.unread; b.style.display = 'inline-block'; } }).catch(() => {});
   </script>
 </body>

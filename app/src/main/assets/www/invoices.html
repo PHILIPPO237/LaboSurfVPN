@@ -21,14 +21,21 @@
   <div id="invBox"></div>
 
   <script>
-    fetch((window.FREE_SURF_API_BASE || '') + '/api/user/invoices').then(r => r.json()).then(d => {
-      document.getElementById('invBox').innerHTML = (d.invoices || []).map(i => `
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#FBBF24;">${i.invoice_no || 'INV'}</strong><span class="stamp">PAYÉ & CERTIFIÉ</span></div>
-          <div style="font-size:13px;margin-top:6px;">${i.plan_label || 'Pass VIP'} · ${i.amount_xaf || 0} XAF</div>
-          <div style="font-size:11px;color:#94A3B8;margin-top:4px;">Token : <code>${i.token_code || '-'}</code></div>
-        </div>`).join('') || '<div class="card" style="color:#94A3B8;">Aucune facture enregistrée.</div>';
-    }).catch(() => {});
+    const API = window.FREE_SURF_API_BASE || sessionStorage.getItem('ls_bridge_api') || 'https://laboratoire.free-surf237-4all.xyz';
+    const TOKEN = sessionStorage.getItem('ls_bridge_token') || '';
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    fetch(API + '/api/user/invoices', { cache: 'no-store', headers: TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {} })
+      .then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(d => {
+        document.getElementById('invBox').innerHTML = (d.invoices || []).map(i => `
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#FBBF24;">${esc(i.invoice_no || 'INV')}</strong><span class="stamp">PAYÉ &amp; CERTIFIÉ</span></div>
+            <div style="font-size:13px;margin-top:6px;">${esc(i.plan_label || 'Pass VIP')} · ${esc(i.amount_xaf == null ? '—' : i.amount_xaf)} XAF</div>
+            <div style="font-size:11px;color:#94A3B8;margin-top:4px;">Token : <code>${esc(i.token_code || '—')}</code></div>
+          </div>`).join('') || '<div class="card" style="color:#94A3B8;">Aucune facture enregistrée pour ce compte.</div>';
+      }).catch(() => {
+        document.getElementById('invBox').innerHTML = '<div class="card" style="color:#94A3B8;">Factures momentanément indisponibles. Ouvrez l’application et vérifiez votre session.</div>';
+      });
   </script>
 </body>
 </html>

@@ -1,18 +1,16 @@
 // Point d'entrée : navigation (rail latéral), retour Android, initialisation.
 //
-// Le rail latéral d'origine est conservé (même style, mêmes raccourcis thème/langue) avec quatre boutons :
-// Compte · Services · Réglages (+ raccourcis thème/langue) · Accueil.
-// Rien n'est supprimé : Serveurs s'ouvre depuis Services, Historique et Espace revendeur depuis Compte,
-// Communauté depuis Réglages (voir PARENT_OF).
-
-const SCREENS = ['home', 'tv', 'services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'livechat', 'settings', 'about', 'logs', 'legal'];
+// Le rail latéral d'origine est conservé (même style, mêmes raccourcis thème/langue).
+// Les flux natifs restent internes (Accueil, Services, Serveurs, TV, Compte, Activité, Réglages) ;
+// les pages secondaires (Communauté, Profil, VIP, Factures, Guide, À propos, Panels) sont des HTML autonomes.
+const SCREENS = ['home', 'tv', 'services', 'servers', 'activity', 'account', 'clients', 'settings', 'logs', 'legal'];
 // Sous-écrans : le bouton du parent reste allumé sur le rail, et « retour » y ramène
-const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', community: 'settings', legal: 'settings', logs: 'settings', about: 'settings' };
+const PARENT_OF = { servers: 'services', activity: 'account', clients: 'account', legal: 'settings', logs: 'settings' };
 let currentScreen = 'home';
 document.documentElement.dataset.screen = 'home';
 
 // Sens de la transition : sous-page = +1 (le contenu arrive du bas), retour = -1, sinon selon la position des boutons dans le rail
-const RAIL_ORDER = ['home', 'services', 'account', 'chat', 'livechat', 'settings', 'logs', 'about', 'tv'];   // même ordre que le rail (du plus au moins prioritaire)
+const RAIL_ORDER = ['home', 'services', 'account', 'settings', 'logs', 'tv'];   // même ordre que le rail (du plus au moins prioritaire)
 function transitionDir(from, to){
   if(PARENT_OF[to] === from) return 1;
   if(PARENT_OF[from] === to) return -1;
@@ -22,8 +20,7 @@ function transitionDir(from, to){
 
 function showScreen(name){
   if(!SCREENS.includes(name)) return;
-  if(name !== 'account' && name !== 'livechat' && typeof LC !== 'undefined') LC.wantReturn = false;   // l'utilisateur est parti ailleurs : plus de retour automatique
-  if(name === 'chat' && !authToken) name = 'account';   // le chat est celui d'un compte : sans compte, on arrive sur la connexion
+  if(name !== 'account' && typeof LC !== 'undefined') LC.wantReturn = false;   // l'utilisateur est parti ailleurs : plus de retour automatique
   const wasActive = name === currentScreen;
   const prevEl = wasActive ? null : $('screen-' + currentScreen);
   const dir = wasActive ? 1 : transitionDir(currentScreen, name);
@@ -53,10 +50,37 @@ function showScreen(name){
   if(name === 'services' && authToken && Services.state === 'idle') loadServices();
   if(name === 'servers' && authToken && Servers.state === 'idle') loadServers();
   if(name === 'clients'){ loadPendingRequests(); loadResellerClients(); }
-  if(name === 'chat'){ loadAppMessages(); loadAnnouncements(true); }   // ouvrir le chat marque les messages comme lus (seulement ici)
   if(name === 'account') pollAccountSignals();   // met à jour les pastilles sans marquer les messages comme lus
 }
-Actions.nav = (el) => showScreen(el.dataset.screen);
+// Pages secondaires autonomes (HTML séparé, en-tête vitré + « ← Retour »). Elles lisent la session
+// réelle via sessionStorage (voir mirrorBridgeSession dans api.js), jamais localStorage ni URL.
+// Les écrans internes restent utilisés pour les flux qui en dépendent (choix du serveur avant
+// connexion VPN, réglages/app, compte) ; les liens « vitrine » ouvrent la page autonome.
+const SECONDARY_PAGES = {
+  community: 'community.html',
+  about: 'about.html',
+  servers: 'servers.html',
+  settings: 'settings.html',
+  profile: 'profile.html',
+  upgrade: 'upgrade.html',
+  invoices: 'invoices.html',
+  guide: 'guide.html',
+  panels: 'panels.html'
+};
+function openPage(name){
+  const raw = String(name || '');
+  const cut = raw.indexOf('#');
+  const key = cut < 0 ? raw : raw.slice(0, cut);
+  const hash = cut < 0 ? '' : raw.slice(cut);
+  const url = SECONDARY_PAGES[key] || key;
+  if(!url) return;
+  location.href = url + hash;
+}
+Actions.openPage = (el) => openPage(el && el.dataset ? el.dataset.page : '');
+Actions.nav = (el) => {
+  if(el && el.dataset && el.dataset.page) { openPage(el.dataset.page); return; }
+  showScreen(el.dataset.screen);
+};
 // L'accueil se mesure (rail, bannière) : on refait la mesure quand son animation d'entrée est terminée
 document.addEventListener('animationend', (e) => { if(e.target.id === 'screen-home') fitHomeScreen(); });
 

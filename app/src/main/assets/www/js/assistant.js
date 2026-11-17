@@ -17,12 +17,12 @@ const FAQ = [
   { id: 'history', go: { screen: 'activity' } },
   { id: 'lang',    go: { screen: 'settings' } },
   { id: 'photo',   go: { screen: 'account' } },
-  { id: 'support', go: { screen: 'chat' } },
+  { id: 'support', go: { page: 'community#dm' } },
   { id: 'privacy', go: { legal: 'privacy' } },
-  { id: 'about',   go: { screen: 'about' } },
+  { id: 'about',   go: { page: 'about' } },
 ];
 const FAQ_SUGGESTIONS = ['signin', 'start', 'fail', 'server', 'renew', 'cache'];   // puces affichées sous la conversation
-const GO_LABEL = { home: 'nav.home', account: 'nav.account', chat: 'nav.chat', servers: 'nav.servers', logs: 'nav.logs', activity: 'nav.activity', settings: 'nav.settings', about: 'nav.about' };
+const GO_LABEL = { home: 'nav.home', account: 'nav.account', servers: 'nav.servers', logs: 'nav.logs', activity: 'nav.activity', settings: 'nav.settings' };
 
 const Assistant = {
   available: false,          // futur : un endpoint du panel pourra répondre en langage libre (voir ask)
@@ -55,7 +55,10 @@ function asstBubble(m){
   let go = '';
   if(f){
     const g = f.go;
-    const label = g.topic ? t('guide.title') : g.legal ? t('set.privacy') : t(GO_LABEL[g.screen]);
+    const label = g.topic ? t('guide.title')
+      : g.legal ? t('set.privacy')
+      : g.page ? (g.page.indexOf('about') === 0 ? t('nav.about') : t('acc.menu.messages'))
+      : t(GO_LABEL[g.screen]);
     go = `<button class="btn btn-secondary btn-sm asst-go" type="button" data-action="asstGo" data-id="${esc(f.id)}">${esc(t('assistant.open'))} · ${esc(label)}</button>`;
   }
   return `<div class="bubble-row"><div class="bubble asst-bubble">${esc(t('faq.' + m.id + '.a'))}${go}</div></div>`;
@@ -91,6 +94,7 @@ Actions.asstGo = (el) => {
   Guide.close();
   const g = f.go;
   if(g.topic){ Guide.open(g.topic, 'guide'); return; }
+  if(g.page){ openPage(g.page); return; }
   if(g.legal){ Actions.openLegal({ dataset: { value: g.legal } }); return; }
   showScreen(g.screen);
   if(g.view && authToken) setAccView(g.view);   // sous-écran du profil : seulement avec un compte connecté

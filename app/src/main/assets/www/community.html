@@ -34,65 +34,154 @@
   </header>
 
   <div class="tabs">
-    <button class="pill active" onclick="setRoom('announcements',this)">📢 Canal</button>
-    <button class="pill" onclick="setRoom('community',this)">🌍 Groupe</button>
-    <button class="pill" id="staffTab" style="display:none;" onclick="setRoom('staff',this)">🛡️ Staff</button>
-    <button class="pill" onclick="openDm(this)">💬 Privés</button>
+    <button class="pill active" data-tab="announcements" onclick="setRoom('announcements',this)">📢 <span data-i18n="tab.channel">Canal</span></button>
+    <button class="pill" data-tab="community" onclick="setRoom('community',this)">🌍 <span data-i18n="tab.group">Groupe</span></button>
+    <button class="pill" id="staffTab" style="display:none;" data-tab="staff" onclick="setRoom('staff',this)">🛡️ <span data-i18n="tab.staff">Staff</span></button>
+    <button class="pill" data-tab="dm" onclick="openDm(this)">💬 <span data-i18n="tab.dm">Privés</span></button>
   </div>
 
   <div style="margin:0 12px 6px;display:flex;justify-content:space-between;font-size:11px;color:#FBBF24;">
-    <span id="qInfo">🆓 10/10 msg/jour · Fonctions 🔒 VIP</span>
-    <a href="upgrade.html" style="color:#10B981;font-weight:800;text-decoration:none;">⭐ Passer VIP</a>
+    <span id="qInfo" data-i18n="quota">🆓 10 messages/jour · Fonctions 🔒 VIP</span>
+    <a href="upgrade.html" style="color:#10B981;font-weight:800;text-decoration:none;">⭐ <span data-i18n="upgrade">Passer VIP</span></a>
   </div>
 
   <div id="feed"></div>
 
   <form class="bar" id="sendForm">
-    <input id="msgIn" placeholder="Écrire un message...">
+    <input id="msgIn" data-i18n-ph="placeholder" placeholder="Écrire un message...">
     <button type="button" class="pill" onclick="location.href='upgrade.html'">🎤 🔒</button>
     <button type="submit" style="padding:9px 14px;border-radius:12px;background:#10B981;color:#060913;font-weight:800;border:none;">➤</button>
   </form>
 
   <script>
     let room = 'community';
-    const API = window.FREE_SURF_API_BASE || 'https://laboratoire.free-surf237-4all.xyz';
+    let dmPeer = 1; // 1 = Support / Administrateur par défaut
+    let meRole = '';
+    let meId = 0;
+    // Clés partagées avec l'application : ls.lang / ls.theme (JSON) et ls_lang / ls_theme.
+    function readLang() {
+      try { const v = JSON.parse(localStorage.getItem('ls.lang')); if (v === 'fr' || v === 'en') return v; } catch (e) {}
+      return localStorage.getItem('ls_lang') === 'en' ? 'en' : 'fr';
+    }
+    function writeLang(l) {
+      try { localStorage.setItem('ls.lang', JSON.stringify(l)); localStorage.setItem('ls_lang', l); } catch (e) {}
+    }
+    let lang = readLang();
+    const I18N = {
+      fr: { 'tab.channel': 'Canal', 'tab.group': 'Groupe', 'tab.staff': 'Staff', 'tab.dm': 'Privés', quota: '🆓 10 messages/jour · Fonctions 🔒 VIP', upgrade: 'Passer VIP', placeholder: 'Écrire un message…', empty: 'Aucun message dans ce salon.', dmEmpty: 'Messagerie privée 1-à-1 : aucun message pour le moment.', translate: '🌐 Traduire 🔒', offline: 'Communauté momentanément indisponible.' },
+      en: { 'tab.channel': 'Channel', 'tab.group': 'Group', 'tab.staff': 'Staff', 'tab.dm': 'Direct', quota: '🆓 10 messages/day · 🔒 VIP features', upgrade: 'Go VIP', placeholder: 'Write a message…', empty: 'No message in this channel.', dmEmpty: '1-to-1 private messages: nothing yet.', translate: '🌐 Translate 🔒', offline: 'Community temporarily unavailable.' }
+    };
+    const tr = (k) => (I18N[lang] && I18N[lang][k]) || I18N.fr[k] || k;
+    const API = window.FREE_SURF_API_BASE || sessionStorage.getItem('ls_bridge_api') || 'https://laboratoire.free-surf237-4all.xyz';
+    const TOKEN = sessionStorage.getItem('ls_bridge_token') || '';
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const authHeaders = (json) => Object.assign(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}, json ? { 'Content-Type': 'application/json' } : {});
     const themes = ['', 'th-doodle', 'th-gold', 'th-matrix', 'th-light'];
     let thIdx = 0;
-    function cycleTheme() { thIdx = (thIdx + 1) % themes.length; document.body.className = themes[thIdx]; }
-    function toggleLang() { alert('FR / EN'); }
+    // Thème persisté (index) : ls_community_theme ; le thème clair suit aussi ls.theme / ls_theme.
+    function readThIdx() {
+      const n = Number(localStorage.getItem('ls_community_theme'));
+      return Number.isInteger(n) && n >= 0 && n < themes.length ? n : 0;
+    }
+    function cycleTheme() {
+      thIdx = (thIdx + 1) % themes.length;
+      document.body.className = themes[thIdx];
+      try {
+        localStorage.setItem('ls_community_theme', String(thIdx));
+        const isLight = themes[thIdx] === 'th-light';
+        localStorage.setItem('ls.theme', JSON.stringify(isLight ? 'light' : 'dark'));
+        localStorage.setItem('ls_theme', isLight ? 'light' : 'dark');
+      } catch (e) {}
+    }
+    function applyLang() {
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = tr(el.getAttribute('data-i18n')); });
+      document.getElementById('msgIn').placeholder = tr('placeholder');
+      applyQuota();
+      writeLang(lang);
+    }
+    // Quota et droit d'écriture réels : Free = 10 messages/jour dans le groupe, VIP = illimité.
+    // Annonces : seul l'administrateur publie (lecture pour tous) — on ne redirige pas vers VIP.
+    function applyQuota() {
+      const q = document.getElementById('qInfo');
+      if (q) q.textContent = meRole && meRole !== 'free'
+        ? (lang === 'en' ? '✅ VIP — unlimited messages & features' : '✅ VIP — messages et fonctions illimités')
+        : tr('quota');
+      const canWrite = room === 'dm' || room === 'community' || (room === 'staff' && (meRole === 'admin' || meRole === 'reseller')) || (room === 'announcements' && meRole === 'admin');
+      const inp = document.getElementById('msgIn');
+      const btn = document.querySelector('#sendForm button[type="submit"]');
+      if (inp) { inp.disabled = !canWrite; inp.placeholder = canWrite ? tr('placeholder') : (room === 'announcements' ? (lang === 'en' ? 'Announcements are read-only (admin posts here).' : 'Annonces en lecture seule (seul l’admin publie).') : (lang === 'en' ? 'Read-only room.' : 'Salon en lecture seule.')); }
+      if (btn) btn.disabled = !canWrite;
+    }
+    thIdx = readThIdx();
+    document.body.className = themes[thIdx];
+    function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; applyLang(); }
     async function trMsg(btn, txt) {
-      const r = await fetch(API + '/api/community/translate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: txt }) }).catch(() => null);
-      if (!r || r.status === 403) return location.href = 'upgrade.html';
-      const d = await r.json(); btn.textContent = '🌐 ' + d.translated_text;
+      const r = await fetch(API + '/api/community/translate', { method:'POST', headers: authHeaders(true), body: JSON.stringify({ text: txt }) }).catch(() => null);
+      if (!r) return;
+      const d = await r.json().catch(() => ({}));
+      if (r.status === 403 && d.vip_locked) { location.href = 'upgrade.html'; return; }
+      if (!r.ok) { btn.textContent = d.message || (lang === 'en' ? 'Translation unavailable.' : 'Traduction indisponible.'); return; }
+      btn.textContent = '🌐 ' + esc(d.translated_text || '');
+    }
+    function messageHtml(m) {
+      const text = m.text ? esc(m.text) : '🎙️';
+      const canTr = m.text ? `<button type="button" onclick="trMsg(this, ${esc(JSON.stringify(m.text))})">${tr('translate')}</button>` : '';
+      return `<div class="row"><img src="${esc(m.avatar_url || 'img/logos/icon-circle-dark.png')}" alt="" style="width:28px;height:28px;border-radius:50%;"><div class="bub other"><div style="font-size:11px;font-weight:800;color:#38BDF8;">${esc(m.username || 'Membre')} [${esc(m.role || 'Membre')}]</div><div>${text}</div>${canTr}</div></div>`;
     }
     async function setRoom(r, btn) {
+      if (r === 'dm') return openDm(btn);
       room = r;
-      document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tabs .pill').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
-      const res = await fetch(API + '/api/community/messages?room=' + encodeURIComponent(r) + '&limit=30').catch(() => null);
+      const res = await fetch(API + '/api/community/messages?room=' + encodeURIComponent(r) + '&limit=30', { cache: 'no-store', headers: authHeaders(false) }).catch(() => null);
       const d = res ? await res.json().catch(() => ({})) : {};
-      document.getElementById('feed').innerHTML = (d.messages || []).map(m =>
-        `<div class="row"><img src="${m.avatar_url || 'img/logos/icon-circle-dark.png'}" style="width:28px;height:28px;border-radius:50%;"><div class="bub other"><div style="font-size:11px;font-weight:800;color:#38BDF8;">${m.username} [${m.role}]</div><div>${m.text || '🎙️ Note vocale'}</div><button type="button" onclick="trMsg(this, ${JSON.stringify(m.text||'')})" style="background:none;border:none;color:#10B981;font-size:10px;padding:3px 0 0;cursor:pointer;">🌐 Traduire 🔒</button></div></div>`
-      ).join('') || '<div style="margin:12px;color:#94A3B8;font-size:13px;">Aucun message dans ce salon.</div>';
+      document.getElementById('feed').innerHTML = (d.messages || []).map(messageHtml).join('') || `<div style="margin:12px;color:#94A3B8;font-size:13px;">${tr('empty')}</div>`;
+      applyQuota();
     }
-    async function openDm(btn) {
-      document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+    async function openDm(btn, peer) {
+      if (typeof peer === 'number' && peer > 0) dmPeer = peer;
+      room = 'dm';
+      document.querySelectorAll('.tabs .pill').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
-      const res = await fetch(API + '/api/community/dms').catch(() => null);
+      const res = await fetch(API + '/api/community/dms?peer_id=' + encodeURIComponent(dmPeer), { cache: 'no-store', headers: authHeaders(false) }).catch(() => null);
       const d = res ? await res.json().catch(() => ({})) : {};
       document.getElementById('feed').innerHTML = (d.messages || []).map(m =>
-        `<div class="row"><div class="bub other" style="border-color:#0EA5E9;"><strong style="color:#38BDF8;">${m.sender_name || 'Support'}</strong>: ${m.body} ✓✓</div></div>`
-      ).join('') || '<div style="margin:12px;color:#94A3B8;font-size:13px;">Messagerie privée 1-à-1 avec votre Support.</div>';
+        `<div class="row"><div class="bub other" style="border-color:#0EA5E9;"><strong style="color:#38BDF8;">${esc(m.sender_name || 'Support')}</strong>: ${esc(m.body || '')} ✓✓</div></div>`
+      ).join('') || `<div style="margin:12px;color:#94A3B8;font-size:13px;">${tr('dmEmpty')}</div>`;
+      applyQuota();
     }
     document.getElementById('sendForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const inp = document.getElementById('msgIn'); if (!inp.value.trim()) return;
       const txt = inp.value.trim(); inp.value = '';
-      const r = await fetch(API + '/api/community/messages', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room, kind:'text', text: txt }) }).catch(() => null);
-      if (r && r.status === 403) location.href = 'upgrade.html';
+      const url = room === 'dm' ? API + '/api/community/dms' : API + '/api/community/messages';
+      const body = room === 'dm' ? { recipient_id: dmPeer, text: txt } : { room, kind:'text', text: txt };
+      const r = await fetch(url, { method:'POST', headers: authHeaders(true), body: JSON.stringify(body) }).catch(() => null);
+      if (!r) { document.getElementById('feed').insertAdjacentHTML('afterbegin', `<div style="margin:12px;color:#F59E0B;font-size:12px;">${tr('offline')}</div>`); return; }
+      const d = await r.json().catch(() => ({}));
+      if (r.status === 403 && d.vip_locked) { location.href = 'upgrade.html'; return; }
+      if (!r.ok) {
+        document.getElementById('feed').insertAdjacentHTML('afterbegin', `<div style="margin:12px;color:#F59E0B;font-size:12px;">${esc(d.message || tr('offline'))}</div>`);
+        inp.value = txt;
+        return;
+      }
+      if (room === 'dm') openDm(document.querySelector('[data-tab="dm"]'));
       else setRoom(room);
     });
-    setRoom('community');
+    // Rôle réel pour le quota et les droits d'écriture (jamais de rôle supposé).
+    fetch(API + '/api/user/me', { cache: 'no-store', headers: authHeaders(false) })
+      .then(r => r.ok ? r.json() : null)
+      .then(me => { if (me) { meRole = String(me.role || '').toLowerCase(); meId = Number(me.id || 0); applyQuota(); } })
+      .catch(() => {});
+    applyLang();
+    // Lien direct depuis le profil : community.html#dm ou community.html#dm=<id>
+    (function init() {
+      const h = (location.hash || '').replace(/^#/, '');
+      const m = /^dm(?:=(\d+))?$/.exec(h);
+      if (m) openDm(document.querySelector('[data-tab="dm"]'), m[1] ? Number(m[1]) : 1);
+      else setRoom('community', document.querySelector('[data-tab="community"]'));
+    })();
   </script>
 </body>
 </html>

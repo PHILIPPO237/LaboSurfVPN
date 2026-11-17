@@ -119,17 +119,9 @@ function renderPass(acc){
   setPassBar('passDTrack', 'passDFill', dp, t('acc.pass.validity'));
 }
 
-// Abonné : une offre autre que « gratuit », non expirée. Le bouton Chat du rail n'existe que pour lui (l'écran, lui, renvoie à
-// la connexion sans compte). Les comptes gratuits gardent « Messages et annonces » dans le profil : c'est par là que
-// arrivent les offres de token et les factures.
+// Abonné : une offre autre que « gratuit », non expirée. Les messages et annonces sont ouverts depuis
+// Compte > Messages, qui pointe désormais vers la page autonome community.html#dm.
 function isSubscriber(acc){ return !!acc && acc.plan !== 'gratuit' && acc.daysLeft !== 0; }
-// Messagerie du compte : plus de bouton dans le rail, l'écran reste ouvert par Compte > Messages (abonnés seulement).
-let messagesAvailable = false;
-function updateChatRail(acc){
-  const sub = isSubscriber(acc);
-  messagesAvailable = sub;
-  if(!sub && currentScreen === 'chat' && acc) showScreen('account');
-}
 
 function renderAccountCard(acc){
   Account.last = acc;
@@ -156,7 +148,6 @@ function renderAccountCard(acc){
 
   renderPass(acc);
   renderProfileView(acc.profileInfo);
-  updateChatRail(acc);
 
   // Sous-titre du menu « Accès et abonnement » : jours restants réels, sinon l'offre
   $('accMenuAccessSub').textContent = acc.plan !== 'gratuit' && acc.daysLeft !== null
@@ -319,12 +310,9 @@ Actions.openPanel = async (next) => {
 
 // Communauté LABOSURF : le Live Chat du Laboratoire (salons officiel, communauté). Ouvert sur le site avec la session de
 // l'application (code d'échange, voir openPanel) : pas de mot de passe redemandé. Sans compte : page de connexion du site.
-Actions.openCommunityWeb = () => Actions.openPanel('/tchatch');   // version web (fichiers, réactions) ; la communauté intégrée est dans js/livechat.js
-// Support : messages avec le revendeur ou l'administrateur (dans l'application si le compte y a accès, sinon sur le site)
-Actions.openSupport = () => {
-  if(authToken && messagesAvailable){ showScreen('chat'); return; }
-  Actions.openPanel('/mes-messages');
-};
+Actions.openCommunityWeb = () => openPage('community.html');   // page autonome : salon, réactions, médias
+// Support : messagerie privée 1-à-1 sur la page Communauté autonome (onglet « Privés »)
+Actions.openSupport = () => openPage('community.html#dm');
 
 // Panel -> application : un code d'échange reçu par lien (App Link /app/open ou bouton « Ouvrir l'app » du panel) ouvre la session
 // de l'application sans mot de passe. Ignoré si une session est déjà ouverte (on ne remplace jamais un compte connecté).
@@ -335,6 +323,7 @@ async function redeemExchange(code){
     if(!res.ok || !res.data || res.data.status !== 'ok' || !res.data.token){ toast(apiMessage(res, 'acc.exchangeFailed'), 'error', 4500); return; }
     authToken = res.data.token;
     authExpiresAt = sessionExpiryFrom(res.data);
+    mirrorBridgeSession();
     const name = res.data.user && res.data.user.username ? res.data.user.username : '';
     await afterAuth(name);
     toast(t('acc.exchangeDone'), 'success');
@@ -438,7 +427,7 @@ async function afterAuth(username){
   await loadAndShowAccount(username);
   if(!authToken) return;
   loadHomeBanner(); // le panel peut renvoyer la bannière du revendeur maintenant que le jeton existe
-  loadAppMessages(); loadAnnouncements(true);
+  loadAppMessages(true); loadAnnouncements(false);
   clearInterval(Account.pollTimer);
   Account.pollTimer = setInterval(pollAccountSignals, 20000);
   if(typeof LC !== 'undefined' && LC.wantReturn){ LC.wantReturn = false; Actions.openCommunity(); }   // connexion demandée depuis la communauté : on y revient directement
@@ -487,6 +476,7 @@ async function restoreRememberedSession(attempt){
   if(!s) return;
   authToken = s.token;
   authExpiresAt = s.expiresAt;
+  mirrorBridgeSession();
   try{ await afterAuth(''); }catch(e){ /* hors ligne : le compte reste ouvert, les données se rechargeront */ }
 }
 
@@ -519,6 +509,7 @@ Actions.login = async () => {
     }
     authToken = login.data.token;
     authExpiresAt = sessionExpiryFrom(login.data);
+    mirrorBridgeSession();
     await afterAuth(u);
     $('accPassword').value = '';
   }catch(e){
@@ -549,6 +540,7 @@ Actions.register = async () => {
     }
     authToken = reg.data.token;
     authExpiresAt = sessionExpiryFrom(reg.data);
+    mirrorBridgeSession();
     toast(t('acc.created'), 'success');
     if(reg.data.country_availability){
       const ca = reg.data.country_availability;
@@ -818,8 +810,7 @@ Actions.toggleAnnouncements = (el) => {
 // ─── Déconnexion du compte / session expirée ───
 function resetToLoggedOut(){
   authToken = null;
-  messagesAvailable = false;
-  if(currentScreen === 'chat') showScreen('account');
+  mirrorBridgeSession();
   if(typeof lcReset === 'function') lcReset();   // communauté : non-lus, salons et pastille effacés avec le compte
   authExpiresAt = null;
   RememberMe.clear();   // déconnexion ou session expirée : plus rien n'est gardé sur le téléphone
@@ -917,7 +908,7 @@ Actions.activateOffer = async (el) => {
     if(res.ok && res.data && res.data.status === 'ok'){
       toast(apiMessage(res, 'tok.activated'), 'success');
       await loadAndShowAccount();
-      await loadAppMessages();
+      await loadAppMessages(true);
     } else {
       toast(apiMessage(res, 'tok.refused'), 'error');   // message du serveur : token expiré, révoqué, appareils au maximum…
     }
@@ -998,6 +989,7 @@ let messagesCache = [];
 function renderAppMessages(messages){
   if(messages) messagesCache = messages;
   const thread = $('messagesThread');
+  if(!thread) return;   // messagerie déplacée vers community.html#dm
   if(!messagesCache.length){
     thread.innerHTML = `<div class="empty" style="padding:var(--sp-4) 0">${esc(t('acc.noMessages'))}</div>`;
     return;
@@ -1075,7 +1067,7 @@ Actions.sendMessage = async () => {
       input.value = '';
       growComposer();
       Actions.clearAttachment();
-      await loadAppMessages();
+      await loadAppMessages(true);
     } else {
       toast(apiMessage(res, 'acc.errSend'), 'error');
     }
@@ -1089,6 +1081,7 @@ let announcementsCache = [];
 function renderAnnouncements(items){
   if(items) announcementsCache = items; else items = announcementsCache;
   const card = $('announcementsCard');
+  if(!card) return;   // annonces affichées dans la page Communauté autonome
   card.hidden = !(items && items.length);
   if(card.hidden) return;
   // Cartes du système de design (aucun style en ligne) : titre, date, texte ; les annonces lues restent perceptibles mais discrètes
@@ -1121,8 +1114,10 @@ async function loadAnnouncements(markSeen){
       renderAnnouncements(items);
       Account.unreadAnnouncements = items.filter((n) => !n.is_read).length;
       const b = $('announcementsCardBadge');
-      b.hidden = Account.unreadAnnouncements === 0;
-      b.textContent = Account.unreadAnnouncements > 9 ? '9+' : String(Account.unreadAnnouncements);
+      if(b){
+        b.hidden = Account.unreadAnnouncements === 0;
+        b.textContent = Account.unreadAnnouncements > 9 ? '9+' : String(Account.unreadAnnouncements);
+      }
       if(markSeen){
         // Marquées comme lues seulement quand la personne a réellement vu l'écran Compte
         await Promise.all(items.filter((n) => !n.is_read).map((n) => apiFetch(`/api/user/notifications/${n.id}/read`, { method: 'POST' })));
@@ -1141,11 +1136,15 @@ function updateAccountBadge(){
   tab.textContent = total > 9 ? '9+' : String(total);
   const cnt = (n) => n > 9 ? '9+' : String(n);
   const cardBadge = $('messagesCardBadge');
-  cardBadge.hidden = Account.unreadMessages === 0;
-  cardBadge.textContent = cnt(Account.unreadMessages);
+  if(cardBadge){
+    cardBadge.hidden = Account.unreadMessages === 0;
+    cardBadge.textContent = cnt(Account.unreadMessages);
+  }
   const rowBadge = $('messagesRowBadge');
-  rowBadge.hidden = total === 0;
-  rowBadge.textContent = cnt(total);
+  if(rowBadge){
+    rowBadge.hidden = total === 0;
+    rowBadge.textContent = cnt(total);
+  }
 }
 
 // Pastilles (messages + annonces) et, si le Profil est à l'écran, consommation/abonnement : sans cette

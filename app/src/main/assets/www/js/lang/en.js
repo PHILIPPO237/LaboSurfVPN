@@ -344,6 +344,8 @@ I18N.register('en', {
   'set.group': 'Discussion group', 'set.groupSub': 'Chat with other members',
   'set.channel': 'Channel', 'set.channelSub': 'News and updates', 'set.developer': 'The developer', 'set.developerSub': 'Contact Philippo',
   'set.app': 'Application', 'set.aboutText': "Labo Surf is the companion app of the Laboratoire du Free-Surf: a VPN access tied to your subscription.",
+'set.pagesRow': 'My spaces & panels', 'set.pagesRowSub': 'Profile, VIP, invoices, community, guide — official web pages',
+'set.advancedWebRow': 'Advanced settings (web)', 'set.advancedWebRowSub': 'Theme, panel latency and updates — standalone page',
   'set.version': 'Version', 'set.terms': 'Terms of use', 'set.privacy': 'Privacy policy',
   
 

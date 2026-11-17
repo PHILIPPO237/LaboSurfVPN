@@ -189,6 +189,25 @@ const API_TIMEOUT_MS = 15000;
 let authToken = null;
 let authExpiresAt = null;   // instant d'expiration de la session (ms), d'après « expires_in » du panel ; null = inconnu
 
+// Passerelle de session pour les pages secondaires autonomes (profile.html, community.html, …) :
+// le jeton reste en mémoire pour l'app, mais une copie de session (sessionStorage, effacée à la
+// fermeture de l'app et à la déconnexion) permet à ces pages de lire les mêmes données réelles.
+// Jamais localStorage, jamais dans une URL.
+function mirrorBridgeSession(){
+  try{
+    if(authToken){
+      sessionStorage.setItem('ls_bridge_token', authToken);
+      if(authExpiresAt) sessionStorage.setItem('ls_bridge_exp', String(authExpiresAt));
+      else sessionStorage.removeItem('ls_bridge_exp');
+    }else{
+      sessionStorage.removeItem('ls_bridge_token');
+      sessionStorage.removeItem('ls_bridge_exp');
+    }
+    if(FREE_SURF_API_BASE) sessionStorage.setItem('ls_bridge_api', FREE_SURF_API_BASE);
+  }catch(e){}
+}
+mirrorBridgeSession();
+
 async function apiFetch(path, options){
   options = options || {};
   // Adresse absente ou non sécurisée : aucune requête n'est envoyée (jamais de repli vers une autre adresse ni vers HTTP)

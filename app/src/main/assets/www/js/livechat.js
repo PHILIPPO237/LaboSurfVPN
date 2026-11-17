@@ -42,9 +42,10 @@ function lcFmtTime(v){
 
 // Ouverture directe : session valide -> salons ; sinon connexion puis retour ici. Aucune page intermédiaire, aucune ressaisie.
 // Décision du propriétaire (2026-11-06) : la communauté n'existe plus que dans sa version web (session reprise par code d'échange).
-// Le bouton Communauté (rail, accueil) ouvre directement le menu de la communauté, d'où part la version web (openCommunityWeb).
+// Le bouton Communauté (rail, accueil) ouvre directement la page web autonome de la communauté
+// (en-tête vitré + « ← Retour »), qui reprend la session réelle via sessionStorage.
 // Les salons intégrés ne sont plus atteignables ; le code ci-dessous reste en attente d'un nettoyage.
-Actions.openCommunity = () => showScreen('community');
+Actions.openCommunity = () => openPage('community.html');
 Actions.lcRetry = () => { if(LC.room) lcOpenRoom(LC.room); else lcLoadRooms(); };
 Actions.lcLogin = () => { LC.wantReturn = true; showScreen('account'); };
 Actions.lcBack = () => { if(LC.room) Actions.lcRooms(); else showScreen('settings'); };
@@ -330,4 +331,6 @@ Actions.lcSend = async () => {
 };
 
 // Un seul écouteur, branché une fois : le script haut de la liste demande la page plus ancienne (voir lcOnScroll).
-$('lcThread').addEventListener('scroll', lcOnScroll, { passive: true });
+// Les salons intégrés n'existent plus dans l'interface : ne pas planter si le nœud a été retiré.
+const lcThreadEl = $('lcThread');
+if(lcThreadEl) lcThreadEl.addEventListener('scroll', lcOnScroll, { passive: true });

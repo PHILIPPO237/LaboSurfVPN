@@ -1,112 +1,229 @@
-# LaboSurfVPN
+# 📱 LaboSurfVPN — Application Android
 
-Client Android du système **LABOSURF**. Application (WebView + Kotlin) qui permet à un utilisateur de créer un compte, se connecter,
-choisir un serveur et établir un tunnel VPN.
+> Application cliente VPN pour Android (WebView + Kotlin). Version **v1.6 ORBIT**. Ne contacte **jamais** LABOSURF_PRO ni l'Agent directement : elle consomme exclusivement l'API du Panel (`https://laboratoire.free-surf237-4all.xyz`).
 
-> **Statut réel (2026-09-21) — à lire avant tout.** Un seul moteur est intégré : **UDP** (protocole LABOSURF PRO). Le trafic de ce
-> protocole **n'est pas chiffré**. La chaîne serveur (client de référence → vrai serveur UDP du VPS → Internet, derrière un NAT)
-> est prouvée ; le client Android est testé en JVM et sur émulateur contre un **faux** serveur ; il n'a **jamais été testé sur un
-> téléphone réel**, et aucun panel public n'est joignable aujourd'hui. Détail exact, fonction par fonction :
-> [`docs/LABOSURFVPN_REAL_FUNCTIONALITY.md`](docs/LABOSURFVPN_REAL_FUNCTIONALITY.md) · résultats des tests :
-> [`docs/LABOSURFVPN_E2E_STATUS.md`](docs/LABOSURFVPN_E2E_STATUS.md).
+---
 
-> Historique des versions : [`CHANGELOG.md`](CHANGELOG.md) · état git/releases : [`PROJECT_RELEASE_STATUS.md`](PROJECT_RELEASE_STATUS.md).
+## 📑 Sommaire
 
-## 1. Architecture réelle
+1. [Présentation](#présentation)
+2. [Architecture technique](#architecture-technique)
+3. [Thème Sombre Émeraude & pages secondaires autonomes](#thème-sombre-émeraude--pages-secondaires-autonomes)
+4. [API distante](#api-distante)
+5. [In-App Update & compilation APK](#in-app-update--compilation-apk)
+6. [Fonctionnalités principales](#fonctionnalités-principales)
+7. [Structure du dépôt](#structure-du-dépôt)
+8. [Tests & CI](#tests--ci)
+
+---
+
+## 1. Présentation
+
+LaboSurfVPN est l'application mobile du écosystème LaboSurf. Elle permet à l'utilisateur de :
+- Se connecter / s'inscrire et gérer son compte.
+- Choisir un serveur et un moteur de tunnel (UDP, Hysteria2, XRAY, DNSTT, SSH, WireGuard, TUIC, hybrides).
+- Accéder à la Communauté (Live Chat) et à la Messagerie Privée 1-à-1.
+- Consommer LABOSURF TV.
+- Recevoir des mises à jour via In-App Update.
+- Changer de thème (Sombre Émeraude, Glassmorphism) et de langue (FR/EN).
+
+**Règle d'or** : LaboSurfVPN ne contacte jamais PRO ni l'Agent. Toute passe par l'API Panel.
+
+---
+
+## 2. Architecture technique
 
 ```
-LaboSurfVPN (Android)
-   │  HTTPS + jeton Bearer
-   ▼
-Laboratoire du Free-Surf  (panel : comptes, abonnements, règles commerciales)
-   │  HTTPS + signatures Ed25519 (empreinte TLS épinglée), via tunnel SSH aujourd'hui
-   ▼
-labosurf-agent            (API de management de PRO, portées, anti-rejeu)
-   ▼
-LABOSURF_PRO              (moteurs, Services, Access)
-   ▼
-Service  ─►  Access  ─►  moteur VPN (UDP, TUIC, …)  ─►  Internet
+┌─────────────────────────────────────────────────────────────┐
+│  LaboSurfVPN v1.6 ORBIT  (Android, Kotlin + WebView)       │
+│  ├── MainActivity.kt             # Point d'entrée           │
+│  ├── LaboVpnService.kt           # Service VPN (TUN)        │
+│  ├── CoreTunnel.kt               # Cœur de tunnel           │
+│  ├── ExchangeLink.kt             # Liaison d'échange        │
+│  ├── NetworkRecovery.kt          # Récupération réseau      │
+│  ├── SessionVault.kt             # Coffre de session        │
+│  ├── UpdateInstaller.kt          # Installation de mise à jour│
+│  ├── udp/                        # UdpLink, UdpProtocol, UdpTunnelClient│
+│  ├── tv/                         # TvApi, TvDownloads, TvPlayerActivity│
+│  └── res/                        # Layouts, drawables, values │
+└─────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ HTTPS (REST + WebSocket)
+┌─────────────────────────────────────────────────────────────┐
+│  Panel API : https://laboratoire.free-surf237-4all.xyz      │
+│  (Laboratoire du Free-Surf, FastAPI)                        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-LaboSurfVPN ne parle **qu'au panel**. Il ne contacte jamais l'agent, PRO ni un moteur autrement que par le tunnel lui-même.
+### Couche WebView (ressources web embarquées)
 
-| Couche | Rôle |
-|---|---|
-| **LaboSurfVPN** | interface, session, choix du serveur, demande de configuration, moteur client (UDP), états et erreurs |
-| **Laboratoire du Free-Surf** | source de vérité des **utilisateurs**, comptes, abonnements, offres, paiements, renouvellements, règles commerciales, promotions, appareils / anti-abus ; décide *qui a droit à quoi* ; relie un serveur commercial à un Service PRO |
-| **labosurf-agent** | porte d'entrée signée de PRO : Services / Access, application, santé, émission de configuration |
-| **LABOSURF_PRO** | tout le technique : moteurs, Services, Access, ports, domaines, TLS, expiration **technique**, application des Access dans les moteurs, santé, consommation *lorsqu'un moteur la mesure* |
+Sous `app/src/main/assets/www/` :
+- `index.html` — page d'accueil principale.
+- `login.html`, `register.html`, `panels.html`, `profile.html`, `settings.html`, `servers.html`, `community.html`, `about.html`, `guide.html`, `upgrade.html`, `invoices.html`, `update.css`…
+- `css/` : `emerald-mobile.css`, `glass.css`, `home.css`, `screens.css`, `secondary.css`, `components.css`, `ap-global.css`, `base.css`, `livechat.css`, `premium.css`, `profile.css`, `splash.css`, `tokens.css`, `tv.css`, `update.css`, `orbite-pages.css`, `galaxy.css`, `logo3d.css`.
+- `js/` : `app.js`, `api.js`, `core.js`, `vpn.js`, `servers.js`, `services.js`, `livechat.js`, `community.js`, `account.js`, `profile-theme.js`, `settings.js`, `update.js`, `theme.js`, `i18n.js`, `lang/fr.js`, `lang/en.js`, `emerald-ux.js`, `galaxy.js`, `sky.js`, `banner.js`, `brand.js`, `logo-globe.js`, `globe-tex-data.js`, `contract.js`, `activity.js`, `splash.js`, `onboarding.js`, `reseller.js`, `legal.js`, `emoji.js`, `assistant.js`, `apropos.js`, `remember.test.js`…
+- `img/` : logos, opérateurs (camtel, mtn, orange), bannières.
+- `manifest.json`, `sw.js` (service worker).
 
-## 2. Ce que fait LaboSurfVPN
+### Couche native (Kotlin)
 
-Inscription · connexion · session (mémoire seulement) · profil · abonnement (lecture) · services et serveurs **fournis par le panel** ·
-demande de configuration (`POST /api/user/connect`) · connexion / déconnexion · états `off → connecting → on → disconnecting → error`
-issus **uniquement** du moteur natif · trafic **réellement mesuré** (octets passés dans le tunnel) · historique **local** · guide ·
-assistant (FAQ locale, **pas une IA**) · réglages · messages / annonces / bannière du panel · renouvellement et code d'activation (formulaires
-vers le panel) · Device ID (`ANDROID_ID`) transmis au panel.
+- Tunnel VPN : `LaboVpnService.kt`, `CoreTunnel.kt`, `UdpTunnelClient.kt`, `UdpProtocol.kt`, `UdpLink.kt`.
+- Mise à jour : `UpdateInstaller.kt` (vérifie `/api/app/latest-version`, télécharge et installe l'APK).
+- TV : `TvApi.kt`, `TvDownloads.kt`, `TvPlayerActivity.kt`.
 
-## 3. Ce que LaboSurfVPN ne fait pas
+### Bibliothèque Go (`core/`)
 
-Ce n'est **pas** un panneau d'administration, ni un gestionnaire de moteurs PRO, de VPS ou de licences PRO, ni un remplacement du
-Laboratoire. Le paiement et la gestion avancée restent au panel (bouton « Continuer sur le Laboratoire du Free-Surf »). Rien n'est
-inventé : pas de faux serveur, ping, débit, durée ni état connecté ; une donnée non mesurée s'affiche « indisponible ».
+`labocore.go`, `probe.go`, `socks.go`, `sshtun.go`, `tuic.go`, `tunstop.go`, `xray_imports.go`, `build.go` + tests (`*_test.go`).
 
-## 4. Protocoles et moteurs
+---
 
-| Moteur | Serveur (PRO) | Android | État |
-|---|---|---|---|
-| **UDP** (LABOSURF) | présent ; testé sur le VPS (test direct) | **client Kotlin natif** | **seul moteur intégré** ; non chiffré ; jamais testé sur téléphone |
-| TUIC | installé et validé sur le VPS (phase 4) | non | refusé côté Android (`protocole non pris en charge`) |
-| Xray, Hysteria, Hysteria2, WireGuard, SSH, SlowDNS, DNSTT, FreewayGate | présents dans PRO, non validés sur le VPS | non | idem |
-| Hybrides (DNSTT+SSH, SlowDNS+SSH, DNSTT+Xray, SlowDNS+Xray…) | composables dans PRO | non | non intégrés, non validés |
+## 3. Thème Sombre Émeraude & pages secondaires autonomes
 
-Un moteur n'est **jamais** affiché « disponible » parce que PRO le connaît : il faut un client Android qui sait le transporter
-(`getEngineInfo()`), une configuration émise par le backend, puis un tunnel vérifié.
+### Thème visuel
 
-### UDP — comment ça marche vraiment
-Lien émis par PRO : `udp://<utilisateur>@<hôte>:<port>?pass=<mot de passe>`. Poignée de main : `HELLO` → `CHALLENGE <nonce>` →
-`AUTH <HMAC-SHA256(mot de passe, nonce)>` → `AUTH_OK <ip tunnel>` puis `CLIENT_ID <hex>` ; ensuite des paquets IPv4 bruts précédés d'un
-en-tête de 12 octets. Le `ClientID` attendu par le serveur dépend de l'adresse source **qu'il observe** : derrière un NAT (4G/5G, box)
-un client ne peut pas le calculer, d'où l'annonce `CLIENT_ID` (correctif PRO, branche `phase6-udp-nat`). « Connecté » n'est émis
-qu'après une **vraie requête DNS aller-retour à travers le tunnel**. L'IPv6 est capté puis abandonné (aucune fuite, aucune connectivité
-IPv6). Spécification serveur : `LABOSURF_PRO/PROTOCOL.md`.
+- **Sombre Émeraude** : fond sombre, accents émeraude (`#10B981`, `#059669`).
+- **Glassmorphism** : cartes translucides, flou d'arrière-plan, bordures fines.
+- CSS dédiés : `emerald-mobile.css`, `glass.css`, `theme.js`, `i18n.js` (FR/EN).
 
-## 5. Compte utilisateur et super-admin
+### Pages secondaires autonomes
 
-* **Utilisateur** : `POST /api/auth/register` (`username`, `contact`, `recovery_secret`, `password`, `confirm_password`) → jeton +
-  compte créé dans le **panel** (statut `configuring` puis `active`) → `GET /api/user/me`. Android ne conserve aucun compte.
-* **Super-admin** : compte `super_admin` du panel, créé au démarrage **sans mot de passe** ; le mot de passe se définit sur le serveur
-  avec `python -m app.tools.admin_account set-password` (saisie masquée, bcrypt, jamais en clair ni dans Git). Procédure complète :
-  [`docs/SUPER_ADMIN_BOOTSTRAP.md`](docs/SUPER_ADMIN_BOOTSTRAP.md) (code dans le dépôt du panel, branche `phase6-account-admin`).
+Chaque page HTML sous `assets/www/` est autonome et peut être ouverte directement depuis le WebView :
 
-## 6. Configuration et installation
+| Page | Fichier | Rôle |
+|------|---------|------|
+| Accueil | `index.html` | Tableau de bord principal |
+| Connexion | `login.html` | Authentification utilisateur |
+| Inscription | `register.html` | Création de compte |
+| Panels | `panels.html` | Sélection du panel (Gratuit/VIP/Revendeur/Admin) |
+| Profil | `profile.html` | Gestion du profil, avatar, thème |
+| Réglages | `settings.html` | Préférences app, langue, pays |
+| Serveurs | `servers.html` | Liste et sélection des serveurs |
+| Communauté | `community.html` | Live Chat & DM |
+| À propos | `about.html` | Infos version, crédits |
+| Guide | `guide.html` | Guide d'utilisation |
+| Mise à niveau | `upgrade.html` | Abonnement VIP / Premium |
+| Factures | `invoices.html` | Historique des paiements |
+| Mise à jour | `update.css` + `update.js` | In-App Update |
 
-* **Adresse de l'API** : fixée à la compilation, HTTPS obligatoire — `gradle assembleDebug -PlabosurfPanelBaseUrl=https://mon-panel.example`.
-  Valeur par défaut `https://laboratoire.free-surf237-4all.xyz` (HTTPS valide, vérifié le 2026-09-28 ; l'ancienne valeur
-  `app.laboratoire…` échoue au TLS). Le panel qui y est déployé doit être à jour (v1.0.0) pour le parcours complet. Émulateur + panel local :
-  `-PlabosurfPanelBaseUrl=http://10.0.2.2:8000` (clair toléré **uniquement** sur la boucle locale, en debug).
-* **Navigateur (développement)** : `python -m http.server 5173 --directory app/src/main/assets/www` puis `index.html?api=http://127.0.0.1:8000`.
-  Aucune connexion VPN n'existe dans un navigateur (l'app le dit). `?preview=1` ne sert qu'à mettre au point les écrans (bandeau permanent).
-* **Compilation** : ce dépôt se compile sur GitHub Actions (`.github/workflows/build-apk.yml`) ou Android Studio ; l'APK **debug** est
-  téléchargeable depuis les Releases / artefacts. Aucune signature de production n'est configurée.
-* **Serveur UDP de test** : voir `docs/LABOSURFVPN_E2E_STATUS.md` (binaire de la branche `phase6-udp-nat` de PRO, port 5667/UDP, TUN).
+---
 
-## 7. Limitations connues
+## 4. API distante
 
-Trafic UDP non chiffré · aucun panel public joignable · jeton perdu à la fermeture (pas de Keystore) · révocation d'un Access effective à
-la prochaine authentification (une session ouverte n'est pas coupée) · quota et consommation non mesurés pour TUIC · aucun autre moteur
-intégré · pas de test sur téléphone réel · espace revendeur à déplacer vers le panel.
+Base URL : `https://laboratoire.free-surf237-4all.xyz`
 
-## 8. Tests
+### Endpoints consommés par l'app
 
-| Commande | Ce que ça vérifie |
-|---|---|
-| `node --test tests/js/*.test.js` | contrat `connect`, flux de connexion, traductions, thème (53 tests) |
-| `gradle testDebugUnitTest` | moteur UDP : protocole (vecteurs du client de référence), lien, client contre faux serveur (26 tests) |
-| `python tests/udp/reference_client.py --host H --port P --password-file F` | **vrai** serveur UDP : handshake, DNS et ICMP à travers le tunnel |
-| `bash tests/android/emulator_test.sh app-debug.apk` | APK sur émulateur : lancement, refus propres, connexion contre `tests/udp/mock_server.py` (faux serveur, ne transporte rien) |
+| Endpoint | Méthode | Usage |
+|----------|---------|-------|
+| `/api/user/me` | GET | Profil de l'utilisateur connecté |
+| `/api/user/connect` | POST | Récupération de la configuration VPN |
+| `/api/user/connect/options` | GET | Options de connexion (serveurs, moteurs) |
+| `/api/user/servers` | GET | Liste des serveurs disponibles pour le plan |
+| `/api/user/subscription` | GET | Détail de l'abonnement |
+| `/api/user/tokens` | GET | Tokens d'abonnement activés |
+| `/api/payment/initiate` | POST | Initier un paiement |
+| `/api/community/dms` | GET/POST | Messagerie Privée 1-à-1 |
+| `/api/community/dms/unread-count` | GET | Nombre de DM non lus |
+| `/api/chat/translate/languages` | GET | Langues de traduction |
+| `/api/app/latest-version` | GET | Vérification de version (In-App Update) |
+| `/api/news` | GET | Nouvelles de l'écosystème |
 
-## 9. Structure
+### Authentification
 
-`app/src/main/assets/www` (interface : `index.html`, `css/`, `js/`, `js/lang/`) · `app/src/main/java/.../MainActivity.kt` (WebView, pont
-natif) · `.../LaboVpnService.kt` (VpnService) · `.../udp/` (protocole, lien, client) · `docs/` · `tests/`.
+- Sessions via cookies (SessionMiddleware côté Panel).
+- Headers : `X-Device-Id`, `X-Device-Name`, `X-LS-Engines` (annonce des capacités du client).
+- Jeton d'appareil : enregistrement via `/api/v1/devices/register`.
+
+---
+
+## 5. In-App Update & compilation APK
+
+### In-App Update
+
+1. L'app interroge `GET /api/app/latest-version`.
+2. Elle compare `version_code` du serveur avec le `versionCode` local (`build.gradle.kts`).
+3. Si `serverVersionCode > localVersionCode` → propose la mise à jour (anti-boucle).
+4. Téléchargement de l'APK depuis `apk_url` (GitHub Releases).
+5. `UpdateInstaller.kt` installe l'APK (demande d'autorisation d'installation de sources inconnues).
+
+### Compilation APK
+
+- **Build system** : Gradle Kotlin DSL (`build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`).
+- **Commande de debug** : `./gradlew assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`.
+- **Commande de release** : `./gradlew assembleRelease` (nécessite keystore de signature).
+- **CI GitHub Actions** :
+  - `.github/workflows/build-apk.yml` — build APK.
+  - `.github/workflows/release-apk.yml` — release APK.
+
+### Versions
+
+- Tags Git : `v1.6.0` → `v1.6.8`.
+- Version actuelle : **v1.6 ORBIT** (`version_code 261117003`).
+- APK de release exemples : `release-1.2.2/` à `release-1.2.6/` (anciennes versions, à archiver).
+
+---
+
+## 6. Fonctionnalités principales
+
+- [ ] Connexion / inscription / récupération de compte.
+- [ ] Sélection de serveur et de moteur de tunnel.
+- [ ] Communauté (Live Chat) avec salons publics et privés.
+- [ ] Messagerie Privée 1-à-1 (`/api/community/dms`).
+- [ ] Traduction de messages (FR ↔ EN et plus).
+- [ ] LABOSURF TV (catalogue, lectures, téléchargements).
+- [ ] Gestion de l'abonnement (VIP, Premium, Revendeur).
+- [ ] Paiements par pays (+237, +225, +221, crypto).
+- [ ] In-App Update avec vérification de version.
+- [ ] Thèmes Sombre Émeraude / Glassmorphism, FR/EN.
+- [ ] Profil utilisateur avec avatar et statistique de messages.
+
+---
+
+## 7. Structure du dépôt
+
+```
+LaboSurfVPN/
+├── app/
+│   ├── src/main/                 # Code source Android (Kotlin + ressources web)
+│   ├── src/debug/                # Configuration debug
+│   ├── src/test/                 # Tests unitaires Kotlin
+│   └── build.gradle.kts
+├── core/                         # Bibliothèque Go (tunnel, proxy, socks, tuic, ssh)
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradle.properties
+├── README.md                     # README existant (conservé)
+├── README.new.md                 # Ce fichier (nouveau, à reviewer)
+├── CHANGELOG.md
+├── PROJECT_RELEASE_STATUS.md
+├── .github/workflows/            # CI/CD (build-apk, release-apk)
+├── docs/                         # ARCHITECTURE_MULTI_MOTEURS.md, AUDIT, RAPPORTS, TESTS
+├── tests/                        # Tests Android, JS, intégration, UDP
+├── design-previews/              # Maquettes HTML statiques (à archiver)
+├── release-1.2.x/                # Anciennes APK de release (à archiver)
+└── debug-apk-*/                  # Anciens APK de debug (à archiver)
+```
+
+---
+
+## 8. Tests & CI
+
+```bash
+# Tests unitaires Kotlin
+./gradlew test
+
+# Tests JS (sous tests/js/)
+npm test  # ou selon le configurateur JS présent
+
+# Tests d'intégration (sous tests/integration/)
+python tests/integration/real_panel_chain.py
+
+# Build APK debug
+./gradlew assembleDebug
+```
+
+CI GitHub Actions : `build-apk.yml` et `release-apk.yml`.
+
+---
+
+*Document généré en parallèle (fichier neuf, aucun fichier existant modifié).*

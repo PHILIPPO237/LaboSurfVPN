@@ -7,47 +7,127 @@
   <link rel="stylesheet" href="css/emerald-mobile.css">
   <style>
     body{margin:0;background:#060913;color:#F1F5F9;font-family:system-ui,-apple-system,sans-serif;padding-bottom:40px;}
+    body.light{background:#F1F5F9;color:#0F172A;}
+    body.light .top{background:rgba(241,245,249,0.9);border-bottom-color:rgba(5,150,105,0.3);}
+    body.light .card{background:rgba(255,255,255,0.85);border-color:rgba(5,150,105,0.3);color:#0F172A;}
+    body.light .pill,body.light .diag-btn{color:#0F172A;background:rgba(5,150,105,0.1);}
     .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(6,9,19,0.86);backdrop-filter:blur(18px);border-bottom:1px solid rgba(16,185,129,0.28);}
     .card{margin:12px;padding:16px;border-radius:18px;background:rgba(12,20,36,0.75);backdrop-filter:blur(18px);border:1px solid rgba(16,185,129,0.28);}
     .pill{background:rgba(255,255,255,0.08);border:1px solid rgba(16,185,129,0.35);color:#F1F5F9;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;}
     .diag-btn{width:100%;text-align:left;padding:10px 12px;margin-top:8px;border-radius:12px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);color:#F1F5F9;font-weight:700;cursor:pointer;}
+    .step{font-size:13px;color:#CBD5E1;line-height:1.5;}
+    body.light .step{color:#334155;}
   </style>
 </head>
 <body>
   <header class="top">
     <a href="index.html" style="color:#10B981;text-decoration:none;font-weight:800;">← Retour</a>
     <img src="img/logos/logo-horizontal-dark.png" alt="Labo Surf VPN" style="height:26px;">
-    <button type="button" class="pill" onclick="toggleLang()">FR / EN</button>
+    <div style="display:flex;gap:6px;">
+      <button type="button" class="pill" onclick="toggleTheme()" aria-label="Thème">🌓</button>
+      <button type="button" class="pill" onclick="toggleLang()">FR / EN</button>
+    </div>
   </header>
 
-  <section class="card">
-    <h2 style="margin:0 0 8px;color:#10B981;">📖 Guide Pas-à-Pas</h2>
-    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">1. <strong>Connexion 1 tap :</strong> Choisissez votre pays & opérateur (Camtel, MTN, Orange, Airtel), puis appuyez sur le bouton central Orbit <b>START</b>.</p>
-    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">2. <strong>5 Services Terrain :</strong> <i>Camtel UDP Pro Stable</i> (:5667), <i>Hysteria2 Ultra</i> (:443), <i>Smart Auto</i>, <i>Camtel Hybride</i> (DNSTT+Xray) et <i>Airtel DNSTT + Xray Pro</i>.</p>
-    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">3. <strong>Pass VIP & Parrainage :</strong> +100 Mo à l'inscription, +500 Mo au passage VIP, convertibles en Jours VIP.</p>
-    <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">4. <strong>LABOSURF COMMUNITY :</strong> Canal Officiel, Grand Groupe, Salon Staff et Messagerie Privée 1-à-1.</p>
+  <section class="card" id="guideCard">
+    <h2 style="margin:0 0 8px;color:#10B981;" data-i18n="guide.title">📖 Guide Pas-à-Pas</h2>
+    <p class="step" data-i18n="guide.s1">1. <strong>Connexion 1 tap :</strong> Choisissez votre pays & opérateur (Camtel, MTN, Orange, Airtel), puis appuyez sur le bouton central Orbit <b>START</b>.</p>
+    <p class="step" data-i18n="guide.s2">2. <strong>5 Services Terrain :</strong> <i>Camtel UDP Pro Stable</i> (:5667), <i>Hysteria2 Ultra</i> (:443), <i>Smart Auto</i>, <i>Camtel Hybride</i> (DNSTT+Xray) et <i>Airtel DNSTT + Xray Pro</i>.</p>
+    <p class="step" data-i18n="guide.s3">3. <strong>Pass VIP & Parrainage :</strong> +100 Mo à l'inscription, +500 Mo au passage VIP, convertibles en Jours VIP.</p>
+    <p class="step" data-i18n="guide.s4">4. <strong>LABOSURF COMMUNITY :</strong> Canal Officiel, Grand Groupe, Salon Staff et Messagerie Privée 1-à-1.</p>
   </section>
 
-  <section class="card" style="border-color:rgba(245,158,11,0.45);">
-    <h2 style="margin:0 0 8px;color:#F59E0B;">🧠 Assistant Diagnostic Rapide</h2>
-    <button class="diag-btn" onclick="diag('no_conn')">🔴 Ça ne se connecte pas</button>
-    <button class="diag-btn" onclick="diag('slow')">🐢 Connexion lente</button>
-    <button class="diag-btn" onclick="diag('vip')">👑 Activer mon code VIP</button>
-    <button class="diag-btn" onclick="diag('dns')">🔄 Réinitialiser la carte réseau / DNS</button>
-    <div id="diagOut" style="margin-top:10px;font-size:13px;color:#10B981;"></div>
+  <section class="card" id="assistantCard" style="border-color:rgba(245,158,11,0.45);">
+    <h2 style="margin:0 0 8px;color:#F59E0B;" data-i18n="diag.title">🧠 Assistant Diagnostic Rapide</h2>
+    <button class="diag-btn" onclick="diag('no_conn')" data-i18n="diag.noConn">🔴 Ça ne se connecte pas</button>
+    <button class="diag-btn" onclick="diag('slow')" data-i18n="diag.slow">🐢 Connexion lente</button>
+    <button class="diag-btn" onclick="diag('vip')" data-i18n="diag.vip">👑 Activer mon code VIP</button>
+    <button class="diag-btn" onclick="diag('dns')" data-i18n="diag.dns">🔄 Conseils réseau / DNS</button>
+    <div id="diagOut" style="margin-top:10px;font-size:13px;color:#10B981;" role="status" aria-live="polite"></div>
   </section>
 
   <script>
-    function diag(k) {
-      const m = {
-        no_conn: '✓ Vérifiez vos données mobiles, sélectionnez "Camtel Smart Auto" ou "Camtel Hybride" et relancez START.',
-        slow: '✓ Passez sur "Camtel Hysteria2 Ultra" (VIP) ou "Camtel UDP Pro Stable" pour un débit optimal.',
-        vip: '✓ Ouvrez Profil > Tokens et collez votre code VIP reçu en Messagerie Privée.',
-        dns: '✓ DNS et cache réseau réinitialisés. Vous pouvez relancer le tunnel.'
-      };
-      document.getElementById('diagOut').textContent = m[k] || '';
+    const DICT = {
+      fr: {
+        'guide.title': '📖 Guide Pas-à-Pas',
+        'guide.s1': '1. <strong>Connexion 1 tap :</strong> Choisissez votre pays & opérateur (Camtel, MTN, Orange, Airtel), puis appuyez sur le bouton central Orbit <b>START</b>.',
+        'guide.s2': '2. <strong>5 Services Terrain :</strong> <i>Camtel UDP Pro Stable</i> (:5667), <i>Hysteria2 Ultra</i> (:443), <i>Smart Auto</i>, <i>Camtel Hybride</i> (DNSTT+Xray) et <i>Airtel DNSTT + Xray Pro</i>.',
+        'guide.s3': '3. <strong>Pass VIP & Parrainage :</strong> +100 Mo à l\'inscription, +500 Mo au passage VIP, convertibles en Jours VIP.',
+        'guide.s4': '4. <strong>LABOSURF COMMUNITY :</strong> Canal Officiel, Grand Groupe, Salon Staff et Messagerie Privée 1-à-1.',
+        'diag.title': '🧠 Assistant Diagnostic Rapide',
+        'diag.noConn': '🔴 Ça ne se connecte pas',
+        'diag.slow': '🐢 Connexion lente',
+        'diag.vip': '👑 Activer mon code VIP',
+        'diag.dns': '🔄 Conseils réseau / DNS',
+        no_conn: '✓ Vérifiez vos données mobiles, choisissez « Camtel Smart Auto » ou « Camtel Hybride » dans Services, puis relancez START. Si l\'échec persiste, ouvrez Profil pour vérifier que votre abonnement est actif.',
+        slow: '✓ Le débit dépend de votre réseau et de l\'opérateur. Essayez « Camtel UDP Pro Stable » ; « Hysteria2 Ultra » est réservé aux comptes VIP. Évitez les heures de pointe.',
+        vip: '✓ Ouvrez Mon Profil puis la messagerie privée : le code VIP est envoyé par le support après validation du paiement. Saisissez-le dans Mise à niveau VIP.',
+        dns: '✓ Cette page web ne peut pas modifier les réglages réseau du téléphone. Activez puis désactivez le mode avion, ou redémarrez l\'application. Ne modifiez le DNS du téléphone que si vous savez le faire.'
+      },
+      en: {
+        'guide.title': '📖 Step-by-Step Guide',
+        'guide.s1': '1. <strong>One-tap connection:</strong> Pick your country & carrier (Camtel, MTN, Orange, Airtel), then press the central Orbit <b>START</b> button.',
+        'guide.s2': '2. <strong>5 field services:</strong> <i>Camtel UDP Pro Stable</i> (:5667), <i>Hysteria2 Ultra</i> (:443), <i>Smart Auto</i>, <i>Camtel Hybrid</i> (DNSTT+Xray) and <i>Airtel DNSTT + Xray Pro</i>.',
+        'guide.s3': '3. <strong>VIP pass & referral:</strong> +100 MB on sign-up, +500 MB when going VIP, convertible into VIP days.',
+        'guide.s4': '4. <strong>LABOSURF COMMUNITY:</strong> Official Channel, Main Group, Staff Room and 1-to-1 private messages.',
+        'diag.title': '🧠 Quick Diagnostic Assistant',
+        'diag.noConn': '🔴 It will not connect',
+        'diag.slow': '🐢 Slow connection',
+        'diag.vip': '👑 Activate my VIP code',
+        'diag.dns': '🔄 Network / DNS advice',
+        no_conn: '✓ Check your mobile data, choose “Camtel Smart Auto” or “Camtel Hybrid” in Services, then press START again. If it still fails, open Profile and check that your subscription is active.',
+        slow: '✓ Speed depends on your network and carrier. Try “Camtel UDP Pro Stable”; “Hysteria2 Ultra” is reserved for VIP accounts. Avoid peak hours.',
+        vip: '✓ Open My Profile then private messages: the VIP code is sent by support after payment validation. Enter it in Upgrade to VIP.',
+        dns: '✓ This web page cannot change your phone\'s network settings. Turn airplane mode on and off, or restart the app. Only change your phone DNS if you know how.'
+      }
+    };
+    // Clés partagées avec l'application : ls.lang / ls.theme (JSON côté app) et ls_lang / ls_theme
+    // (pages autonomes). On lit et écrit les deux pour qu'un choix s'applique partout.
+    function readTheme() {
+      try { const v = JSON.parse(localStorage.getItem('ls.theme')); if (v === 'light' || v === 'dark') return v; } catch (e) {}
+      return localStorage.getItem('ls_theme') === 'light' ? 'light' : 'dark';
     }
-    function toggleLang() { alert('Langue basculée FR / EN'); }
+    function writeTheme(t) {
+      try { localStorage.setItem('ls.theme', JSON.stringify(t)); localStorage.setItem('ls_theme', t); } catch (e) {}
+    }
+    function readLang() {
+      try { const v = JSON.parse(localStorage.getItem('ls.lang')); if (v === 'fr' || v === 'en') return v; } catch (e) {}
+      return localStorage.getItem('ls_lang') === 'en' ? 'en' : 'fr';
+    }
+    function writeLang(l) {
+      try { localStorage.setItem('ls.lang', JSON.stringify(l)); localStorage.setItem('ls_lang', l); } catch (e) {}
+    }
+    let lang = readLang();
+    const tr = (k) => (DICT[lang] && DICT[lang][k]) || DICT.fr[k] || k;
+    function applyLang() {
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-i18n]').forEach((el) => { el.innerHTML = tr(el.getAttribute('data-i18n')); });
+      const out = document.getElementById('diagOut');
+      if (out && out.dataset.key) out.textContent = tr(out.dataset.key);
+      writeLang(lang);
+    }
+    function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; applyLang(); }
+    function diag(k) {
+      const out = document.getElementById('diagOut');
+      out.dataset.key = k;
+      out.textContent = tr(k);
+    }
+    function toggleTheme() {
+      const next = readTheme() === 'light' ? 'dark' : 'light';
+      document.body.classList.toggle('light', next === 'light');
+      writeTheme(next);
+    }
+    document.body.classList.toggle('light', readTheme() === 'light');
+    applyLang();
+
+    // Liens depuis l'application : guide.html#<rubrique> ou guide.html#assistant
+    function applyHash(){
+      const h = (location.hash || '').replace(/^#/, '');
+      const target = h === 'assistant' ? document.getElementById('assistantCard') : document.getElementById('guideCard');
+      if(target) target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+    window.addEventListener('hashchange', applyHash);
+    applyHash();
   </script>
 </body>
 </html>

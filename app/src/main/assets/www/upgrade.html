@@ -24,6 +24,7 @@
     <p style="font-size:13px;color:#CBD5E1;">Débloquez Hysteria2 Ultra, Airtel DNSTT+Xray Pro, multi-appareils et LaboSurfTV HD.</p>
     <select id="plan"><option value="vip_7|Pass VIP 7 Jours|7|1000">7 Jours — 1 000 XAF</option><option value="vip_30|Pass VIP 30 Jours|30|3500">30 Jours — 3 500 XAF</option><option value="vip_90|Pass VIP 90 Jours|90|9000">90 Jours — 9 000 XAF</option></select>
     <select id="prov"><option>MTN MoMo</option><option>Orange Money</option><option>Crypto USDT</option></select>
+    <div id="deposit" style="font-size:12px;color:#94A3B8;margin:2px 0 8px;"></div>
     <input id="tx" placeholder="ID de transaction Mobile Money">
     <input id="proof" type="file" accept="image/*" style="font-size:12px;">
     <button class="btn" onclick="sendPay()">Envoyer ma preuve de paiement</button>
@@ -31,6 +32,24 @@
   </section>
 
   <script>
+    const API = window.FREE_SURF_API_BASE || sessionStorage.getItem('ls_bridge_api') || 'https://laboratoire.free-surf237-4all.xyz';
+    const TOKEN = sessionStorage.getItem('ls_bridge_token') || '';
+    const authHeaders = (json) => Object.assign(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}, json ? { 'Content-Type': 'application/json' } : {});
+    // Moyens de paiement et numéros de dépôt réellement configurés pour le pays du compte.
+    fetch(API + '/api/payments/methods', { cache: 'no-store', headers: authHeaders(false) })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)))
+      .then(d => {
+        const sel = document.getElementById('prov');
+        const providers = Array.isArray(d.suggested_providers) ? d.suggested_providers : [];
+        if (providers.length) sel.innerHTML = providers.map(p => `<option>${String(p).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</option>`).join('');
+        const methods = Array.isArray(d.methods) ? d.methods : [];
+        document.getElementById('deposit').innerHTML = methods.length
+          ? 'Dépôt : ' + methods.map(m => `${String(m.provider)} ${String(m.account_number || '')}`.trim()).join(' · ')
+          : 'Aucun numéro de dépôt publié pour votre pays : contactez votre revendeur.';
+      }).catch(() => {
+        const box = document.getElementById('deposit');
+        if (box) box.textContent = 'Moyens de paiement momentanément indisponibles.';
+      });
     let proofB64 = '';
     document.getElementById('proof').addEventListener('change', (e) => {
       const f = e.target.files[0]; if (!f) return;
@@ -38,8 +57,8 @@
     });
     async function sendPay() {
       const [code, label, days, xaf] = document.getElementById('plan').value.split('|');
-      const r = await fetch((window.FREE_SURF_API_BASE || '') + '/api/user/payment-requests', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
+      const r = await fetch(API + '/api/user/payment-requests', {
+        method: 'POST', headers: authHeaders(true),
         body: JSON.stringify({ plan_code: code, plan_label: label, days: Number(days), amount_xaf: Number(xaf), provider: document.getElementById('prov').value, tx_ref: document.getElementById('tx').value.trim(), proof_image: proofB64 })
       }).catch(() => null);
       document.getElementById('msg').textContent = (r && r.ok) ? '✓ Preuve transmise en temps réel à l\'Admin !' : 'Vérifiez votre connexion et l\'ID de transaction.';

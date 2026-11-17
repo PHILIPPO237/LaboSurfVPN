@@ -16,13 +16,60 @@
   <header class="top">
     <a href="index.html" style="color:#10B981;text-decoration:none;font-weight:800;">← Retour</a>
     <strong>⚙️ Paramètres Avancés</strong>
-    <span style="font-size:11px;color:#10B981;">v1.6.6</span>
+    <span style="font-size:11px;color:#10B981;">v1.6.8</span>
   </header>
 
   <div class="card"><div><strong>🔄 Auto-Reconnect Intelligent</strong><div style="font-size:12px;color:#94A3B8;">Bascule fluide Wi-Fi ⇄ Données mobiles</div></div><input type="checkbox" checked></div>
   <div class="card"><div><strong>🛡️ Kill Switch & Anti-Fuite DNS</strong><div style="font-size:12px;color:#94A3B8;">Bloque le trafic hors tunnel sécurisé</div></div><input type="checkbox" checked></div>
-  <div class="card"><div><strong>🚀 Testeur Vitesse & Latence</strong><div id="spdRes" style="font-size:12px;color:#10B981;">Prêt</div></div><button class="btn" onclick="document.getElementById('spdRes').textContent='Ping 34 ms · ↓ 42.8 Mo/s · ↑ 18.4 Mo/s'">Tester</button></div>
-  <div class="card"><div><strong>🌙 Thème Interface</strong><div style="font-size:12px;color:#94A3B8;">Sombre Émeraude / Clair Givré</div></div><button class="btn" onclick="document.body.classList.toggle('light')">Basculer</button></div>
-  <div class="card"><div><strong>📲 Mises à jour (In-App Update)</strong><div style="font-size:12px;color:#94A3B8;">Version installée : v1.6.6 (261117001)</div></div><button class="btn" onclick="alert('Vous utilisez déjà la dernière version v1.6.6 !')">Vérifier</button></div>
+  <div class="card"><div><strong>🚀 Testeur de latence</strong><div id="spdRes" style="font-size:12px;color:#94A3B8;">Non testé</div></div><button class="btn" id="spdBtn" type="button">Tester</button></div>
+  <div class="card"><div><strong>🌙 Thème Interface</strong><div style="font-size:12px;color:#94A3B8;">Sombre Émeraude / Clair Givré</div></div><button class="btn" id="themeBtn" type="button">Basculer</button></div>
+  <div class="card"><div><strong>📲 Mises à jour (In-App Update)</strong><div id="updState" style="font-size:12px;color:#94A3B8;">Version installée : v1.6.8 (261117003)</div></div><button class="btn" onclick="checkUpdate()">Vérifier</button></div>
+  <script>
+    const API = window.FREE_SURF_API_BASE || sessionStorage.getItem('ls_bridge_api') || 'https://laboratoire.free-surf237-4all.xyz';
+    const INSTALLED = '1.6.8';
+    // Clés partagées avec l'application (ls.theme JSON) et pages autonomes (ls_theme).
+    function readTheme() {
+      try { const v = JSON.parse(localStorage.getItem('ls.theme')); if (v === 'light' || v === 'dark') return v; } catch (e) {}
+      return localStorage.getItem('ls_theme') === 'light' ? 'light' : 'dark';
+    }
+    document.body.classList.toggle('light', readTheme() === 'light');
+    function applyTheme(light) {
+      const t = light ? 'light' : 'dark';
+      document.body.classList.toggle('light', light);
+      try { localStorage.setItem('ls.theme', JSON.stringify(t)); localStorage.setItem('ls_theme', t); } catch (e) {}
+    }
+    async function checkUpdate() {
+      const out = document.getElementById('updState');
+      out.textContent = 'Vérification…';
+      try {
+        const r = await fetch(API + '/api/app/latest-version', { cache: 'no-store' });
+        const d = await r.json();
+        const latest = d.version_name || d.version || '';
+        out.textContent = latest && latest !== INSTALLED
+          ? 'Mise à jour disponible : v' + latest + (d.apk_url ? ' — téléchargement dans l’application' : '')
+          : 'Vous utilisez la dernière version publiée (v' + (latest || INSTALLED) + ').';
+      } catch (e) { out.textContent = 'Vérification impossible pour le moment (panel injoignable).'; }
+    }
+    // Latence réelle mesurée vers le panel. Le débit (↓/↑) ne peut pas être mesuré honnêtement
+    // depuis une simple page web : il est affiché par l'application une fois le tunnel connecté.
+    document.getElementById('spdBtn').addEventListener('click', async () => {
+      const out = document.getElementById('spdRes');
+      const btn = document.getElementById('spdBtn');
+      out.style.color = '#94A3B8';
+      out.textContent = 'Mesure en cours…';
+      btn.disabled = true;
+      const t0 = performance.now();
+      try {
+        await fetch(API + '/api/app/latest-version', { cache: 'no-store' });
+        const ms = Math.round(performance.now() - t0);
+        out.style.color = '#10B981';
+        out.textContent = 'Latence panel : ' + ms + ' ms (débit ↓/↑ disponible dans l’app connectée).';
+      } catch (e) {
+        out.style.color = '#F59E0B';
+        out.textContent = 'Panel injoignable — impossible de mesurer la latence.';
+      } finally { btn.disabled = false; }
+    });
+    document.getElementById('themeBtn').addEventListener('click', () => applyTheme(!document.body.classList.contains('light')));
+  </script>
 </body>
 </html>
