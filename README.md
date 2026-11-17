@@ -157,8 +157,8 @@ Base URL : `https://laboratoire.free-surf237-4all.xyz`
 
 ### Versions
 
-- Tags Git : `v1.6.0` → `v1.6.8`.
-- Version actuelle : **v1.6 ORBIT** (`version_code 261117003`).
+- Tags Git : `v1.6.0` → `v1.6.8.1`.
+- Version actuelle : **v1.6.8.1 ORBIT** (`version_code 261117004`).
 - APK de release exemples : `release-1.2.2/` à `release-1.2.6/` (anciennes versions, à archiver).
 
 ---

@@ -16,17 +16,17 @@
   <header class="top">
     <a href="index.html" style="color:#10B981;text-decoration:none;font-weight:800;">← Retour</a>
     <strong>⚙️ Paramètres Avancés</strong>
-    <span style="font-size:11px;color:#10B981;">v1.6.8</span>
+    <span style="font-size:11px;color:#10B981;">v1.6.8.1</span>
   </header>
 
   <div class="card"><div><strong>🔄 Auto-Reconnect Intelligent</strong><div style="font-size:12px;color:#94A3B8;">Bascule fluide Wi-Fi ⇄ Données mobiles</div></div><input type="checkbox" checked></div>
   <div class="card"><div><strong>🛡️ Kill Switch & Anti-Fuite DNS</strong><div style="font-size:12px;color:#94A3B8;">Bloque le trafic hors tunnel sécurisé</div></div><input type="checkbox" checked></div>
   <div class="card"><div><strong>🚀 Testeur de latence</strong><div id="spdRes" style="font-size:12px;color:#94A3B8;">Non testé</div></div><button class="btn" id="spdBtn" type="button">Tester</button></div>
   <div class="card"><div><strong>🌙 Thème Interface</strong><div style="font-size:12px;color:#94A3B8;">Sombre Émeraude / Clair Givré</div></div><button class="btn" id="themeBtn" type="button">Basculer</button></div>
-  <div class="card"><div><strong>📲 Mises à jour (In-App Update)</strong><div id="updState" style="font-size:12px;color:#94A3B8;">Version installée : v1.6.8 (261117003)</div></div><button class="btn" onclick="checkUpdate()">Vérifier</button></div>
+  <div class="card"><div><strong>📲 Mises à jour (In-App Update)</strong><div id="updState" style="font-size:12px;color:#94A3B8;">Version installée : v1.6.8.1 (261117004)</div></div><button class="btn" onclick="checkUpdate()">Vérifier</button></div>
   <script>
     const API = window.FREE_SURF_API_BASE || sessionStorage.getItem('ls_bridge_api') || 'https://laboratoire.free-surf237-4all.xyz';
-    const INSTALLED = '1.6.8';
+    const INSTALLED = '1.6.8.1';
     // Clés partagées avec l'application (ls.theme JSON) et pages autonomes (ls_theme).
     function readTheme() {
       try { const v = JSON.parse(localStorage.getItem('ls.theme')); if (v === 'light' || v === 'dark') return v; } catch (e) {}
