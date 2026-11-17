@@ -1,5 +1,6 @@
 'use strict';
-// Chat : écran dédié, bouton dans le rail réservé aux abonnés, affichage des messages (heures réelles, séparateurs de jour).
+// Messagerie privée : elle s'ouvre désormais sur la page autonome community.html#dm.
+// Plus d'écran Chat interne ni de variable messagesAvailable : le contrat est l'ouverture de la page web.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -9,50 +10,41 @@ const { loadApp } = require('./harness.js');
 const WWW = path.join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www');
 const empty = () => ({ ok: true, status: 200, expired: false, data: { status: 'ok', messages: [], notifications: [] } });
 const app = () => loadApp({ native: { engine: { integrated: false, protocols: [] }, apiBase: 'https://panel.example.tld' }, respond: empty });
-const iso = (d) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
-const render = (a, me, sub) => a.ev(`renderAccountCard(accountFromApi(${JSON.stringify(me)}, ${JSON.stringify(sub || {})}, ''))`);
-// Le bouton Messages a quitté le rail (décision du 2026-11-06) : la disponibilité de la messagerie se lit dans messagesAvailable.
-const railHidden = (a) => a.ev('!messagesAvailable');
 
-test('messagerie : disponible seulement pour un abonné (offre payante non expirée), sans bouton dans le rail', () => {
-  const a = app();
-  render(a, { type: 'VIP', username: 'a', expiration: iso(12) });
-  assert.equal(railHidden(a), false, 'VIP actif : visible');
-  render(a, { type: 'Gratuit', username: 'b' });
-  assert.equal(railHidden(a), true, 'gratuit : caché');
-  render(a, { type: 'VIP', username: 'c', expiration: iso(-3) });
-  assert.equal(railHidden(a), true, 'VIP expiré : caché');
-  render(a, { type: 'ADMIN', username: 'root', role_code: 'admin' });
-  assert.equal(railHidden(a), false, 'admin sans expiration : visible');
+test('messagerie : le bouton du compte ouvre la page autonome community.html#dm', () => {
+  const html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8');
+  assert.match(html, /data-action="openPage" data-page="community#dm"/);
+  const src = fs.readFileSync(path.join(WWW, 'js', 'account.js'), 'utf8');
+  assert.match(src, /Actions\.openSupport = \(\) => openPage\('community\.html#dm'\)/);
+  const community = fs.readFileSync(path.join(WWW, 'community.html'), 'utf8');
+  assert.match(community, /\^dm\(\?:=\(\\d\+\)\)\?\$/);
 });
 
 // Le harnais remplace showScreen() par une fonction vide : la navigation est donc vérifiée sur le code source réel (app.js / account.js)
 const SRC = (f) => fs.readFileSync(path.join(WWW, 'js', f), 'utf8');
 
-test("écran Chat : sans compte on arrive sur la connexion ; avec compte on l'ouvre et on charge les messages", () => {
+test('navigation : aucun écran Chat interne, openPage conserve le hash #dm', () => {
   const src = SRC('app.js');
-  assert.match(src, /if\(name === 'chat' && !authToken\) name = 'account';/);
-  assert.match(src, /if\(name === 'chat'\)\{ loadAppMessages\(\); loadAnnouncements\(true\); \}/);
-  assert.match(src, /const SCREENS = \[[^\]]*'chat'/);
-  assert.match(src, /const RAIL_ORDER = \['home', 'services', 'account', 'chat'/);
+  assert.doesNotMatch(src, /const SCREENS = \[[^\]]*'chat'/);
+  assert.doesNotMatch(src, /const RAIL_ORDER = \[[^\]]*'chat'/);
+  assert.match(src, /community: 'community\.html'/);
+  assert.match(src, /const cut = raw\.indexOf\('#'\)/);
+  assert.match(src, /location\.href = url \+ hash/);
 });
 
-test("un compte qui cesse d'être abonné perd le bouton et est renvoyé du Chat vers le profil", () => {
-  const a = app();
-  render(a, { type: 'VIP', username: 'a', expiration: iso(12) });
-  assert.equal(railHidden(a), false);
-  render(a, { type: 'Gratuit', username: 'a' });
-  assert.equal(railHidden(a), true);
-  assert.match(SRC('account.js'), /if\(!sub && currentScreen === 'chat' && acc\) showScreen\('account'\);/);
+test('compte : les messages ne sont pas marqués comme lus à l’ouverture du compte', () => {
+  const src = SRC('account.js');
+  assert.match(src, /loadAppMessages\(true\); loadAnnouncements\(false\)/);
+  assert.doesNotMatch(src, /showScreen\('chat'\)/);
+  assert.doesNotMatch(src, /messagesAvailable/);
 });
 
-test('déconnexion du compte : le bouton Chat disparaît', () => {
+test('déconnexion : la session miroir est effacée sans écran Chat à refermer', () => {
   const a = app();
   a.signIn();
-  render(a, { type: 'VIP', username: 'a', expiration: iso(12) });
-  assert.equal(railHidden(a), false);
   a.ev('resetToLoggedOut()');
-  assert.equal(railHidden(a), true);
+  assert.equal(a.ev('authToken'), null);
+  assert.doesNotMatch(SRC('account.js'), /currentScreen === 'chat'/);
 });
 
 test('messages : heure et jour RÉELS ; sans date lisible, aucun séparateur ni heure inventée', () => {
@@ -91,17 +83,16 @@ test('annonces : repliées par défaut, le bouton les déplie et le dit (aria-ex
   assert.equal(btn.expanded, 'false');
 });
 
-test('structure : le chat n\'a plus de bouton dans le rail, le profil y mène, l\'ancienne sous-vue a disparu', () => {
+test('structure : plus de vue Chat interne, le bouton du compte ouvre community.html#dm', () => {
   const html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8');
   assert.doesNotMatch(html, /id="railBtn-chat"/);
   assert.doesNotMatch(html, /id="chatBadge"/);
-  assert.match(html, /<section class="screen" id="screen-chat"/);
-  assert.match(html, /<button class="row" type="button" data-action="nav" data-screen="chat">/);
+  assert.doesNotMatch(html, /id="screen-chat"/);
+  assert.doesNotMatch(html, /id="screen-livechat"/);
+  assert.doesNotMatch(html, /data-action="nav" data-screen="chat"/);
+  assert.match(html, /data-action="openPage" data-page="community#dm"/);
   assert.doesNotMatch(html, /accViewMessages/);
   assert.doesNotMatch(html, /data-action="accOpen" data-view="messages"/);
-  for (const id of ['messagesThread', 'msgComposerInput', 'msgAttachInput', 'messagesCardBadge', 'announcementsList']) {
-    assert.equal((html.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1, id);
-  }
 });
 
 test('textes : Chat en français et en anglais', () => {
@@ -113,7 +104,8 @@ test('textes : Chat en français et en anglais', () => {
   assert.equal(a.ev("t('chat.sub')"), 'Talk to your manager');
 });
 
-test('l\'assistant envoie « support » vers l\'écran Chat', () => {
+test('l’assistant envoie « support » vers la messagerie privée autonome', () => {
   const src = fs.readFileSync(path.join(WWW, 'js', 'assistant.js'), 'utf8');
-  assert.match(src, /id: 'support', go: \{ screen: 'chat' \}/);
+  assert.match(src, /id: 'support', go: \{ page: 'community#dm' \}/);
+  assert.match(src, /if\(g\.page\)\{ openPage\(g\.page\); return; \}/);
 });

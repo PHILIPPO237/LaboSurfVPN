@@ -19,14 +19,21 @@ test('rail : un seul rail, masqué en CSS hors de l\'accueil, la goutte réserv�
   assert.equal((html.match(/class="nav-bottom|id="navBottom|class="bottom-nav/g) || []).length, 0, 'pas de barre de navigation basse ajoutée');
 });
 
-test('retour : tout écran secondaire a un bouton Retour visible ; l\'accueil n\'en a pas', () => {
-  const screens = ['services', 'servers', 'activity', 'account', 'chat', 'clients', 'community', 'livechat', 'settings', 'about', 'logs', 'legal'];
+test('retour : tout écran secondaire interne a un bouton Retour ; les pages autonomes aussi', () => {
+  const screens = ['services', 'servers', 'activity', 'account', 'clients', 'settings', 'logs', 'legal'];
   for(const s of screens){
     const i = html.indexOf('id="screen-' + s + '"');
     assert.ok(i > 0, 'screen-' + s + ' existe');
     const j = html.indexOf('<section', i + 1);
     const block = html.slice(i, j < 0 ? html.length : j);
     assert.match(block, /back-btn/, 'pas de bouton Retour dans screen-' + s);
+  }
+  for(const s of ['chat', 'livechat', 'community', 'about']){
+    assert.equal(html.indexOf('id="screen-' + s + '"'), -1, 'aucune ancienne vue cachée screen-' + s);
+  }
+  for(const page of ['about.html', 'community.html', 'guide.html', 'panels.html', 'profile.html', 'servers.html', 'settings.html', 'upgrade.html']){
+    const t = fs.readFileSync(path.join(WWW, page), 'utf8');
+    assert.match(t, /Retour|common\.back|back-btn/, page + ' doit avoir son bouton Retour');
   }
   const home = html.slice(html.indexOf('id="screen-home"'), html.indexOf('id="screen-services"'));
   assert.doesNotMatch(home, /back-btn/, 'l\'accueil se navigue au rail, pas au retour');

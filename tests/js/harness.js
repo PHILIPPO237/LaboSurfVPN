@@ -30,7 +30,7 @@ function makeEl(id){
 function loadApp(opts){
   opts = opts || {};
   const els = {};
-  const calls = { apiFetch: [], toasts: [], native: { startVpn: [], stopVpn: [], resetNetwork: 0, restartApp: 0 }, sessionExpired: 0, logs: [] };
+  const calls = { apiFetch: [], toasts: [], openPage: [], native: { startVpn: [], stopVpn: [], resetNetwork: 0, restartApp: 0 }, sessionExpired: 0, logs: [] };
   const timers = [];
   let timerSeq = 1;
   const storage = new Map();
@@ -108,6 +108,7 @@ function loadApp(opts){
     var currentScreen = 'home'; var Reseller = { reset(){} }; var Theme = { get(){ return 'dark'; }, resolved(){ return 'dark'; }, set(){} };
     function loadHomeBanner(){} function showScreen(){} function setAccView(){} function fitBannerDefault(){}
     function renderHome_stub(){} function updateAccountBadge(){} function renderLogs(){}
+    function openPage(p){ __calls.openPage.push(p); }
   `);
   ['js/api.js', 'js/servers.js', 'js/services.js', 'js/vpn.js', 'js/account.js', 'js/activity.js', 'js/livechat.js', 'js/update.js'].forEach(run);
 

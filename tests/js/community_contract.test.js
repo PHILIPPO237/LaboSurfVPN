@@ -137,23 +137,24 @@ test('Salon ouvert : l\'épinglage et la fin d\'historique viennent du panel (ha
   assert.equal(a.ev('$("lcComposer").hidden'), true, 'salon read-only : composer caché');
 });
 
-test('Communauté : le bouton ouvre directement le menu de la communauté (version web seulement), aucun appel au panel', () => {
+test('Communauté : le bouton ouvre la page autonome community.html, aucun appel au panel', () => {
   const a = app();
   a.ev('authToken = null');
   a.ev('Actions.openCommunity()');
   assert.equal(a.calls.apiFetch.length, 0);
+  assert.deepEqual(a.calls.openPage, ['community.html']);
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www', 'js', 'livechat.js'), 'utf8');
-  assert.match(src, /Actions\.openCommunity = \(\) => showScreen\('community'\);/);
+  assert.match(src, /Actions\.openCommunity = \(\) => openPage\('community\.html'\)/);
   const html = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www', 'index.html'), 'utf8');
-  const com = html.slice(html.indexOf('id="screen-community"'), html.indexOf('id="screen-clients"'));
-  assert.match(com, /data-action="openCommunityWeb"/);
-  assert.doesNotMatch(com, /t\.me|openSupport|data-action="openCommunity"/, 'ni Telegram, ni Support, ni salons intégrés');
+  assert.doesNotMatch(html, /id="screen-community"/);
+  assert.match(html, /data-action="openPage" data-page="community"/);
+  assert.match(html, /data-action="openCommunity"/, 'le rail garde le raccourci Communauté');
 });
 
-test("Communauté : le retour automatique est annulé si l'utilisateur va ailleurs (showScreen)", () => {
+test("Communauté : plus de retour automatique vers un salon intégré supprimé", () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'app', 'src', 'main', 'assets', 'www', 'js', 'app.js'), 'utf8');
-  assert.match(src, /name !== 'account' && name !== 'livechat'.*LC\.wantReturn = false/);
-  assert.match(src, /const SCREENS = \[[^\]]*'livechat'/);
+  assert.match(src, /name !== 'account' && typeof LC !== 'undefined'.*LC\.wantReturn = false/);
+  assert.doesNotMatch(src, /const SCREENS = \[[^\]]*'livechat'/);
 });
 
 test("Profil : le bouton du panel complet n'est proposé que si le serveur indique un accès (jamais Gratuit ni VIP)", () => {
