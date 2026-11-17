@@ -120,7 +120,12 @@ jobs:
           test -n "$VNAME" && test -n "$VCODE" || fail "versionName/versionCode illisibles"
           if [[ -n "$RELEASE_TAG" ]]; then
             test "v$VNAME" = "$RELEASE_TAG" || fail "le tag $RELEASE_TAG ne correspond pas a versionName $VNAME"
+            # Les tags legers n'ont pas de ref « pelee » ^{} : on retombe sur le ref direct.
             TAGSHA=$(git ls-remote origin "refs/tags/$RELEASE_TAG^{}" | cut -f1)
+            if [[ -z "$TAGSHA" ]]; then
+              TAGSHA=$(git ls-remote origin "refs/tags/$RELEASE_TAG" | cut -f1)
+            fi
+            test -n "$TAGSHA" || fail "tag $RELEASE_TAG introuvable sur origin"
             test "$(git rev-parse HEAD)" = "$TAGSHA" || fail "le code construit ($(git rev-parse --short HEAD)) n'est pas celui du tag $RELEASE_TAG"
           fi
           OUT="LaboSurfVPN-v${VNAME}.apk"
