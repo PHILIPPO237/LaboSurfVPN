@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Mise à niveau VIP — Labo Surf VPN</title>
+  <style>
+    body{margin:0;background:#060913;color:#F1F5F9;font-family:system-ui,-apple-system,sans-serif;padding-bottom:40px;}
+    .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(6,9,19,0.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(245,158,11,0.35);}
+    .card{margin:12px;padding:16px;border-radius:18px;background:rgba(12,20,36,0.78);backdrop-filter:blur(16px);border:1px solid rgba(245,158,11,0.4);}
+    .btn{width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#10B981);color:#060913;font-weight:900;border:none;cursor:pointer;}
+    input,select{width:100%;box-sizing:border-box;padding:10px;border-radius:10px;background:#0c1424;border:1px solid rgba(16,185,129,0.3);color:#fff;margin-bottom:8px;}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a href="index.html" style="color:#F59E0B;text-decoration:none;font-weight:800;">← Retour</a>
+    <img src="img/logos/title-simple-dark.png" alt="LABOSURF" style="height:22px;">
+    <span style="font-size:12px;font-weight:800;color:#FBBF24;">👑 VIP</span>
+  </header>
+
+  <section class="card">
+    <h2 style="margin:0 0 8px;color:#FBBF24;">Pass VIP Or Champagne</h2>
+    <p style="font-size:13px;color:#CBD5E1;">Débloquez Hysteria2 Ultra, Airtel DNSTT+Xray Pro, multi-appareils et LaboSurfTV HD.</p>
+    <select id="plan"><option value="vip_7|Pass VIP 7 Jours|7|1000">7 Jours — 1 000 XAF</option><option value="vip_30|Pass VIP 30 Jours|30|3500">30 Jours — 3 500 XAF</option><option value="vip_90|Pass VIP 90 Jours|90|9000">90 Jours — 9 000 XAF</option></select>
+    <select id="prov"><option>MTN MoMo</option><option>Orange Money</option><option>Crypto USDT</option></select>
+    <input id="tx" placeholder="ID de transaction Mobile Money">
+    <input id="proof" type="file" accept="image/*" style="font-size:12px;">
+    <button class="btn" onclick="sendPay()">Envoyer ma preuve de paiement</button>
+    <div id="msg" style="margin-top:8px;font-size:13px;color:#10B981;"></div>
+  </section>
+
+  <script>
+    let proofB64 = '';
+    document.getElementById('proof').addEventListener('change', (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader(); r.onload = () => { proofB64 = r.result; }; r.readAsDataURL(f);
+    });
+    async function sendPay() {
+      const [code, label, days, xaf] = document.getElementById('plan').value.split('|');
+      const r = await fetch((window.FREE_SURF_API_BASE || '') + '/api/user/payment-requests', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ plan_code: code, plan_label: label, days: Number(days), amount_xaf: Number(xaf), provider: document.getElementById('prov').value, tx_ref: document.getElementById('tx').value.trim(), proof_image: proofB64 })
+      }).catch(() => null);
+      document.getElementById('msg').textContent = (r && r.ok) ? '✓ Preuve transmise en temps réel à l\'Admin !' : 'Vérifiez votre connexion et l\'ID de transaction.';
+    }
+  </script>
+</body>
+</html>
