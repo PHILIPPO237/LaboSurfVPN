@@ -6,65 +6,91 @@
   <title>LABOSURF COMMUNITY — Labo Surf VPN</title>
   <style>
     body{margin:0;background:#060913;color:#F1F5F9;font-family:system-ui,-apple-system,sans-serif;padding-bottom:72px;}
-    .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(6,9,19,0.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(16,185,129,0.28);}
-    .tabs{display:flex;gap:6px;padding:10px 12px;overflow-x:auto;}
-    .pill{background:rgba(255,255,255,0.06);border:1px solid rgba(16,185,129,0.3);color:#F1F5F9;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;}
+    body.th-doodle{background:#0b141a;background-image:radial-gradient(rgba(16,185,129,0.08) 1px,transparent 1px);background-size:20px 20px;}
+    body.th-gold{background:radial-gradient(circle at top,#1c1507,#060913);}
+    body.th-matrix{background:#020604;color:#67E8F9;}
+    body.th-light{background:#F1F5F9;color:#0F172A;}
+    .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(6,9,19,0.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(16,185,129,0.28);}
+    .tabs{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;}
+    .pill{background:rgba(255,255,255,0.06);border:1px solid rgba(16,185,129,0.3);color:inherit;border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:700;white-space:nowrap;cursor:pointer;}
     .pill.active{background:#10B981;color:#060913;border-color:#10B981;}
-    .card{margin:8px 12px;padding:12px;border-radius:16px;background:rgba(12,20,36,0.78);backdrop-filter:blur(16px);border:1px solid rgba(16,185,129,0.25);}
-    .bar{position:fixed;bottom:0;left:0;right:0;display:flex;gap:8px;padding:10px 12px;background:rgba(6,9,19,0.92);border-top:1px solid rgba(16,185,129,0.28);}
-    input{flex:1;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(16,185,129,0.28);color:#fff;}
+    .row{display:flex;gap:8px;margin:6px 10px;align-items:flex-end;}
+    .row.me{justify-content:flex-end;}
+    .bub{max-width:78%;padding:9px 12px;border-radius:16px;font-size:13px;line-height:1.4;}
+    .bub.other{background:rgba(255,255,255,0.08);backdrop-filter:blur(14px);border:1px solid rgba(16,185,129,0.25);border-bottom-left-radius:4px;}
+    .bub.me{background:linear-gradient(135deg,#10B981,#059669);color:#04120c;border-bottom-right-radius:4px;}
+    .bar{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:8px 10px;background:rgba(6,9,19,0.94);border-top:1px solid rgba(16,185,129,0.28);}
+    input{flex:1;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(16,185,129,0.28);color:inherit;}
   </style>
 </head>
 <body>
   <header class="top">
     <a href="index.html" style="color:#10B981;text-decoration:none;font-weight:800;">← Retour</a>
-    <img src="img/logos/symbol-only-dark.png" alt="LABOSURF" style="height:26px;border-radius:50%;">
-    <span style="font-size:12px;font-weight:800;color:#10B981;">COMMUNITY</span>
+    <img src="img/logos/symbol-only-dark.png" alt="LABOSURF" style="height:24px;border-radius:50%;">
+    <div style="display:flex;gap:6px;">
+      <button class="pill" onclick="cycleTheme()">🎨</button>
+      <button class="pill" onclick="toggleLang()">FR/EN</button>
+    </div>
   </header>
 
   <div class="tabs">
-    <button class="pill active" onclick="setRoom('announcements',this)">📢 Canal Officiel</button>
-    <button class="pill" onclick="setRoom('community',this)">💬 Grand Groupe</button>
-    <button class="pill" id="staffTab" style="display:none;border-color:#8B5CF6;" onclick="setRoom('staff',this)">🔐 Staff Privé</button>
-    <button class="pill" onclick="openDm(this)">✉️ Privés</button>
+    <button class="pill active" onclick="setRoom('announcements',this)">📢 Canal</button>
+    <button class="pill" onclick="setRoom('community',this)">🌍 Groupe</button>
+    <button class="pill" id="staffTab" style="display:none;" onclick="setRoom('staff',this)">🛡️ Staff</button>
+    <button class="pill" onclick="openDm(this)">💬 Privés</button>
+  </div>
+
+  <div style="margin:0 12px 6px;display:flex;justify-content:space-between;font-size:11px;color:#FBBF24;">
+    <span id="qInfo">🆓 10/10 msg/jour · Fonctions 🔒 VIP</span>
+    <a href="upgrade.html" style="color:#10B981;font-weight:800;text-decoration:none;">⭐ Passer VIP</a>
   </div>
 
   <div id="feed"></div>
 
   <form class="bar" id="sendForm">
     <input id="msgIn" placeholder="Écrire un message...">
-    <button type="submit" style="padding:10px 16px;border-radius:12px;background:#10B981;color:#060913;font-weight:800;border:none;">Envoyer</button>
+    <button type="button" class="pill" onclick="location.href='upgrade.html'">🎤 🔒</button>
+    <button type="submit" style="padding:9px 14px;border-radius:12px;background:#10B981;color:#060913;font-weight:800;border:none;">➤</button>
   </form>
 
   <script>
     let room = 'community';
-    const base = (window.FREE_SURF_API_BASE || '');
+    const API = window.FREE_SURF_API_BASE || 'https://laboratoire.free-surf237-4all.xyz';
+    const themes = ['', 'th-doodle', 'th-gold', 'th-matrix', 'th-light'];
+    let thIdx = 0;
+    function cycleTheme() { thIdx = (thIdx + 1) % themes.length; document.body.className = themes[thIdx]; }
+    function toggleLang() { alert('FR / EN'); }
+    async function trMsg(btn, txt) {
+      const r = await fetch(API + '/api/community/translate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: txt }) }).catch(() => null);
+      if (!r || r.status === 403) return location.href = 'upgrade.html';
+      const d = await r.json(); btn.textContent = '🌐 ' + d.translated_text;
+    }
     async function setRoom(r, btn) {
       room = r;
       document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
-      const res = await fetch(base + '/api/community/messages?room=' + encodeURIComponent(r) + '&limit=30').catch(() => null);
+      const res = await fetch(API + '/api/community/messages?room=' + encodeURIComponent(r) + '&limit=30').catch(() => null);
       const d = res ? await res.json().catch(() => ({})) : {};
       document.getElementById('feed').innerHTML = (d.messages || []).map(m =>
-        `<div class="card"><div style="display:flex;align-items:center;gap:8px;"><img src="${m.avatar_url || 'img/logos/icon-circle-dark.png'}" style="width:28px;height:28px;border-radius:50%;"><strong style="color:#10B981;font-size:12px;">${m.username}</strong><span style="font-size:10px;color:#94A3B8;">[${m.role}]</span></div><div style="margin-top:6px;font-size:13.5px;">${m.text || '🎙️ Note vocale'}</div></div>`
-      ).join('') || '<div class="card" style="color:#94A3B8;">Aucun message dans ce salon.</div>';
+        `<div class="row"><img src="${m.avatar_url || 'img/logos/icon-circle-dark.png'}" style="width:28px;height:28px;border-radius:50%;"><div class="bub other"><div style="font-size:11px;font-weight:800;color:#38BDF8;">${m.username} [${m.role}]</div><div>${m.text || '🎙️ Note vocale'}</div><button type="button" onclick="trMsg(this, ${JSON.stringify(m.text||'')})" style="background:none;border:none;color:#10B981;font-size:10px;padding:3px 0 0;cursor:pointer;">🌐 Traduire 🔒</button></div></div>`
+      ).join('') || '<div style="margin:12px;color:#94A3B8;font-size:13px;">Aucun message dans ce salon.</div>';
     }
     async function openDm(btn) {
       document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
-      const res = await fetch(base + '/api/community/dms').catch(() => null);
+      const res = await fetch(API + '/api/community/dms').catch(() => null);
       const d = res ? await res.json().catch(() => ({})) : {};
       document.getElementById('feed').innerHTML = (d.messages || []).map(m =>
-        `<div class="card" style="border-color:#0EA5E9;"><strong style="color:#38BDF8;">${m.sender_name || 'Support'}</strong>: ${m.body} <span style="float:right;font-size:10px;">${m.is_read ? '✓✓' : '✓'}</span></div>`
-      ).join('') || '<div class="card" style="color:#94A3B8;">Messagerie privée directe avec le Support LABOSURF.</div>';
+        `<div class="row"><div class="bub other" style="border-color:#0EA5E9;"><strong style="color:#38BDF8;">${m.sender_name || 'Support'}</strong>: ${m.body} ✓✓</div></div>`
+      ).join('') || '<div style="margin:12px;color:#94A3B8;font-size:13px;">Messagerie privée 1-à-1 avec votre Support.</div>';
     }
     document.getElementById('sendForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const inp = document.getElementById('msgIn');
-      if (!inp.value.trim()) return;
+      const inp = document.getElementById('msgIn'); if (!inp.value.trim()) return;
       const txt = inp.value.trim(); inp.value = '';
-      await fetch(base + '/api/community/messages', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ room, kind: 'text', text: txt }) }).catch(() => {});
-      setRoom(room);
+      const r = await fetch(API + '/api/community/messages', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room, kind:'text', text: txt }) }).catch(() => null);
+      if (r && r.status === 403) location.href = 'upgrade.html';
+      else setRoom(room);
     });
     setRoom('community');
   </script>
