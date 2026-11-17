@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Inscription — Labo Surf VPN</title>
+  <style>
+    body{margin:0;background:#060913;color:#F1F5F9;font-family:system-ui,-apple-system,sans-serif;padding:16px;}
+    .card{max-width:420px;margin:14px auto;padding:22px;border-radius:20px;background:rgba(12,20,36,0.82);backdrop-filter:blur(18px);border:1px solid rgba(16,185,129,0.32);text-align:center;}
+    input,select{width:100%;box-sizing:border-box;padding:10px;border-radius:12px;background:#0c1424;border:1px solid rgba(16,185,129,0.28);color:#fff;margin-bottom:8px;}
+    button{width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#10B981,#0EA5E9);color:#060913;font-weight:800;border:none;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="img/logos/logo-vertical-dark.png" alt="LABOSURF" style="width:110px;border-radius:12px;margin-bottom:8px;">
+    <h2 style="margin:4px 0 10px;">Créer un compte</h2>
+    <input id="av" type="file" accept="image/*" style="font-size:12px;">
+    <input id="u" placeholder="Nom d'utilisateur">
+    <select id="cc"><option value="CM">🇨🇲 Cameroun</option><option value="CI">🇨🇮 Côte d'Ivoire</option><option value="SN">🇸🇳 Sénégal</option><option value="GA">🇬🇦 Gabon</option></select>
+    <input id="c" placeholder="WhatsApp ou Email">
+    <input id="rs" placeholder="Phrase de récupération (8+ car.)">
+    <input id="p" type="password" placeholder="Mot de passe">
+    <input id="ref" placeholder="Code parrainage (optionnel)">
+    <button onclick="doReg()">Créer mon compte</button>
+    <div style="margin-top:10px;font-size:13px;"><a href="login.html" style="color:#10B981;">Connexion</a> · <a href="index.html" style="color:#94A3B8;">← Accueil</a></div>
+  </div>
+  <script>
+    const API = window.FREE_SURF_API_BASE || 'https://laboratoire.free-surf237-4all.xyz';
+    let avData = '';
+    av.onchange = () => { const f = av.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{avData=r.result;}; r.readAsDataURL(f); };
+    async function doReg() {
+      if(!avData) return alert('Photo d\'avatar obligatoire !');
+      const r = await fetch(API + '/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: u.value.trim(), country_code: cc.value, contact: c.value.trim(), recovery_secret: rs.value.trim(), password: p.value, confirm_password: p.value, referral_code: ref.value.trim(), avatar_data: avData }) });
+      const d = await r.json().catch(()=>({}));
+      if (r.ok && d.status === 'ok') location.href = 'index.html'; else alert(d.message || 'Erreur inscription');
+    }
+  </script>
+</body>
+</html>

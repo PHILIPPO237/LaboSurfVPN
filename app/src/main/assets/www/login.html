@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Connexion — Labo Surf VPN</title>
+  <style>
+    body{margin:0;background:#060913;color:#F1F5F9;font-family:system-ui,-apple-system,sans-serif;padding:16px;}
+    .card{max-width:420px;margin:20px auto;padding:24px;border-radius:20px;background:rgba(12,20,36,0.82);backdrop-filter:blur(18px);border:1px solid rgba(16,185,129,0.32);text-align:center;}
+    input{width:100%;box-sizing:border-box;padding:11px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(16,185,129,0.28);color:#fff;margin-bottom:10px;}
+    button{width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#10B981,#0EA5E9);color:#060913;font-weight:800;border:none;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="img/logos/logo-vertical-dark.png" alt="LABOSURF" style="width:140px;border-radius:14px;margin-bottom:10px;">
+    <h2 style="margin:6px 0;">Accès Panel — Labo Surf VPN</h2>
+    <input id="u" placeholder="Nom d'utilisateur">
+    <input id="p" type="password" placeholder="Mot de passe">
+    <button onclick="doLogin()">Se connecter</button>
+    <div style="margin-top:12px;font-size:13px;"><a href="register.html" style="color:#10B981;">Créer un compte</a> · <a href="index.html" style="color:#94A3B8;">← Accueil</a></div>
+  </div>
+  <script>
+    const API = window.FREE_SURF_API_BASE || 'https://laboratoire.free-surf237-4all.xyz';
+    async function doLogin() {
+      const r = await fetch(API + '/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: u.value.trim(), password: p.value }) });
+      const d = await r.json().catch(()=>({}));
+      if (r.ok && d.status === 'ok') location.href = 'index.html'; else alert(d.message || 'Identifiants invalides');
+    }
+  </script>
+</body>
+</html>
